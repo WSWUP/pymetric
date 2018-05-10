@@ -1,0 +1,31 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# PyCharm
+.idea
+
+# Temporary files
+*.bak
+*.lock
+
+# Documents
+*.mxd
+*.docx
+
+# Data folders
+/cdl
+/cimis/*/
+/daymet
+/dem/tiles
+/dem/p*r*/
+/fields
+/gridmet
+/landfire
+/nlcd
+/nldas/*/
+/refet
+/soils
+/ssurgo
+/statsgo
