@@ -214,7 +214,7 @@ METRIC
 :   If True, override INI and interpolate zone tables
 
 ## Example sequence of running the python codes within this directory
-__Please note that these scripts will only run effectively if the required data is downloaded and structured as prescribed in the [Example Data readme](docs/EXAMPLE_DATA.md).__
+__Please note that these scripts will only run effectively if the required data is downloaded and structured as prescribed in the [Example Data readme](../../docs/EXAMPLE_DATA.md).__
 ```
 python D:\pyMETRIC\code\local\landsat_prep_path_row.py -i D:\pyMETRIC\harney\landsat_2015.ini
 python D:\pyMETRIC\code\local\landsat_prep_ini.py -i D:\pyMETRIC\harney\landsat_2015.ini
