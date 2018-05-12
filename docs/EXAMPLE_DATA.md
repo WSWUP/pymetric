@@ -351,11 +351,6 @@ python D:\pyMETRIC\tools\download\download_nlcd.py
 #### Landsat data download and prep
 
 pyMETRIC uses the [Landsat578](https://github.com/dgketchum/Landsat578) package for downloading Landsat imagery products.
-
-__Credentials must be established from the [USGS Earth Resources Observation and Science (EROS)](https://ers.cr.usgs.gov/register/) site and stored in .txt file prior to running Landsat data download script__
-
 ```
-python landsat --satellite LC8 --start 2015-01-01 --end 2015-12-31 --path 43 --row 30 -o D:\pyMETRIC\harney\landsat --credentials *Your individual credential file* --zipped
-python landsat --satellite LE7 --start 2015-01-01 --end 2015-12-31 --path 43 --row 30 -o D:\pyMETRIC\harney\landsat --credentials *Your individual credential file* --zipped
-python D:\pyMETRIC\landsat\landsat_image_organize.py
+D:\pyMETRIC>landsat -conf harney\harney_downloader_config.yml
 ```

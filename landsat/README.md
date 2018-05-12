@@ -14,11 +14,5 @@ The Landsat images can be downloaded using the [Landsat578 tool](https://github.
 
 The Landsat 7 and 8 images from 2015 for the study area can be downloaded using the following commands.  The Landsat images are being downloaded to the non-project landsat folder so that they can be used by other projects, but they could be downloaded directly to the project folder instead.
 ```
-D:\pyMETRIC>landsat --satellite LE7 --start 2015-01-01 --end 2015-12-31 --path 43 --row 30 --output .\landsat --credentials .\landsat\usgs.txt --zipped
-D:\pyMETRIC>landsat --satellite LC8 --start 2015-01-01 --end 2015-12-31 --path 43 --row 30 --output .\landsat --credentials .\landsat\usgs.txt --zipped
-```
-
-After downloading, you will need to run the following script to rename and move the Landsat tar.gz files into the correct folder structure.  Eventually, the Landsat578 download tool may support writing directly to the target folders.
-```
-D:\pyMETRIC>python landsat\landsat_image_organize.py
+D:\pyMETRIC>landsat -conf harney\harney_downloader_config.yml
 ```
