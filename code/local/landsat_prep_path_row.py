@@ -218,7 +218,6 @@ def main(ini_path, tile_list=None, overwrite_flag=False, mp_procs=1):
     env.cellsize = snap_cs
     env.snap_xmin, env.snap_ymin = snap_xmin, snap_ymin
 
-
     # Use WGSS84 (EPSG 4326) for GCS spatial reference
     # Could also use NAD83 (EPSG 4269)
     # gcs_epsg = 4326
@@ -311,7 +310,6 @@ def main(ini_path, tile_list=None, overwrite_flag=False, mp_procs=1):
         logging.debug('\nSkip list not set in INI')
         skip_list = []
 
-
     # Copy and unzip raw Landsat scenes
     # Use these for thermal band, MTL file (scene time), and to run FMask
     if landsat_flag:
@@ -321,8 +319,8 @@ def main(ini_path, tile_list=None, overwrite_flag=False, mp_procs=1):
         for tile_name in tile_list:
             tile_output_ws = os.path.join(project_ws, str(year), tile_name)
 
-            # Force path/row as strings without leading zeros
-            path, row = map(str, map(int, tile_re.match(tile_name).groups()))
+            # path/row as strings with leading zeros
+            path, row = map(str, tile_re.match(tile_name).groups())
             tile_input_ws = os.path.join(
                 landsat_input_ws, path, row, str(year))
             if not os.path.isdir(tile_input_ws):
@@ -364,6 +362,8 @@ def main(ini_path, tile_list=None, overwrite_flag=False, mp_procs=1):
 
                 # Extract Landsat tar.gz file
                 input_path = os.path.join(tile_input_ws, input_name)
+                print(orig_data_ws)
+                # sys.exit()
                 if mp_procs > 1:
                     extract_targz_list.append([input_path, orig_data_ws])
                 else:
