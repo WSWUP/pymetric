@@ -280,11 +280,14 @@ def extract_targz_func(input_path, output_ws):
     print('    {}'.format(os.path.basename(input_path)))
     try:
         input_tar = tarfile.open(input_path, 'r:gz')
-        input_tar.extractall(output_ws)
+        # adjusting for Landsat578 directory structure
+        for member in input_tar.getmembers():
+            if member.isreg():  # skip if the TarInfo is not files
+                member.name = os.path.basename(member.name)  # remove the path by reset it
+                input_tar.extract(member, output_ws)
         input_tar.close()
     except IOError:
         print('    IOError')
-
 
 def extract_hdfgz_mp(tup):
     """Pool multiprocessing friendly hdf extract function
