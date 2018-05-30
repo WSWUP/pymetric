@@ -232,6 +232,7 @@ def main(netcdf_ws=os.getcwd(), ancillary_ws=os.getcwd(),
         tmin_nc_f = netCDF4.Dataset(tmin_path, 'r')
         tmin_nc = tmin_nc_f.variables[gridmet_band_dict['tmmn']][
             :, g_j:g_j + g_rows, g_i:g_i + g_cols].copy()
+        tmin_nc = np.flip(tmin_nc, 1)
         tmin_nc_f.close()
         del tmin_nc_f
 
@@ -239,6 +240,7 @@ def main(netcdf_ws=os.getcwd(), ancillary_ws=os.getcwd(),
         tmax_nc_f = netCDF4.Dataset(tmax_path, 'r')
         tmax_nc = tmax_nc_f.variables[gridmet_band_dict['tmmx']][
             :, g_j:g_j + g_rows, g_i:g_i + g_cols].copy()
+        tmax_nc = np.flip(tmax_nc, 1)
         tmax_nc_f.close()
         del tmax_nc_f
 
@@ -246,6 +248,7 @@ def main(netcdf_ws=os.getcwd(), ancillary_ws=os.getcwd(),
         sph_nc_f = netCDF4.Dataset(sph_path, 'r')
         sph_nc = sph_nc_f.variables[gridmet_band_dict['sph']][
             :, g_j:g_j + g_rows, g_i:g_i + g_cols].copy()
+        sph_nc = np.flip(sph_nc, 1)
         sph_nc_f.close()
         del sph_nc_f
 
@@ -253,6 +256,7 @@ def main(netcdf_ws=os.getcwd(), ancillary_ws=os.getcwd(),
         rs_nc_f = netCDF4.Dataset(rs_path, 'r')
         rs_nc = rs_nc_f.variables[gridmet_band_dict['srad']][
             :, g_j:g_j + g_rows, g_i:g_i + g_cols].copy()
+        rs_nc = np.flip(rs_nc, 1)
         rs_nc_f.close()
         del rs_nc_f
 
@@ -260,6 +264,7 @@ def main(netcdf_ws=os.getcwd(), ancillary_ws=os.getcwd(),
         wind_nc_f = netCDF4.Dataset(wind_path, 'r')
         wind_nc = wind_nc_f.variables[gridmet_band_dict['vs']][
             :, g_j:g_j + g_rows, g_i:g_i + g_cols].copy()
+        wind_nc = np.flip(wind_nc, 1)
         wind_nc_f.close()
         del wind_nc_f
 
