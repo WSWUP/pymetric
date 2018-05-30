@@ -197,8 +197,9 @@ def main(netcdf_ws=os.getcwd(), ancillary_ws=os.getcwd(),
             # Immediatly clip input array to save memory
             input_nc_f = netCDF4.Dataset(input_raster, 'r')
             input_nc = input_nc_f.variables[gridmet_band_dict[input_var]][
-                :, g_i:g_i + g_cols, g_j:g_j + g_rows].copy()
-            input_nc = np.transpose(input_nc, (0, 2, 1))
+                :, g_j:g_j + g_rows, g_i:g_i + g_cols].copy()
+            input_nc_f.close()
+            del input_nc_f
 
             # A numpy array is returned when slicing a masked array
             #   if there are no masked pixels
@@ -261,8 +262,6 @@ def main(netcdf_ws=os.getcwd(), ancillary_ws=os.getcwd(),
                 #     output_geo=gridmet_geo, output_proj=gridmet_proj,
                 #     stats_flag=False)
                 del output_array
-            input_nc_f.close()
-            del input_nc_f
 
         if stats_flag:
             drigo.raster_statistics(output_path)
