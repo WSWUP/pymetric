@@ -125,7 +125,12 @@ def main(netcdf_ws=os.getcwd(), ancillary_ws=os.getcwd(),
         logging.debug('  Extent: {}'.format(gridmet_extent))
     elif extent_path is not None:
         logging.info('\nComputing subset extent & geo')
-        if extent_path.lower().endswith('.shp'):
+        if not os.path.isfile(extent_path):
+            logging.error(
+                '\nThe extent object not exist, exiting\n'
+                '  {}'.format(extent_path))
+            return False
+        elif extent_path.lower().endswith('.shp'):
             gridmet_extent = drigo.feature_path_extent(extent_path)
             extent_osr = drigo.feature_path_osr(extent_path)
             extent_cs = None
@@ -326,7 +331,7 @@ def arg_parse():
         help='End date (format YYYY-MM-DD)', metavar='DATE')
     parser.add_argument(
         '--extent', default=None, metavar='PATH',
-        help='Subset extent raster path')
+        help='Subset extent shapefile or raster path')
     parser.add_argument(
         '-te', default=None, type=float, nargs=4,
         metavar=('xmin', 'ymin', 'xmax', 'ymax'),
