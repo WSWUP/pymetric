@@ -71,7 +71,7 @@ def main(ini_path, tile_list=None, stats_flag=True,
     # INI file is built as a function of year and tile_name
     ini_fmt = '{}_{}_{}.ini'
 
-    # Calculate pixel regions/rating immediatly after running Model 1
+    # Calculate pixel regions/rating immediately after running Model 1
     # pixel_regions_flag = True
 
     # Only allow new terminal windows on Windows

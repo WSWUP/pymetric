@@ -205,7 +205,7 @@ def main(netcdf_ws=os.getcwd(), ancillary_ws=os.getcwd(),
             output_extent=gridmet_extent, output_fill_flag=True)
 
         # Read in the GRIDMET NetCDF file
-        # Immediatly clip input array to save memory
+        # Immediately clip input array to save memory
         input_nc_f = netCDF4.Dataset(input_raster, 'r')
         input_nc = input_nc_f.variables[gridmet_band_dict[input_var]][
             :, g_j:g_j + g_rows, g_i:g_i + g_cols].copy()

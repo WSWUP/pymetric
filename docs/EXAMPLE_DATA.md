@@ -6,7 +6,7 @@ This example will step through acquiring and prepping all of the Landsat images 
 
 ## Project Folder
 
-All of the example script calls listed below assume that the pyMETRIC repository was installed on a Windows computer to "D:\pyMETRIC" and that the scripts are being called from this folder.
+All of the example script calls listed below assume that the pyMETRIC repository was installed on a Windows computer to "D:\pymetric" and that the scripts are being called from this folder.
 
 After cloning the repository, the first step is to create a project folder if it doesn't exists.  This can be done from the command line (using the following command) or in the file explorer.
 ```
