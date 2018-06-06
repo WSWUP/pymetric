@@ -12,7 +12,7 @@ import sys
 import _utils
 
 
-def main(netcdf_ws=os.getcwd(), variables=['all'],
+def main(netcdf_ws=os.getcwd(), variables=['etr', 'pr'],
          start_date=None, end_date=None, overwrite_flag=False):
     """Download GRIDMET netcdf files
 
@@ -21,10 +21,8 @@ def main(netcdf_ws=os.getcwd(), variables=['all'],
     netcdf_ws : str
         Folder of GRIDMET netcdf files.
     variable : list, optional
-        GRIDMET variables to download ('ppt', 'srad', 'sph', 'tmmn', 'tmmx', 'vs').
-        Set as ['all'] to download all PPT and ETr/ETo variables.
-        Set as ['etr'] or ['eto'] to download all variables needed to compute
-        ASCE standardized reference ET.
+        GRIDMET variables to download (the default is ['etr', 'ppt']).
+        Choices: 'eto', 'etr', 'pr', 'srad', 'sph', 'tmmn', 'tmmx', 'vs'
     start_date : str, optional
         ISO format date (YYYY-MM-DD).
     end_date : str, optional
@@ -55,8 +53,7 @@ def main(netcdf_ws=os.getcwd(), variables=['all'],
         logging.info('  End date:   {}'.format(end_dt))
 
     # GRIDMET rasters to extract
-    data_full_list = ['pr', 'srad', 'sph', 'tmmn', 'tmmx', 'vs']
-    data_etr_list = ['srad', 'sph', 'tmmn', 'tmmx', 'vs']
+    data_full_list = ['eto', 'etr', 'pr', 'srad', 'sph', 'tmmn', 'tmmx', 'vs']
     if not variables:
         logging.error('\nERROR: variables parameter is empty\n')
         sys.exit()
@@ -64,15 +61,16 @@ def main(netcdf_ws=os.getcwd(), variables=['all'],
         # DEADBEEF - I could try converting comma separated strings to lists?
         logging.warning('\nERROR: variables parameter must be a list\n')
         sys.exit()
-    elif 'all' in variables:
-        logging.error('Downloading all variables\n  {}'.format(
-            ','.join(data_full_list)))
-        data_list = data_full_list
-    elif 'eto' in variables or 'etr' in variables:
-        logging.error(
-            'Downloading all variables needed to compute ETr/ETo\n  {}'.format(
-                ','.join(data_etr_list)))
-        data_list = data_etr_list
+    # elif 'all' in variables:
+    #     logging.error('Downloading all variables\n  {}'.format(
+    #         ','.join(data_full_list)))
+    #     data_list = data_full_list
+    # elif 'eto' in variables or 'etr' in variables:
+    #     data_etr_list = ['srad', 'sph', 'tmmn', 'tmmx', 'vs']
+    #     logging.error(
+    #         'Downloading all variables needed to compute ETr/ETo\n  {}'.format(
+    #             ','.join(data_etr_list)))
+    #     data_list = data_etr_list
     elif not set(variables).issubset(set(data_full_list)):
         logging.error('\nERROR: variables parameter is invalid\n  {}'.format(
             variables))
@@ -139,8 +137,8 @@ def arg_parse():
         '--netcdf', default=os.path.join(gridmet_folder, 'netcdf'),
         metavar='PATH', help='Output netCDF folder path')
     parser.add_argument(
-        '--vars', default=['all'], nargs='+',
-        choices=['all', 'etr', 'eto', 'pr', 'srad', 'sph', 'tmmn', 'tmmx', 'vs'],
+        '--vars', default=['etr', 'pr'], nargs='+',
+        choices=['etr', 'eto', 'pr', 'srad', 'sph', 'tmmn', 'tmmx', 'vs'],
         help='GRIDMET variables to download')
     parser.add_argument(
         '--start', default='2017-01-01', type=_utils.valid_date,

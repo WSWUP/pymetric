@@ -19,7 +19,7 @@ import _utils
 
 
 def main(netcdf_ws=os.getcwd(), ancillary_ws=os.getcwd(),
-         output_ws=os.getcwd(), variables=['pr'],
+         output_ws=os.getcwd(), variables=['etr', 'pr'],
          start_date=None, end_date=None,
          extent_path=None, output_extent=None,
          stats_flag=True, overwrite_flag=False):
@@ -34,7 +34,8 @@ def main(netcdf_ws=os.getcwd(), ancillary_ws=os.getcwd(),
     output_ws : str
         Folder of output rasters.
     variable : list, optional
-        GRIDMET variables to download ('pr', 'srad', 'sph', 'tmmn', 'tmmx', 'vs').
+        GRIDMET variables to download (the default is ['etr', 'pr']).
+        Choices: 'eto', 'etr', 'pr', 'srad', 'sph', 'tmmn', 'tmmx', 'vs'
         Set as ['all'] to process all variables.
     start_date : str, optional
         ISO format date (YYYY-MM-DD).
@@ -74,7 +75,7 @@ def main(netcdf_ws=os.getcwd(), ancillary_ws=os.getcwd(),
     elev_raster = os.path.join(ancillary_ws, 'gridmet_elev.img')
 
     # GRIDMET rasters to extract
-    data_full_list = ['pr', 'srad', 'sph', 'tmmn', 'tmmx', 'vs']
+    data_full_list = ['eto', 'etr', 'pr', 'srad', 'sph', 'tmmn', 'tmmx', 'vs']
     if not variables:
         logging.error('\nERROR: variables parameter is empty\n')
         sys.exit()
@@ -92,6 +93,8 @@ def main(netcdf_ws=os.getcwd(), ancillary_ws=os.getcwd(),
 
     # GRIDMET band name dictionary
     gridmet_band_dict = dict()
+    gridmet_band_dict['eto'] = 'potential_evapotranspiration'
+    gridmet_band_dict['etr'] = 'potential_evapotranspiration'
     gridmet_band_dict['pr'] = 'precipitation_amount'
     gridmet_band_dict['srad'] = 'surface_downwelling_shortwave_flux_in_air'
     gridmet_band_dict['sph'] = 'specific_humidity'
@@ -220,7 +223,7 @@ def main(netcdf_ws=os.getcwd(), ancillary_ws=os.getcwd(),
                 output_extent=gridmet_extent, output_fill_flag=True)
 
             # Read in the GRIDMET NetCDF file
-            # Immediatly clip input array to save memory
+            # Immediately clip input array to save memory
             input_nc_f = netCDF4.Dataset(input_raster, 'r')
             input_nc = input_nc_f.variables[gridmet_band_dict[input_var]][
                 :, g_j:g_j + g_rows, g_i:g_i + g_cols].copy()
@@ -320,8 +323,8 @@ def arg_parse():
         '--output', default=gridmet_folder,
         metavar='PATH', help='Output raster folder path')
     parser.add_argument(
-        '--vars', default=['pr'], nargs='+',
-        choices=['pr', 'srad', 'sph', 'tmmn', 'tmmx', 'vs', 'all'],
+        '--vars', default=['etr', 'pr'], nargs='+',
+        choices=['eto', 'etr', 'pr', 'srad', 'sph', 'tmmn', 'tmmx', 'vs', 'all'],
         help='GRIDMET variables to extract')
     parser.add_argument(
         '--start', default='2017-01-01', type=_utils.valid_date,

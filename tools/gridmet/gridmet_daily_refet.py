@@ -14,7 +14,7 @@ import drigo
 import netCDF4
 import numpy as np
 from osgeo import gdal
-import refet
+# import refet
 
 import _utils
 
@@ -91,12 +91,14 @@ def main(netcdf_ws=os.getcwd(), ancillary_ws=os.getcwd(),
 
     # GRIDMET band name dictionary
     gridmet_band_dict = dict()
-    gridmet_band_dict['pr'] = 'precipitation_amount'
-    gridmet_band_dict['srad'] = 'surface_downwelling_shortwave_flux_in_air'
-    gridmet_band_dict['sph'] = 'specific_humidity'
-    gridmet_band_dict['tmmn'] = 'air_temperature'
-    gridmet_band_dict['tmmx'] = 'air_temperature'
-    gridmet_band_dict['vs'] = 'wind_speed'
+    gridmet_band_dict['eto'] = 'potential_evapotranspiration'
+    gridmet_band_dict['etr'] = 'potential_evapotranspiration'
+    # gridmet_band_dict['pr'] = 'precipitation_amount'
+    # gridmet_band_dict['srad'] = 'surface_downwelling_shortwave_flux_in_air'
+    # gridmet_band_dict['sph'] = 'specific_humidity'
+    # gridmet_band_dict['tmmn'] = 'air_temperature'
+    # gridmet_band_dict['tmmx'] = 'air_temperature'
+    # gridmet_band_dict['vs'] = 'wind_speed'
 
     # Get extent/geo from elevation raster
     gridmet_ds = gdal.Open(elev_raster)
@@ -198,21 +200,15 @@ def main(netcdf_ws=os.getcwd(), ancillary_ws=os.getcwd(),
             continue
 
         # Build input file path
-        tmin_path = os.path.join(netcdf_ws, 'tmmn_{}.nc'.format(year_str))
-        tmax_path = os.path.join(netcdf_ws, 'tmmx_{}.nc'.format(year_str))
-        sph_path = os.path.join(netcdf_ws, 'sph_{}.nc'.format(year_str))
-        rs_path = os.path.join(netcdf_ws, 'srad_{}.nc'.format(year_str))
-        wind_path = os.path.join(netcdf_ws, 'vs_{}.nc'.format(year_str))
-        # Check that all input files are present
-        missing_flag = False
-        for input_path in [tmin_path, tmax_path, sph_path,
-                           rs_path, wind_path]:
-            if not os.path.isfile(input_path):
-                logging.debug('  Input NetCDF doesn\'t exist\n    {}'.format(
-                    input_path))
-                missing_flag = True
-        if missing_flag:
-            logging.debug('  skipping')
+        eto_path = os.path.join(netcdf_ws, 'eto_{}.nc'.format(year_str))
+        etr_path = os.path.join(netcdf_ws, 'etr_{}.nc'.format(year_str))
+        if eto_flag and not os.path.isfile(eto_path):
+            logging.debug('  ETo NetCDF doesn\'t exist\n    {}'.format(
+                eto_path))
+            continue
+        if etr_flag and not os.path.isfile(etr_path):
+            logging.debug('  ETr NetCDF doesn\'t exist\n    {}'.format(
+                etr_path))
             continue
 
         # Create a single raster for each year with 365 bands
@@ -235,65 +231,36 @@ def main(netcdf_ws=os.getcwd(), ancillary_ws=os.getcwd(),
         #   did not pass and pass logging debug message to user
 
         # Read in the GRIDMET NetCDF file
-        # Immediatly clip input arrays to save memory
+        # Immediately clip input arrays to save memory
         # Transpose arrays back to row x col
         logging.info('  Reading NetCDFs into memory')
-        logging.debug("    {}".format(tmin_path))
-        tmin_nc_f = netCDF4.Dataset(tmin_path, 'r')
-        tmin_nc = tmin_nc_f.variables[gridmet_band_dict['tmmn']][
-            :, g_j:g_j + g_rows, g_i:g_i + g_cols].copy()
-        tmin_nc = np.flip(tmin_nc, 1)
-        tmin_nc_f.close()
-        del tmin_nc_f
-
-        logging.debug("    {}".format(tmax_path))
-        tmax_nc_f = netCDF4.Dataset(tmax_path, 'r')
-        tmax_nc = tmax_nc_f.variables[gridmet_band_dict['tmmx']][
-            :, g_j:g_j + g_rows, g_i:g_i + g_cols].copy()
-        tmax_nc = np.flip(tmax_nc, 1)
-        tmax_nc_f.close()
-        del tmax_nc_f
-
-        logging.debug("    {}".format(sph_path))
-        sph_nc_f = netCDF4.Dataset(sph_path, 'r')
-        sph_nc = sph_nc_f.variables[gridmet_band_dict['sph']][
-            :, g_j:g_j + g_rows, g_i:g_i + g_cols].copy()
-        sph_nc = np.flip(sph_nc, 1)
-        sph_nc_f.close()
-        del sph_nc_f
-
-        logging.debug("    {}".format(rs_path))
-        rs_nc_f = netCDF4.Dataset(rs_path, 'r')
-        rs_nc = rs_nc_f.variables[gridmet_band_dict['srad']][
-            :, g_j:g_j + g_rows, g_i:g_i + g_cols].copy()
-        rs_nc = np.flip(rs_nc, 1)
-        rs_nc_f.close()
-        del rs_nc_f
-
-        logging.debug("    {}".format(wind_path))
-        wind_nc_f = netCDF4.Dataset(wind_path, 'r')
-        wind_nc = wind_nc_f.variables[gridmet_band_dict['vs']][
-            :, g_j:g_j + g_rows, g_i:g_i + g_cols].copy()
-        wind_nc = np.flip(wind_nc, 1)
-        wind_nc_f.close()
-        del wind_nc_f
+        if eto_flag:
+            logging.debug("    {}".format(eto_path))
+            eto_nc_f = netCDF4.Dataset(eto_path, 'r')
+            eto_nc = eto_nc_f.variables[gridmet_band_dict['eto']][
+                :, g_j:g_j + g_rows, g_i:g_i + g_cols].copy()
+            eto_nc = np.flip(eto_nc, 1)
+            eto_nc_f.close()
+            del eto_nc_f
+        if etr_flag:
+            logging.debug("    {}".format(etr_path))
+            etr_nc_f = netCDF4.Dataset(etr_path, 'r')
+            etr_nc = etr_nc_f.variables[gridmet_band_dict['etr']][
+                :, g_j:g_j + g_rows, g_i:g_i + g_cols].copy()
+            etr_nc = np.flip(etr_nc, 1)
+            etr_nc_f.close()
+            del etr_nc_f
 
         # A numpy array is returned when slicing a masked array
         #   if there are no masked pixels
         # This is a hack to force the numpy array back to a masked array
         # For now assume all arrays need to be converted
-        if type(tmax_nc) != np.ma.core.MaskedArray:
-            tmax_nc = np.ma.core.MaskedArray(
-                tmax_nc, np.zeros(tmax_nc.shape, dtype=bool))
-        if type(sph_nc) != np.ma.core.MaskedArray:
-            sph_nc = np.ma.core.MaskedArray(
-                sph_nc, np.zeros(sph_nc.shape, dtype=bool))
-        if type(rs_nc) != np.ma.core.MaskedArray:
-            rs_nc = np.ma.core.MaskedArray(
-                rs_nc, np.zeros(rs_nc.shape, dtype=bool))
-        if type(wind_nc) != np.ma.core.MaskedArray:
-            wind_nc = np.ma.core.MaskedArray(
-                wind_nc, np.zeros(wind_nc.shape, dtype=bool))
+        if eto_flag and type(eto_nc) != np.ma.core.MaskedArray:
+            eto_nc = np.ma.core.MaskedArray(
+                eto_nc, np.zeros(eto_nc.shape, dtype=bool))
+        if etr_flag and type(etr_nc) != np.ma.core.MaskedArray:
+            etr_nc = np.ma.core.MaskedArray(
+                etr_nc, np.zeros(etr_nc.shape, dtype=bool))
 
         # Check all valid dates in the year
         year_dates = _utils.date_range(
@@ -313,126 +280,31 @@ def main(netcdf_ws=os.getcwd(), ancillary_ws=os.getcwd(),
             doy = int(date_dt.strftime('%j'))
             doy_i = range(1, year_days + 1).index(doy)
 
-            # Arrays are being read as masked array with a fill value of -9999
-            # Convert to basic numpy array arrays with nan values
-            try:
-                tmin_ma = tmin_nc[doy_i, :, :]
-            except IndexError:
-                logging.info('    date not in netcdf, skipping')
-                continue
-            tmin_array = tmin_ma.data.astype(np.float32)
-            tmin_nodata = float(tmin_ma.fill_value)
-            tmin_array[tmin_array == tmin_nodata] = np.nan
-
-            try:
-                tmax_ma = tmax_nc[doy_i, :, :]
-            except IndexError:
-                logging.info('    date not in netcdf, skipping')
-                continue
-            tmax_array = tmax_ma.data.astype(np.float32)
-            tmax_nodata = float(tmax_ma.fill_value)
-            tmax_array[tmax_array == tmax_nodata] = np.nan
-
-            try:
-                sph_ma = sph_nc[doy_i, :, :]
-            except IndexError:
-                logging.info('    date not in netcdf, skipping')
-                continue
-            sph_array = sph_ma.data.astype(np.float32)
-            sph_nodata = float(sph_ma.fill_value)
-            sph_array[sph_array == sph_nodata] = np.nan
-
-            try:
-                rs_ma = rs_nc[doy_i, :, :]
-            except IndexError:
-                logging.info('    date not in netcdf, skipping')
-                continue
-            rs_array = rs_ma.data.astype(np.float32)
-            rs_nodata = float(rs_ma.fill_value)
-            rs_array[rs_array == rs_nodata] = np.nan
-
-            try:
-                wind_ma = wind_nc[doy_i, :, :]
-            except IndexError:
-                logging.info('    date not in netcdf, skipping')
-                continue
-            wind_array = wind_ma.data.astype(np.float32)
-            wind_nodata = float(wind_ma.fill_value)
-            wind_array[wind_array == wind_nodata] = np.nan
-            del tmin_ma, tmax_ma, sph_ma, rs_ma, wind_ma
-
-            # Since inputs are netcdf, need to create GDAL raster
-            #   datasets in order to use gdal_common functions
-            # Create an in memory dataset of the full ETo array
-            tmin_ds = drigo.array_to_mem_ds(
-                tmin_array, output_geo=gridmet_geo,
-                # tmin_array, output_geo=gridmet_full_geo,
-                output_proj=gridmet_proj)
-            tmax_ds = drigo.array_to_mem_ds(
-                tmax_array, output_geo=gridmet_geo,
-                # tmax_array, output_geo=gridmet_full_geo,
-                output_proj=gridmet_proj)
-            sph_ds = drigo.array_to_mem_ds(
-                sph_array, output_geo=gridmet_geo,
-                # sph_array, output_geo=gridmet_full_geo,
-                output_proj=gridmet_proj)
-            rs_ds = drigo.array_to_mem_ds(
-                rs_array, output_geo=gridmet_geo,
-                # rs_array, output_geo=gridmet_full_geo,
-                output_proj=gridmet_proj)
-            wind_ds = drigo.array_to_mem_ds(
-                wind_array, output_geo=gridmet_geo,
-                # wind_array, output_geo=gridmet_full_geo,
-                output_proj=gridmet_proj)
-
-            # Then extract the subset from the in memory dataset
-            tmin_array = drigo.raster_ds_to_array(
-                tmin_ds, 1, mask_extent=gridmet_extent, return_nodata=False)
-            tmax_array = drigo.raster_ds_to_array(
-                tmax_ds, 1, mask_extent=gridmet_extent, return_nodata=False)
-            sph_array = drigo.raster_ds_to_array(
-                sph_ds, 1, mask_extent=gridmet_extent, return_nodata=False)
-            rs_array = drigo.raster_ds_to_array(
-                rs_ds, 1, mask_extent=gridmet_extent, return_nodata=False)
-            wind_array = drigo.raster_ds_to_array(
-                wind_ds, 1, mask_extent=gridmet_extent, return_nodata=False)
-            del tmin_ds, tmax_ds, sph_ds, rs_ds, wind_ds
-
-            # Adjust units
-            tmin_array -= 273.15
-            tmax_array -= 273.15
-            rs_array *= 0.0864
-
-            # Compute vapor pressure from specific humidity
-            pair_array = refet.calcs._air_pressure(elev=elev_array)
-            ea_array = refet.calcs._actual_vapor_pressure(
-                q=sph_array, pair=pair_array)
-
-            # ETr/ETo
-            refet_obj = refet.Daily(
-                tmin=tmin_array, tmax=tmax_array, ea=ea_array, rs=rs_array,
-                uz=wind_array, zw=zw, elev=elev_array, lat=lat_array, doy=doy,
-                method='asce')
-            if etr_flag:
-                etr_array = refet_obj.etr()
             if eto_flag:
-                eto_array = refet_obj.eto()
+                # Arrays are being read as masked array with a fill value of -9999
+                # Convert to basic numpy array arrays with nan values
+                try:
+                    eto_ma = eto_nc[doy_i, :, :]
+                except IndexError:
+                    logging.info('    date not in netcdf, skipping')
+                    continue
+                eto_array = eto_ma.data.astype(np.float32)
+                eto_nodata = float(eto_ma.fill_value)
+                eto_array[eto_array == eto_nodata] = np.nan
 
-            # Cleanup
-            del tmin_array, tmax_array, sph_array, rs_array, wind_array
-            del pair_array, ea_array
+                # Since inputs are netcdf, need to create GDAL raster
+                #   datasets in order to use gdal_common functions
+                # Create an in memory dataset of the full ETo array
+                eto_ds = drigo.array_to_mem_ds(
+                    eto_array, output_geo=gridmet_geo,
+                    # eto_array, output_geo=gridmet_full_geo,
+                    output_proj=gridmet_proj)
 
-            # Save the projected array as 32-bit floats
-            if etr_flag:
-                drigo.array_to_comp_raster(
-                    etr_array.astype(np.float32), etr_raster,
-                    band=doy, stats_flag=False)
-                # drigo.array_to_raster(
-                #     etr_array.astype(np.float32), etr_raster,
-                #     output_geo=gridmet_geo, output_proj=gridmet_proj,
-                #     stats_flag=stats_flag)
-                del etr_array
-            if eto_flag:
+                # Then extract the subset from the in memory dataset
+                eto_array = drigo.raster_ds_to_array(
+                    eto_ds, 1, mask_extent=gridmet_extent, return_nodata=False)
+
+                # Save
                 drigo.array_to_comp_raster(
                     eto_array.astype(np.float32), eto_raster,
                     band=doy, stats_flag=False)
@@ -440,18 +312,295 @@ def main(netcdf_ws=os.getcwd(), ancillary_ws=os.getcwd(),
                 #     eto_array.astype(np.float32), eto_raster,
                 #     output_geo=gridmet_geo, output_proj=gridmet_proj,
                 #     stats_flag=stats_flag)
-                del eto_array
 
-        del tmin_nc
-        del tmax_nc
-        del sph_nc
-        del rs_nc
-        del wind_nc
+                # Cleanup
+                del eto_ds, eto_array
 
-        if stats_flag and etr_flag:
-            drigo.raster_statistics(etr_raster)
+            if etr_flag:
+                try:
+                    etr_ma = etr_nc[doy_i, :, :]
+                except IndexError:
+                    logging.info('    date not in netcdf, skipping')
+                    continue
+                etr_array = etr_ma.data.astype(np.float32)
+                etr_nodata = float(etr_ma.fill_value)
+                etr_array[etr_array == etr_nodata] = np.nan
+                etr_ds = drigo.array_to_mem_ds(
+                    etr_array, output_geo=gridmet_geo,
+                    # etr_array, output_geo=gridmet_full_geo,
+                    output_proj=gridmet_proj)
+                etr_array = drigo.raster_ds_to_array(
+                    etr_ds, 1, mask_extent=gridmet_extent, return_nodata=False)
+                drigo.array_to_comp_raster(
+                    etr_array.astype(np.float32), etr_raster,
+                    band=doy, stats_flag=False)
+                # drigo.array_to_raster(
+                #     etr_array.astype(np.float32), etr_raster,
+                #     output_geo=gridmet_geo, output_proj=gridmet_proj,
+                #     stats_flag=stats_flag)
+                del etr_ds, etr_array
+
         if stats_flag and eto_flag:
             drigo.raster_statistics(eto_raster)
+        if stats_flag and etr_flag:
+            drigo.raster_statistics(etr_raster)
+
+        # DEADBEEF - Code for computing ETo/ETr from the component variables
+        # # Build input file path
+        # tmin_path = os.path.join(netcdf_ws, 'tmmn_{}.nc'.format(year_str))
+        # tmax_path = os.path.join(netcdf_ws, 'tmmx_{}.nc'.format(year_str))
+        # sph_path = os.path.join(netcdf_ws, 'sph_{}.nc'.format(year_str))
+        # rs_path = os.path.join(netcdf_ws, 'srad_{}.nc'.format(year_str))
+        # wind_path = os.path.join(netcdf_ws, 'vs_{}.nc'.format(year_str))
+        # # Check that all input files are present
+        # missing_flag = False
+        # for input_path in [tmin_path, tmax_path, sph_path,
+        #                    rs_path, wind_path]:
+        #     if not os.path.isfile(input_path):
+        #         logging.debug('  Input NetCDF doesn\'t exist\n    {}'.format(
+        #             input_path))
+        #         missing_flag = True
+        # if missing_flag:
+        #     logging.debug('  skipping')
+        #     continue
+        #
+        # # Create a single raster for each year with 365 bands
+        # # Each day will be stored in a separate band
+        # etr_raster = os.path.join(etr_ws, etr_fmt.format(year_str))
+        # eto_raster = os.path.join(eto_ws, eto_fmt.format(year_str))
+        # if etr_flag and (overwrite_flag or not os.path.isfile(etr_raster)):
+        #     logging.debug('  {}'.format(etr_raster))
+        #     drigo.build_empty_raster(
+        #         etr_raster, band_cnt=366, output_dtype=np.float32,
+        #         output_proj=gridmet_proj, output_cs=gridmet_cs,
+        #         output_extent=gridmet_extent, output_fill_flag=True)
+        # if eto_flag and (overwrite_flag or not os.path.isfile(eto_raster)):
+        #     logging.debug('  {}'.format(eto_raster))
+        #     drigo.build_empty_raster(
+        #         eto_raster, band_cnt=366, output_dtype=np.float32,
+        #         output_proj=gridmet_proj, output_cs=gridmet_cs,
+        #         output_extent=gridmet_extent, output_fill_flag=True)
+        # # DEADBEEF - Need to find a way to test if both of these conditionals
+        # #   did not pass and pass logging debug message to user
+        #
+        # # Read in the GRIDMET NetCDF file
+        # # Immediately clip input arrays to save memory
+        # # Transpose arrays back to row x col
+        # logging.info('  Reading NetCDFs into memory')
+        # logging.debug("    {}".format(tmin_path))
+        # tmin_nc_f = netCDF4.Dataset(tmin_path, 'r')
+        # tmin_nc = tmin_nc_f.variables[gridmet_band_dict['tmmn']][
+        #     :, g_j:g_j + g_rows, g_i:g_i + g_cols].copy()
+        # tmin_nc = np.flip(tmin_nc, 1)
+        # tmin_nc_f.close()
+        # del tmin_nc_f
+        #
+        # logging.debug("    {}".format(tmax_path))
+        # tmax_nc_f = netCDF4.Dataset(tmax_path, 'r')
+        # tmax_nc = tmax_nc_f.variables[gridmet_band_dict['tmmx']][
+        #     :, g_j:g_j + g_rows, g_i:g_i + g_cols].copy()
+        # tmax_nc = np.flip(tmax_nc, 1)
+        # tmax_nc_f.close()
+        # del tmax_nc_f
+        #
+        # logging.debug("    {}".format(sph_path))
+        # sph_nc_f = netCDF4.Dataset(sph_path, 'r')
+        # sph_nc = sph_nc_f.variables[gridmet_band_dict['sph']][
+        #     :, g_j:g_j + g_rows, g_i:g_i + g_cols].copy()
+        # sph_nc = np.flip(sph_nc, 1)
+        # sph_nc_f.close()
+        # del sph_nc_f
+        #
+        # logging.debug("    {}".format(rs_path))
+        # rs_nc_f = netCDF4.Dataset(rs_path, 'r')
+        # rs_nc = rs_nc_f.variables[gridmet_band_dict['srad']][
+        #     :, g_j:g_j + g_rows, g_i:g_i + g_cols].copy()
+        # rs_nc = np.flip(rs_nc, 1)
+        # rs_nc_f.close()
+        # del rs_nc_f
+        #
+        # logging.debug("    {}".format(wind_path))
+        # wind_nc_f = netCDF4.Dataset(wind_path, 'r')
+        # wind_nc = wind_nc_f.variables[gridmet_band_dict['vs']][
+        #     :, g_j:g_j + g_rows, g_i:g_i + g_cols].copy()
+        # wind_nc = np.flip(wind_nc, 1)
+        # wind_nc_f.close()
+        # del wind_nc_f
+        #
+        # # A numpy array is returned when slicing a masked array
+        # #   if there are no masked pixels
+        # # This is a hack to force the numpy array back to a masked array
+        # # For now assume all arrays need to be converted
+        # if type(tmax_nc) != np.ma.core.MaskedArray:
+        #     tmax_nc = np.ma.core.MaskedArray(
+        #         tmax_nc, np.zeros(tmax_nc.shape, dtype=bool))
+        # if type(sph_nc) != np.ma.core.MaskedArray:
+        #     sph_nc = np.ma.core.MaskedArray(
+        #         sph_nc, np.zeros(sph_nc.shape, dtype=bool))
+        # if type(rs_nc) != np.ma.core.MaskedArray:
+        #     rs_nc = np.ma.core.MaskedArray(
+        #         rs_nc, np.zeros(rs_nc.shape, dtype=bool))
+        # if type(wind_nc) != np.ma.core.MaskedArray:
+        #     wind_nc = np.ma.core.MaskedArray(
+        #         wind_nc, np.zeros(wind_nc.shape, dtype=bool))
+        #
+        # # Check all valid dates in the year
+        # year_dates = _utils.date_range(
+        #     dt.datetime(year_int, 1, 1), dt.datetime(year_int + 1, 1, 1))
+        # for date_dt in year_dates:
+        #     if start_dt is not None and date_dt < start_dt:
+        #         logging.debug('  {} - before start date, skipping'.format(
+        #             date_dt.date()))
+        #         continue
+        #     elif end_dt is not None and date_dt > end_dt:
+        #         logging.debug('  {} - after end date, skipping'.format(
+        #             date_dt.date()))
+        #         continue
+        #     else:
+        #         logging.info('  {}'.format(date_dt.date()))
+        #
+        #     doy = int(date_dt.strftime('%j'))
+        #     doy_i = range(1, year_days + 1).index(doy)
+        #
+        #     # Arrays are being read as masked array with a fill value of -9999
+        #     # Convert to basic numpy array arrays with nan values
+        #     try:
+        #         tmin_ma = tmin_nc[doy_i, :, :]
+        #     except IndexError:
+        #         logging.info('    date not in netcdf, skipping')
+        #         continue
+        #     tmin_array = tmin_ma.data.astype(np.float32)
+        #     tmin_nodata = float(tmin_ma.fill_value)
+        #     tmin_array[tmin_array == tmin_nodata] = np.nan
+        #
+        #     try:
+        #         tmax_ma = tmax_nc[doy_i, :, :]
+        #     except IndexError:
+        #         logging.info('    date not in netcdf, skipping')
+        #         continue
+        #     tmax_array = tmax_ma.data.astype(np.float32)
+        #     tmax_nodata = float(tmax_ma.fill_value)
+        #     tmax_array[tmax_array == tmax_nodata] = np.nan
+        #
+        #     try:
+        #         sph_ma = sph_nc[doy_i, :, :]
+        #     except IndexError:
+        #         logging.info('    date not in netcdf, skipping')
+        #         continue
+        #     sph_array = sph_ma.data.astype(np.float32)
+        #     sph_nodata = float(sph_ma.fill_value)
+        #     sph_array[sph_array == sph_nodata] = np.nan
+        #
+        #     try:
+        #         rs_ma = rs_nc[doy_i, :, :]
+        #     except IndexError:
+        #         logging.info('    date not in netcdf, skipping')
+        #         continue
+        #     rs_array = rs_ma.data.astype(np.float32)
+        #     rs_nodata = float(rs_ma.fill_value)
+        #     rs_array[rs_array == rs_nodata] = np.nan
+        #
+        #     try:
+        #         wind_ma = wind_nc[doy_i, :, :]
+        #     except IndexError:
+        #         logging.info('    date not in netcdf, skipping')
+        #         continue
+        #     wind_array = wind_ma.data.astype(np.float32)
+        #     wind_nodata = float(wind_ma.fill_value)
+        #     wind_array[wind_array == wind_nodata] = np.nan
+        #     del tmin_ma, tmax_ma, sph_ma, rs_ma, wind_ma
+        #
+        #     # Since inputs are netcdf, need to create GDAL raster
+        #     #   datasets in order to use gdal_common functions
+        #     # Create an in memory dataset of the full ETo array
+        #     tmin_ds = drigo.array_to_mem_ds(
+        #         tmin_array, output_geo=gridmet_geo,
+        #         # tmin_array, output_geo=gridmet_full_geo,
+        #         output_proj=gridmet_proj)
+        #     tmax_ds = drigo.array_to_mem_ds(
+        #         tmax_array, output_geo=gridmet_geo,
+        #         # tmax_array, output_geo=gridmet_full_geo,
+        #         output_proj=gridmet_proj)
+        #     sph_ds = drigo.array_to_mem_ds(
+        #         sph_array, output_geo=gridmet_geo,
+        #         # sph_array, output_geo=gridmet_full_geo,
+        #         output_proj=gridmet_proj)
+        #     rs_ds = drigo.array_to_mem_ds(
+        #         rs_array, output_geo=gridmet_geo,
+        #         # rs_array, output_geo=gridmet_full_geo,
+        #         output_proj=gridmet_proj)
+        #     wind_ds = drigo.array_to_mem_ds(
+        #         wind_array, output_geo=gridmet_geo,
+        #         # wind_array, output_geo=gridmet_full_geo,
+        #         output_proj=gridmet_proj)
+        #
+        #     # Then extract the subset from the in memory dataset
+        #     tmin_array = drigo.raster_ds_to_array(
+        #         tmin_ds, 1, mask_extent=gridmet_extent, return_nodata=False)
+        #     tmax_array = drigo.raster_ds_to_array(
+        #         tmax_ds, 1, mask_extent=gridmet_extent, return_nodata=False)
+        #     sph_array = drigo.raster_ds_to_array(
+        #         sph_ds, 1, mask_extent=gridmet_extent, return_nodata=False)
+        #     rs_array = drigo.raster_ds_to_array(
+        #         rs_ds, 1, mask_extent=gridmet_extent, return_nodata=False)
+        #     wind_array = drigo.raster_ds_to_array(
+        #         wind_ds, 1, mask_extent=gridmet_extent, return_nodata=False)
+        #     del tmin_ds, tmax_ds, sph_ds, rs_ds, wind_ds
+        #
+        #     # Adjust units
+        #     tmin_array -= 273.15
+        #     tmax_array -= 273.15
+        #     rs_array *= 0.0864
+        #
+        #     # Compute vapor pressure from specific humidity
+        #     pair_array = refet.calcs._air_pressure(elev=elev_array)
+        #     ea_array = refet.calcs._actual_vapor_pressure(
+        #         q=sph_array, pair=pair_array)
+        #
+        #     # ETr/ETo
+        #     refet_obj = refet.Daily(
+        #         tmin=tmin_array, tmax=tmax_array, ea=ea_array, rs=rs_array,
+        #         uz=wind_array, zw=zw, elev=elev_array, lat=lat_array, doy=doy,
+        #         method='asce')
+        #     if etr_flag:
+        #         etr_array = refet_obj.etr()
+        #     if eto_flag:
+        #         eto_array = refet_obj.eto()
+        #
+        #     # Cleanup
+        #     del tmin_array, tmax_array, sph_array, rs_array, wind_array
+        #     del pair_array, ea_array
+        #
+        #     # Save the projected array as 32-bit floats
+        #     if etr_flag:
+        #         drigo.array_to_comp_raster(
+        #             etr_array.astype(np.float32), etr_raster,
+        #             band=doy, stats_flag=False)
+        #         # drigo.array_to_raster(
+        #         #     etr_array.astype(np.float32), etr_raster,
+        #         #     output_geo=gridmet_geo, output_proj=gridmet_proj,
+        #         #     stats_flag=stats_flag)
+        #         del etr_array
+        #     if eto_flag:
+        #         drigo.array_to_comp_raster(
+        #             eto_array.astype(np.float32), eto_raster,
+        #             band=doy, stats_flag=False)
+        #         # drigo.array_to_raster(
+        #         #     eto_array.astype(np.float32), eto_raster,
+        #         #     output_geo=gridmet_geo, output_proj=gridmet_proj,
+        #         #     stats_flag=stats_flag)
+        #         del eto_array
+        #
+        # del tmin_nc
+        # del tmax_nc
+        # del sph_nc
+        # del rs_nc
+        # del wind_nc
+        #
+        # if stats_flag and etr_flag:
+        #     drigo.raster_statistics(etr_raster)
+        # if stats_flag and eto_flag:
+        #     drigo.raster_statistics(eto_raster)
 
     logging.debug('\nScript Complete')
 
