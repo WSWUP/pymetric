@@ -215,8 +215,8 @@ def arg_parse():
         '--grb', default=os.path.join(nldas_folder, 'grb'),
         metavar='PATH', help='Output GRB folder path')
     parser.add_argument(
-        '--landsat', default=None,
-        metavar='PATH', help='Landsat scene keep list path')
+        '--landsat', default=None, metavar='PATH',
+        help='Landsat scene keep list path')
     parser.add_argument(
         '--start', default='2017-01-01', type=_utils.valid_date,
         help='Start date (format YYYY-MM-DD)', metavar='DATE')
@@ -234,7 +234,7 @@ def arg_parse():
     # Convert relative paths to absolute paths
     if args.grb and os.path.isdir(os.path.abspath(args.grb)):
         args.grb = os.path.abspath(args.grb)
-    if args.landsat and os.path.isdir(os.path.abspath(args.landsat)):
+    if args.landsat and os.path.isfile(os.path.abspath(args.landsat)):
         args.landsat = os.path.abspath(args.landsat)
     return args
 
