@@ -19,7 +19,7 @@ class BadCredentialsException(BaseException):
     pass
 
 
-def main(username, password, grb_ws=os.getcwd(), landsat_ws=None,
+def main(username, password, grb_ws=os.getcwd(), keep_list_path=None,
          start_date=None, end_date=None, overwrite_flag=False):
     """Download hourly NLDAS data
 
@@ -31,8 +31,8 @@ def main(username, password, grb_ws=os.getcwd(), landsat_ws=None,
         Earthdata password.
     grb_ws : str, optional
         Folder of NLDAS data (the default is the current working directory).
-    landsat_ws : str, optional
-        Folder of Landsat scenes or tar.gz files.
+    keep_list_path : str, optional
+        Landsat scene keep list file path.
     start_date : str, optional
         ISO format date string (YYYY-MM-DD).
     end_date : str, optional
@@ -47,7 +47,7 @@ def main(username, password, grb_ws=os.getcwd(), landsat_ws=None,
     """
     logging.info('\nDownloading NLDAS data')
 
-    # Site URLs
+    # Site URL
     data_url = 'https://hydro1.gesdisc.eosdis.nasa.gov/data/NLDAS/NLDAS_FORA0125_H.002'
 
     file_fmt = 'NLDAS_FORA0125_H.A{:04d}{:02d}{:02d}.{}.002.grb'
@@ -74,34 +74,50 @@ def main(username, password, grb_ws=os.getcwd(), landsat_ws=None,
     #
     session = requests.Session()
 
-    # Build a date list from landsat_ws scene folders or tar.gz files
+    # Build a date list from the Landsat scene keep list file
     date_list = []
-    if landsat_ws is not None and os.path.isdir(landsat_ws):
-        logging.info('\nReading dates from Landsat IDs')
-        logging.info('  {}'.format(landsat_ws))
+    if keep_list_path is not None and os.path.isfile(keep_list_path):
+        logging.info('\nReading dates from scene keep list file')
+        logging.info('  {}'.format(keep_list_path))
         landsat_re = re.compile(
             '^(?:LT04|LT05|LE07|LC08)_(?:\d{3})(?:\d{3})_' +
             '(?P<year>\d{4})(?P<month>\d{2})(?P<day>\d{2})')
-        for root, dirs, files in os.walk(landsat_ws, topdown=True):
-            # If root matches, don't explore subfolders
-            try:
-                landsat_match = landsat_re.match(os.path.basename(root))
-                date_list.append(dt.datetime.strptime(
-                    '_'.join(landsat_match.groups()), '%Y_%m_%d').date().isoformat())
-                dirs[:] = []
-            except:
-                pass
+        with open(keep_list_path) as input_f:
+            keep_list = input_f.readlines()
+        keep_list = [image_id.strip() for image_id in keep_list
+                     if landsat_re.match(image_id.strip())]
+        date_list = [
+            dt.datetime.strptime(image_id[12:20], '%Y%m%d').strftime('%Y-%m-%d')
+            for image_id in keep_list]
+        logging.debug('  {}'.format(', '.join(date_list)))
 
-            for file in files:
-                try:
-                    landsat_match = landsat_re.match(file)
-                    date_list.append(dt.datetime.strptime(
-                        '_'.join(landsat_match.groups()), '%Y_%m_%d').date().isoformat())
-                except:
-                    pass
-        date_list = sorted(list(set(date_list)))
-    # elif landsat_ws is not None and os.path.isfile(landsat_ws):
-    #     with open(landsat_ws) as landsat_f:
+    # DEADBEEF
+    # # Build a date list from landsat_ws scene folders or tar.gz files
+    # date_list = []
+    # if landsat_ws is not None and os.path.isdir(landsat_ws):
+    #     logging.info('\nReading dates from Landsat IDs')
+    #     logging.info('  {}'.format(landsat_ws))
+    #     landsat_re = re.compile(
+    #         '^(?:LT04|LT05|LE07|LC08)_(?:\d{3})(?:\d{3})_' +
+    #         '(?P<year>\d{4})(?P<month>\d{2})(?P<day>\d{2})')
+    #     for root, dirs, files in os.walk(landsat_ws, topdown=True):
+    #         # If root matches, don't explore subfolders
+    #         try:
+    #             landsat_match = landsat_re.match(os.path.basename(root))
+    #             date_list.append(dt.datetime.strptime(
+    #                 '_'.join(landsat_match.groups()), '%Y_%m_%d').date().isoformat())
+    #             dirs[:] = []
+    #         except:
+    #             pass
+    #
+    #         for file in files:
+    #             try:
+    #                 landsat_match = landsat_re.match(file)
+    #                 date_list.append(dt.datetime.strptime(
+    #                     '_'.join(landsat_match.groups()), '%Y_%m_%d').date().isoformat())
+    #             except:
+    #                 pass
+    #     date_list = sorted(list(set(date_list)))
 
     # Each sub folder in the main folder has all imagery for 1 day
     # The path for each subfolder is the /YYYY/DOY
@@ -200,7 +216,7 @@ def arg_parse():
         metavar='PATH', help='Output GRB folder path')
     parser.add_argument(
         '--landsat', default=None,
-        metavar='PATH', help='Landsat scenes/tar.gz root folder path')
+        metavar='PATH', help='Landsat scene keep list path')
     parser.add_argument(
         '--start', default='2017-01-01', type=_utils.valid_date,
         help='Start date (format YYYY-MM-DD)', metavar='DATE')
@@ -234,6 +250,6 @@ if __name__ == '__main__':
         'Script:', os.path.basename(sys.argv[0])))
 
     main(username=args.username, password=args.password,
-         grb_ws=args.grb, landsat_ws=args.landsat,
+         grb_ws=args.grb, keep_list_path=args.landsat,
          start_date=args.start, end_date=args.end,
          overwrite_flag=args.overwrite)
