@@ -99,7 +99,7 @@ def main(ini_path, tile_list=None, blocksize=2048, smooth_flag=True,
 
     # Read skip list
     if skip_list_path:
-        logging.debug('\nReading scene skiplist')
+        logging.debug('\nReading scene skip list')
         with open(skip_list_path) as skip_list_f:
             skip_list = skip_list_f.readlines()
             skip_list = [image_id.strip() for image_id in skip_list
