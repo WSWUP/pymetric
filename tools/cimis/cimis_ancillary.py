@@ -69,7 +69,7 @@ def main(ancillary_ws=os.getcwd(), overwrite_flag=False):
 
     # File paths
     mask_url = site_url + '/2010/01/01/ETo.asc.gz'
-    mask_gz = os.path.join(ancillary_ws, 'cimis_mask.asc.gz')
+    # mask_gz = os.path.join(ancillary_ws, 'cimis_mask.asc.gz')
     mask_ascii = os.path.join(ancillary_ws, 'cimis_mask.asc')
     mask_raster = os.path.join(ancillary_ws, 'cimis_mask.img')
     elev_raster = os.path.join(ancillary_ws, 'cimis_elev.img')
@@ -81,34 +81,27 @@ def main(ancillary_ws=os.getcwd(), overwrite_flag=False):
         logging.info('\nCIMIS mask')
         logging.debug('  Downloading')
         logging.debug("    {}".format(mask_url))
-        logging.debug("    {}".format(mask_gz))
-        _utils.url_download(mask_url, mask_gz)
-        # try:
-        #     # This actually downloads the data
-        #     # urllib.urlretrieve(mask_url, mask_gz)
-        #     # This will work also, I don't know which is better
-        #     # f = open(mask_gz,'wb')
-        #     # f.write(urllib2.urlopen(mask_gz_url).read())
-        #     # f.close()
-        # except:
-        #     logging.error("  ERROR: {}\n  FILE: {}".format(
-        #         sys.exc_info()[0], mask_gz))
-        #     # Try to remove the file since it may not have completely downloaded
-        #     os.remove(mask_gz)
+        logging.debug("    {}".format(mask_ascii))
+        _utils.url_download(mask_url, mask_ascii)
 
-        # Uncompress '.gz' file to a new file
-        logging.debug('  Uncompressing')
-        logging.debug('    {}'.format(mask_ascii))
-        try:
-            input_f = gzip.open(mask_gz, 'rb')
-            output_f = open(mask_ascii, 'wb')
-            output_f.write(input_f.read())
-            output_f.close()
-            input_f.close()
-            del input_f, output_f
-        except:
-            logging.error("  ERROR EXTRACTING FILE")
-        os.remove(mask_gz)
+        # DEADBEEF - The files do not appeared to be compressed even though
+        # logging.debug("    {}".format(mask_gz))
+        # _utils.url_download(mask_url, mask_gz)
+        #
+        #   they are named .asc.gz
+        # # Uncompress '.gz' file to a new file
+        # logging.debug('  Uncompressing')
+        # logging.debug('    {}'.format(mask_ascii))
+        # try:
+        #     input_f = gzip.open(mask_gz, 'rb')
+        #     output_f = open(mask_ascii, 'wb')
+        #     output_f.write(input_f.read())
+        #     output_f.close()
+        #     input_f.close()
+        #     del input_f, output_f
+        # except:
+        #     logging.error("  ERROR EXTRACTING FILE")
+        # os.remove(mask_gz)
 
         # # Set spatial reference of the ASCII files
         # if build_prj_flag:
@@ -121,7 +114,7 @@ def main(ancillary_ws=os.getcwd(), overwrite_flag=False):
         logging.debug('    {}'.format(mask_raster))
         mask_array = drigo.raster_to_array(mask_ascii, return_nodata=False)
         cimis_geo = drigo.raster_path_geo(mask_ascii)
-        cimis_extent = drigo.raster_path_extent(mask_ascii)
+        # cimis_extent = drigo.raster_path_extent(mask_ascii)
         logging.debug('    {}'.format(cimis_geo))
         mask_array = np.isfinite(mask_array).astype(np.uint8)
         drigo.array_to_raster(
@@ -155,18 +148,6 @@ def main(ancillary_ws=os.getcwd(), overwrite_flag=False):
         logging.debug("    {}".format(elev_full_zip))
         if overwrite_flag or not os.path.isfile(elev_full_zip):
             _utils.url_download(elev_full_url, elev_full_zip)
-            # try:
-            #     # This actually downloads the data
-            #     urllib.urlretrieve(elev_full_url, elev_full_zip)
-            #     # This will work also, I don't know which is better
-            #     # f = open(mask_gz,'wb')
-            #     # f.write(urllib2.urlopen(mask_gz_url).read())
-            #     # f.close()
-            # except:
-            #     logging.error("  ERROR: {}\n  FILE: {}".format(
-            #         sys.exc_info()[0], elev_full_zip))
-            #     # Try to remove the file since it may not have completely downloaded
-            #     os.remove(elev_full_zip)
 
         # Uncompress '.gz' file to a new file
         logging.debug('  Uncompressing')
