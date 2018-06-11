@@ -206,7 +206,7 @@ def main(netcdf_ws=os.getcwd(), ancillary_ws=os.getcwd(),
         # Immediately clip input array to save memory
         input_nc_f = netCDF4.Dataset(input_raster, 'r')
         input_nc = input_nc_f.variables[gridmet_band_dict[input_var]][
-            :, g_j:g_j + g_rows, g_i:g_i + g_cols].copy()
+            :, row_a: row_b, col_a: col_b].copy()
         input_nc = np.flip(input_nc, 1)
         input_nc_f.close()
         del input_nc_f
