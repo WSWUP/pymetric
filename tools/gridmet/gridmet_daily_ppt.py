@@ -136,6 +136,11 @@ def main(netcdf_ws=os.getcwd(), ancillary_ws=os.getcwd(),
         gridmet_full_geo, gridmet_geo, cs=gridmet_cs)
     g_rows, g_cols = gridmet_extent.shape(cs=gridmet_cs)
 
+    # Flip row indices since GRIDMET arrays are flipped up/down
+    # Hard coding GRIDMET row count for now
+    row_a, row_b = 585 - (g_j + g_rows), 585 - g_j,
+    col_a, col_b = g_i, g_i + g_cols
+
     # Process each variable
     input_var = 'pr'
     output_var = 'ppt'

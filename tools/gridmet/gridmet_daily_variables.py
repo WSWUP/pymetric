@@ -156,6 +156,11 @@ def main(netcdf_ws=os.getcwd(), ancillary_ws=os.getcwd(),
         gridmet_full_geo, gridmet_geo, cs=gridmet_cs)
     g_rows, g_cols = gridmet_extent.shape(cs=gridmet_cs)
 
+    # Flip row indices since GRIDMET arrays are flipped up/down
+    # Hard coding GRIDMET row count for now
+    row_a, row_b = 585 - (g_j + g_rows), 585 - g_j,
+    col_a, col_b = g_i, g_i + g_cols
+
     # Process each variable
     logging.info("")
     for input_var in variables:
@@ -226,7 +231,7 @@ def main(netcdf_ws=os.getcwd(), ancillary_ws=os.getcwd(),
             # Immediately clip input array to save memory
             input_nc_f = netCDF4.Dataset(input_raster, 'r')
             input_nc = input_nc_f.variables[gridmet_band_dict[input_var]][
-                :, g_j:g_j + g_rows, g_i:g_i + g_cols].copy()
+                :, row_a: row_b, col_a: col_b].copy()
             input_nc = np.flip(input_nc, 1)
             input_nc_f.close()
             del input_nc_f

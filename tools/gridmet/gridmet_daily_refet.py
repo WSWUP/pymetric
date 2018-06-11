@@ -159,6 +159,11 @@ def main(netcdf_ws=os.getcwd(), ancillary_ws=os.getcwd(),
         gridmet_full_geo, gridmet_geo, cs=gridmet_cs)
     g_rows, g_cols = gridmet_extent.shape(cs=gridmet_cs)
 
+    # Flip row indices since GRIDMET arrays are flipped up/down
+    # Hard coding GRIDMET row count for now
+    row_a, row_b = 585 - (g_j + g_rows), 585 - g_j,
+    col_a, col_b = g_i, g_i + g_cols
+
     # Read the elevation and latitude arrays
     elev_array = drigo.raster_to_array(
         elev_raster, mask_extent=gridmet_extent, return_nodata=False)
@@ -238,7 +243,7 @@ def main(netcdf_ws=os.getcwd(), ancillary_ws=os.getcwd(),
             logging.debug("    {}".format(eto_path))
             eto_nc_f = netCDF4.Dataset(eto_path, 'r')
             eto_nc = eto_nc_f.variables[gridmet_band_dict['eto']][
-                :, g_j:g_j + g_rows, g_i:g_i + g_cols].copy()
+                :, row_a: row_b, col_a: col_b].copy()
             eto_nc = np.flip(eto_nc, 1)
             eto_nc_f.close()
             del eto_nc_f
@@ -246,7 +251,7 @@ def main(netcdf_ws=os.getcwd(), ancillary_ws=os.getcwd(),
             logging.debug("    {}".format(etr_path))
             etr_nc_f = netCDF4.Dataset(etr_path, 'r')
             etr_nc = etr_nc_f.variables[gridmet_band_dict['etr']][
-                :, g_j:g_j + g_rows, g_i:g_i + g_cols].copy()
+                :, row_a: row_b, col_a: col_b].copy()
             etr_nc = np.flip(etr_nc, 1)
             etr_nc_f.close()
             del etr_nc_f
@@ -390,7 +395,7 @@ def main(netcdf_ws=os.getcwd(), ancillary_ws=os.getcwd(),
         # logging.debug("    {}".format(tmin_path))
         # tmin_nc_f = netCDF4.Dataset(tmin_path, 'r')
         # tmin_nc = tmin_nc_f.variables[gridmet_band_dict['tmmn']][
-        #     :, g_j:g_j + g_rows, g_i:g_i + g_cols].copy()
+        #     :, row_a: row_b, col_a: col_b].copy()
         # tmin_nc = np.flip(tmin_nc, 1)
         # tmin_nc_f.close()
         # del tmin_nc_f
@@ -398,7 +403,7 @@ def main(netcdf_ws=os.getcwd(), ancillary_ws=os.getcwd(),
         # logging.debug("    {}".format(tmax_path))
         # tmax_nc_f = netCDF4.Dataset(tmax_path, 'r')
         # tmax_nc = tmax_nc_f.variables[gridmet_band_dict['tmmx']][
-        #     :, g_j:g_j + g_rows, g_i:g_i + g_cols].copy()
+        #     :, row_a: row_b, col_a: col_b].copy()
         # tmax_nc = np.flip(tmax_nc, 1)
         # tmax_nc_f.close()
         # del tmax_nc_f
@@ -406,7 +411,7 @@ def main(netcdf_ws=os.getcwd(), ancillary_ws=os.getcwd(),
         # logging.debug("    {}".format(sph_path))
         # sph_nc_f = netCDF4.Dataset(sph_path, 'r')
         # sph_nc = sph_nc_f.variables[gridmet_band_dict['sph']][
-        #     :, g_j:g_j + g_rows, g_i:g_i + g_cols].copy()
+        #     :, row_a: row_b, col_a: col_b].copy()
         # sph_nc = np.flip(sph_nc, 1)
         # sph_nc_f.close()
         # del sph_nc_f
@@ -414,7 +419,7 @@ def main(netcdf_ws=os.getcwd(), ancillary_ws=os.getcwd(),
         # logging.debug("    {}".format(rs_path))
         # rs_nc_f = netCDF4.Dataset(rs_path, 'r')
         # rs_nc = rs_nc_f.variables[gridmet_band_dict['srad']][
-        #     :, g_j:g_j + g_rows, g_i:g_i + g_cols].copy()
+        #     :, row_a: row_b, col_a: col_b].copy()
         # rs_nc = np.flip(rs_nc, 1)
         # rs_nc_f.close()
         # del rs_nc_f
@@ -422,7 +427,7 @@ def main(netcdf_ws=os.getcwd(), ancillary_ws=os.getcwd(),
         # logging.debug("    {}".format(wind_path))
         # wind_nc_f = netCDF4.Dataset(wind_path, 'r')
         # wind_nc = wind_nc_f.variables[gridmet_band_dict['vs']][
-        #     :, g_j:g_j + g_rows, g_i:g_i + g_cols].copy()
+        #     :, row_a: row_b, col_a: col_b].copy()
         # wind_nc = np.flip(wind_nc, 1)
         # wind_nc_f.close()
         # del wind_nc_f
