@@ -146,7 +146,7 @@ def main(netcdf_ws=os.getcwd(), ancillary_ws=os.getcwd(),
     # Read the elevation array
     elev_array = drigo.raster_to_array(
         elev_raster, mask_extent=gridmet_extent, return_nodata=False)
-    pair_array = refet.calcs._air_pressure_func(elev_array)
+    pair_array = refet.calcs._air_pressure(elev_array)
     del elev_array
 
     # Process each variable
