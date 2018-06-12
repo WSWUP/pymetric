@@ -302,7 +302,6 @@ def main(netcdf_ws=os.getcwd(), ancillary_ws=os.getcwd(),
                 # Create an in memory dataset of the full ETo array
                 eto_ds = drigo.array_to_mem_ds(
                     eto_array, output_geo=gridmet_geo,
-                    # eto_array, output_geo=gridmet_full_geo,
                     output_proj=gridmet_proj)
 
                 # Then extract the subset from the in memory dataset
@@ -332,7 +331,6 @@ def main(netcdf_ws=os.getcwd(), ancillary_ws=os.getcwd(),
                 etr_array[etr_array == etr_nodata] = np.nan
                 etr_ds = drigo.array_to_mem_ds(
                     etr_array, output_geo=gridmet_geo,
-                    # etr_array, output_geo=gridmet_full_geo,
                     output_proj=gridmet_proj)
                 etr_array = drigo.raster_ds_to_array(
                     etr_ds, 1, mask_extent=gridmet_extent, return_nodata=False)

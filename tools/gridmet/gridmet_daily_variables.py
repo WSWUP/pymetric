@@ -276,7 +276,7 @@ def main(netcdf_ws=os.getcwd(), ancillary_ws=os.getcwd(),
                 #   datasets in order to use gdal_common functions
                 # Create an in memory dataset of the full ETo array
                 input_full_ds = drigo.array_to_mem_ds(
-                    input_full_array, output_geo=gridmet_full_geo,
+                    input_full_array, output_geo=gridmet_geo,
                     output_proj=gridmet_proj)
 
                 # Then extract the subset from the in memory dataset
@@ -289,7 +289,7 @@ def main(netcdf_ws=os.getcwd(), ancillary_ws=os.getcwd(),
                     output_array -= 273.15
 
                 # Save the projected array as 32-bit floats
-                drigo.array_to_raster(
+                drigo.array_to_comp_raster(
                     output_array.astype(np.float32), output_path,
                     band=doy, stats_flag=False)
                 # drigo.array_to_raster(

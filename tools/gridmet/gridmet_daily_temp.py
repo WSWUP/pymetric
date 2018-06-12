@@ -244,6 +244,7 @@ def main(netcdf_ws=os.getcwd(), ancillary_ws=os.getcwd(),
                 except IndexError:
                     logging.info('    date not in netcdf, skipping')
                     continue
+
                 input_full_array = input_full_ma.data.astype(np.float32)
                 input_full_nodata = float(input_full_ma.fill_value)
                 input_full_array[input_full_array == input_full_nodata] = np.nan
@@ -252,7 +253,7 @@ def main(netcdf_ws=os.getcwd(), ancillary_ws=os.getcwd(),
                 #   datasets in order to use gdal_common functions
                 # Create an in memory dataset of the full ETo array
                 input_full_ds = drigo.array_to_mem_ds(
-                    input_full_array, output_geo=gridmet_full_geo,
+                    input_full_array, output_geo=gridmet_geo,
                     output_proj=gridmet_proj)
 
                 # Then extract the subset from the in memory dataset
