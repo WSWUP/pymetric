@@ -78,12 +78,6 @@ def main(ancillary_ws=os.getcwd(), zero_elev_nodata_flag=False,
         logging.debug("    {}".format(elev_url))
         logging.debug("    {}".format(input_elev_ascii))
         _utils.url_download(elev_url, input_elev_ascii)
-        # try:
-        #     urllib.urlretrieve(elev_url, input_elev_ascii)
-        # except:
-        #     logging.error("  ERROR: {}\n  FILE: {}".format(
-        #         sys.exc_info()[0], input_elev_ascii))
-        #     os.remove(input_elev_ascii)
 
     # Download the land/water mask if necessary
     if overwrite_flag or not os.path.isfile(input_mask_ascii):
@@ -91,12 +85,6 @@ def main(ancillary_ws=os.getcwd(), zero_elev_nodata_flag=False,
         logging.debug("    {}".format(elev_url))
         logging.debug("    {}".format(input_elev_ascii))
         _utils.url_download(mask_url, input_mask_ascii)
-        # try:
-        #     urllib.urlretrieve(mask_url, input_mask_ascii)
-        # except:
-        #     logging.error("  ERROR: {}\n  FILE: {}".format(
-        #         sys.exc_info()[0], input_mask_ascii))
-        #     os.remove(input_mask_ascii)
 
     # The XYZ ASCII format is expecting LAT/LON/VALUE
     # Export new asc files with just the needed columns for each raster
@@ -184,21 +172,22 @@ def main(ancillary_ws=os.getcwd(), zero_elev_nodata_flag=False,
 
 def arg_parse():
     """Base all default folders from script location
-        scripts: ./pyMETRIC/tools/nldas
-        tools:   ./pyMETRIC/tools
-        output:  ./pyMETRIC/nldas
+        scripts: ./pymetric/tools/nldas
+        tools:   ./pymetric/tools
+        output:  ./pymetric/nldas
     """
     script_folder = sys.path[0]
     code_folder = os.path.dirname(script_folder)
     project_folder = os.path.dirname(code_folder)
     nldas_folder = os.path.join(project_folder, 'nldas')
+    ancillary_folder = os.path.join(nldas_folder, 'ancillary')
 
     parser = argparse.ArgumentParser(
         description='Download/prep NLDAS ancillary data',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
-        '--ancillary', default=os.path.join(nldas_folder, 'ancillary'),
-        metavar='PATH', help='Ancillary raster folder path')
+        '--ancillary', default=ancillary_folder, metavar='PATH',
+        help='Ancillary raster folder path')
     parser.add_argument(
         '--zero', default=False, action="store_true",
         help='Set elevation nodata values to 0')
@@ -213,6 +202,7 @@ def arg_parse():
     # Convert relative paths to absolute paths
     if args.ancillary and os.path.isdir(os.path.abspath(args.ancillary)):
         args.ancillary = os.path.abspath(args.ancillary)
+
     return args
 
 

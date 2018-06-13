@@ -75,7 +75,7 @@ def valid_date(input_date):
 
     Returns
     -------
-    str
+    datetime
 
     Raises
     ------
@@ -83,7 +83,8 @@ def valid_date(input_date):
 
     """
     try:
-        return dt.datetime.strptime(input_date, "%Y-%m-%d").date().isoformat()
+        return dt.datetime.strptime(input_date, "%Y-%m-%d")
+        # return dt.datetime.strptime(input_date, "%Y-%m-%d").date().isoformat()
     except ValueError:
         msg = "Not a valid date: '{}'.".format(input_date)
         raise argparse.ArgumentTypeError(msg)

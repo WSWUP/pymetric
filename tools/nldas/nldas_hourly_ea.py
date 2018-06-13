@@ -20,8 +20,8 @@ import _utils
 # np.seterr(invalid='ignore')
 
 
-def main(grb_ws=os.getcwd(), ancillary_ws=os.getcwd(), output_ws=os.getcwd(),
-         keep_list_path=None, start_date=None, end_date=None, times_str='',
+def main(grb_ws, ancillary_ws, output_ws, scene_list_path=None,
+         start_dt=None, end_dt=None, times_str='',
          extent_path=None, output_extent=None,
          stats_flag=True, overwrite_flag=False):
     """Extract hourly NLDAS vapour pressure rasters
@@ -34,12 +34,12 @@ def main(grb_ws=os.getcwd(), ancillary_ws=os.getcwd(), output_ws=os.getcwd(),
         Folder of ancillary rasters.
     output_ws : str
         Folder of output rasters.
-    keep_list_path : str, optional
+    scene_list_path : str, optional
         Landsat scene keep list file path.
-    start_date : str, optional
-        ISO format date (YYYY-MM-DD).
-    end_date : str, optional
-        ISO format date (YYYY-MM-DD).
+    start_dt : datetime, optional
+        Start date.
+    end_dt : datetime, optional
+        End date.
     times : str, optional
         Comma separated values and/or ranges of UTC hours (i.e. "1, 2, 5-8").
         Parsed with python_common.parse_int_set().
@@ -64,23 +64,18 @@ def main(grb_ws=os.getcwd(), ancillary_ws=os.getcwd(), output_ws=os.getcwd(),
         'NLDAS_FORA0125_H.A(?P<YEAR>\d{4})(?P<MONTH>\d{2})' +
         '(?P<DAY>\d{2}).(?P<TIME>\d{4}).002.grb$')
 
+    # # Landsat Collection 1 Product ID
+    # landsat_re = re.compile(
+    #     '^(?:LT04|LT05|LE07|LC08)_\w{4}_\d{3}\d{3}_(?P<DATE>\d{8})_'
+    #     '\w{8}_\w{2}_\w{2}')
+
+    # Landsat Custom Scene ID
+    landsat_re = re.compile(
+        '^(?:LT04|LT05|LE07|LC08)_\d{6}_(?P<DATE>\d{8})')
+
     output_folder = 'ea'
     output_fmt = 'ea_{:04d}{:02d}{:02d}_hourly_nldas.img'
     # output_fmt = 'ea_{:04d}{:02d}{:02d}_{:04d}_nldas.img'
-
-    # If a date is not set, process 2017
-    try:
-        start_dt = dt.datetime.strptime(start_date, '%Y-%m-%d')
-        logging.debug('  Start date: {}'.format(start_dt))
-    except:
-        start_dt = dt.datetime(2017, 1, 1)
-        logging.info('  Start date: {}'.format(start_dt))
-    try:
-        end_dt = dt.datetime.strptime(end_date, '%Y-%m-%d')
-        logging.debug('  End date:   {}'.format(end_dt))
-    except:
-        end_dt = dt.datetime(2017, 12, 31)
-        logging.info('  End date:   {}'.format(end_dt))
 
     # Only process a specific hours
     if not times_str:
@@ -96,50 +91,31 @@ def main(grb_ws=os.getcwd(), ancillary_ws=os.getcwd(), output_ws=os.getcwd(),
     mask_path = os.path.join(ancillary_ws, 'nldas_mask.img')
     elev_path = os.path.join(ancillary_ws, 'nldas_elev.img')
 
-    # Build a date list from the Landsat scene keep list file
-    date_list = []
-    if keep_list_path is not None and os.path.isfile(keep_list_path):
+    # Process Landsat scene list and start/end input parameters
+    if not scene_list_path and (not start_dt or not end_dt):
+        logging.error(
+            '\nERROR: A Landsat scene list or start/end dates must be set, '
+            'exiting\n')
+        return False
+    if scene_list_path is not None and os.path.isfile(scene_list_path):
+        # Build a date list from the Landsat scene keep list file
         logging.info('\nReading dates from scene keep list file')
-        logging.info('  {}'.format(keep_list_path))
-        landsat_re = re.compile(
-            '^(?:LT04|LT05|LE07|LC08)_(?:\d{3})(?:\d{3})_' +
-            '(?P<year>\d{4})(?P<month>\d{2})(?P<day>\d{2})')
-        with open(keep_list_path) as input_f:
+        logging.info('  {}'.format(scene_list_path))
+        with open(scene_list_path) as input_f:
             keep_list = input_f.readlines()
-        keep_list = [image_id.strip() for image_id in keep_list
-                     if landsat_re.match(image_id.strip())]
-        date_list = [
-            dt.datetime.strptime(image_id[12:20], '%Y%m%d').strftime('%Y-%m-%d')
-            for image_id in keep_list]
+        date_list = sorted([
+            dt.datetime.strptime(m.group('DATE'), '%Y%m%d').strftime('%Y-%m-%d')
+            for image_id in keep_list
+            for m in [landsat_re.match(image_id)] if m])
         logging.debug('  {}'.format(', '.join(date_list)))
-
-    # DEADBEEF
-    # # Build a date list from landsat_ws scene folders or tar.gz files
-    # date_list = []
-    # if landsat_ws is not None and os.path.isdir(landsat_ws):
-    #     logging.info('\nReading dates from Landsat IDs')
-    #     logging.info('  {}'.format(landsat_ws))
-    #     landsat_re = re.compile(
-    #         '^(?:LT04|LT05|LE07|LC08)_(?:\d{3})(?:\d{3})_' +
-    #         '(?P<year>\d{4})(?P<month>\d{2})(?P<day>\d{2})')
-    #     for root, dirs, files in os.walk(landsat_ws, topdown=True):
-    #         # If root matches, don't explore subfolders
-    #         try:
-    #             landsat_match = landsat_re.match(os.path.basename(root))
-    #             date_list.append(dt.datetime.strptime(
-    #                 '_'.join(landsat_match.groups()), '%Y_%m_%d').date().isoformat())
-    #             dirs[:] = []
-    #         except:
-    #             pass
-    #
-    #         for file in files:
-    #             try:
-    #                 landsat_match = landsat_re.match(file)
-    #                 date_list.append(dt.datetime.strptime(
-    #                     '_'.join(landsat_match.groups()), '%Y_%m_%d').date().isoformat())
-    #             except:
-    #                 pass
-    #     date_list = sorted(list(set(date_list)))
+    else:
+        date_list = []
+    if start_dt and end_dt:
+        logging.debug('  Start date: {}'.format(start_dt))
+        logging.debug('  End date:   {}'.format(end_dt))
+    else:
+        start_dt = dt.datetime.strptime(date_list[0], '%Y-%m-%d')
+        end_dt = dt.datetime.strptime(date_list[-1], '%Y-%m-%d')
 
     # This allows GDAL to throw Python Exceptions
     # gdal.UseExceptions()
@@ -340,36 +316,38 @@ def grib_band_names(grib_path):
 
 def arg_parse():
     """Base all default folders from script location
-        scripts: ./pyMETRIC/tools/nldas
-        tools:   ./pyMETRIC/tools
-        output:  ./pyMETRIC/nldas
+        scripts: ./pymetric/tools/nldas
+        tools:   ./pymetric/tools
+        output:  ./pymetric/nldas
     """
     script_folder = sys.path[0]
     code_folder = os.path.dirname(script_folder)
     project_folder = os.path.dirname(code_folder)
     nldas_folder = os.path.join(project_folder, 'nldas')
+    ancillary_folder = os.path.join(nldas_folder, 'ancillary')
+    grb_folder = os.path.join(nldas_folder, 'grb')
 
     parser = argparse.ArgumentParser(
         description='NLDAS hourly vapour pressure',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
-        '--grb', default=os.path.join(nldas_folder, 'grb'),
-        metavar='PATH', help='Input GRB folder path')
+        '--start', default=None, type=_utils.valid_date, metavar='YYYY-MM-DD',
+        help='Start date')
     parser.add_argument(
-        '--ancillary', default=os.path.join(nldas_folder, 'ancillary'),
-        metavar='PATH', help='Ancillary raster folder path')
-    parser.add_argument(
-        '--output', default=nldas_folder,
-        metavar='PATH', help='Output raster folder path')
+        '--end', default=None, type=_utils.valid_date, metavar='YYYY-MM-DD',
+        help='End date')
     parser.add_argument(
         '--landsat', default=None, metavar='PATH',
         help='Landsat scene keep list path')
     parser.add_argument(
-        '--start', default='2017-01-01', type=_utils.valid_date,
-        help='Start date (format YYYY-MM-DD)', metavar='DATE')
+        '--grb', default=grb_folder, metavar='PATH',
+        help='Input GRB folder path')
     parser.add_argument(
-        '--end', default='2017-12-31', type=_utils.valid_date,
-        help='End date (format YYYY-MM-DD)', metavar='DATE')
+        '--ancillary', default=ancillary_folder, metavar='PATH',
+        help='Ancillary raster folder path')
+    parser.add_argument(
+        '--output', default=nldas_folder, metavar='PATH',
+        help='Output raster folder path')
     parser.add_argument(
         '--times', default='0-23', type=str,
         help='Time list and/or range (0-23 for all times)')
@@ -402,6 +380,7 @@ def arg_parse():
         args.landsat = os.path.abspath(args.landsat)
     if args.extent and os.path.isfile(os.path.abspath(args.extent)):
         args.extent = os.path.abspath(args.extent)
+
     return args
 
 
@@ -415,8 +394,7 @@ if __name__ == '__main__':
     logging.info('{:<20s} {}'.format(
         'Script:', os.path.basename(sys.argv[0])))
 
-    main(grb_ws=args.grb, ancillary_ws=args.ancillary,
-         output_ws=args.output, keep_list_path=args.landsat,
-         start_date=args.start, end_date=args.end, times_str=args.times,
-         extent_path=args.extent, output_extent=args.te,
+    main(grb_ws=args.grb, ancillary_ws=args.ancillary, output_ws=args.output,
+         start_dt=args.start, end_dt=args.end, scene_list_path=args.landsat,
+         times_str=args.times, extent_path=args.extent, output_extent=args.te,
          stats_flag=args.stats, overwrite_flag=args.overwrite)
