@@ -130,9 +130,9 @@ def main(extent_path, output_folder, overwrite_flag=False):
 
 def arg_parse():
     """Base all default folders from script location
-        scripts: ./pyMETRIC/tools/download
-        tools:   ./pyMETRIC/tools
-        output:  ./pyMETRIC/dem
+        scripts: ./pymetric/tools/download
+        tools:   ./pymetric/tools
+        output:  ./pymetric/dem
     """
     script_folder = sys.path[0]
     code_folder = os.path.dirname(script_folder)
@@ -143,11 +143,11 @@ def arg_parse():
         description='Download NED',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
-        '--extent', help='Study area shapefile',
-        metavar='FILE', required=True)
+        '--extent', required=True, metavar='FILE',
+        help='Study area shapefile')
     parser.add_argument(
-        '--output', help='Output folder', metavar='FOLDER',
-        default=output_folder)
+        '--output', default=output_folder, metavar='FOLDER',
+        help='Output folder')
     parser.add_argument(
         '-o', '--overwrite', default=None, action="store_true",
         help='Force overwrite of existing files')
@@ -156,11 +156,12 @@ def arg_parse():
         help='Debug level logging', action="store_const", dest="loglevel")
     args = parser.parse_args()
 
-    # Convert input file to an absolute path
-    if args.output and os.path.isdir(os.path.abspath(args.output)):
-        args.output = os.path.abspath(args.output)
+    # Convert relative paths to absolute paths
     if args.extent and os.path.isfile(os.path.abspath(args.extent)):
         args.extent = os.path.abspath(args.extent)
+    if args.output and os.path.isdir(os.path.abspath(args.output)):
+        args.output = os.path.abspath(args.output)
+
     return args
 
 
@@ -170,7 +171,8 @@ if __name__ == '__main__':
     logging.basicConfig(level=args.loglevel, format='%(message)s')
     logging.info('\n{}'.format('#' * 80))
     log_f = '{:<20s} {}'
-    logging.info(log_f.format('Run Time Stamp:', dt.datetime.now().isoformat(' ')))
+    logging.info(log_f.format(
+        'Run Time Stamp:', dt.datetime.now().isoformat(' ')))
     logging.info(log_f.format('Script:', os.path.basename(sys.argv[0])))
 
     main(extent_path=args.extent, output_folder=args.output,
