@@ -18,7 +18,7 @@ import numpy as np
 import _utils
 
 
-def main(ancillary_ws=os.getcwd(), overwrite_flag=False):
+def main(ancillary_ws, overwrite_flag=False):
     """Process CIMIS ancillary data
 
     Parameters
@@ -40,7 +40,9 @@ def main(ancillary_ws=os.getcwd(), overwrite_flag=False):
 
     # DEM for air pressure calculation
     # http://topotools.cr.usgs.gov/gmted_viewer/gmted2010_global_grids.php
-    elev_full_url = 'http://edcintl.cr.usgs.gov/downloads/sciweb1/shared/topo/downloads/GMTED/Grid_ZipFiles/mn30_grd.zip'
+    elev_full_url = (
+        'http://edcintl.cr.usgs.gov/downloads/sciweb1/shared/'
+        'topo/downloads/GMTED/Grid_ZipFiles/mn30_grd.zip')
     elev_full_zip = os.path.join(ancillary_ws, 'mn30_grd.zip')
     elev_full_raster = os.path.join(ancillary_ws, 'mn30_grd')
 
@@ -52,7 +54,7 @@ def main(ancillary_ws=os.getcwd(), overwrite_flag=False):
 
     # Spatial reference parameters
     cimis_proj4 = (
-        "+proj=aea +lat_1=34 +lat_2=40.5 +lat_0=0 +lon_0=-120 +x_0=0 " +
+        "+proj=aea +lat_1=34 +lat_2=40.5 +lat_0=0 +lon_0=-120 +x_0=0 "
         "+y_0=-4000000 +ellps=GRS80 +datum=NAD83 +units=m +no_defs")
     cimis_osr = drigo.proj4_osr(cimis_proj4)
     # cimis_epsg = 3310  # NAD_1983_California_Teale_Albers
@@ -185,21 +187,22 @@ def main(ancillary_ws=os.getcwd(), overwrite_flag=False):
 
 def arg_parse():
     """Base all default folders from script location
-        scripts: ./pyMETRIC/tools/cimis
-        tools:   ./pyMETRIC/tools
-        output:  ./pyMETRIC/cimis
+        scripts: ./pymetric/tools/cimis
+        tools:   ./pymetric/tools
+        output:  ./pymetric/cimis
     """
     script_folder = sys.path[0]
     code_folder = os.path.dirname(script_folder)
     project_folder = os.path.dirname(code_folder)
     cimis_folder = os.path.join(project_folder, 'cimis')
+    ancillary_folder = os.path.join(cimis_folder, 'ancillary')
 
     parser = argparse.ArgumentParser(
         description='Download/prep CIMIS ancillary data',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
-        '--ancillary', default=os.path.join(cimis_folder, 'ancillary'),
-        metavar='PATH', help='Ancillary raster folder path')
+        '--ancillary', default=ancillary_folder, metavar='PATH',
+        help='Ancillary raster folder path')
     parser.add_argument(
         '-o', '--overwrite', default=False, action="store_true",
         help='Force overwrite of existing files')
@@ -211,6 +214,7 @@ def arg_parse():
     # Convert relative paths to absolute paths
     if args.ancillary and os.path.isdir(os.path.abspath(args.ancillary)):
         args.ancillary = os.path.abspath(args.ancillary)
+
     return args
 
 

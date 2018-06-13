@@ -15,22 +15,22 @@ import requests
 import _utils
 
 
-def main(output_ws=os.getcwd(), variables=['all'],
-         start_date=None, end_date=None, overwrite_flag=False):
+def main(start_dt, end_dt, output_ws, variables=['all'],
+         overwrite_flag=False):
     """Download CIMIS data
 
     Parameters
     ----------
+    start_dt : datetime
+        Start date.
+    end_dt : datetime
+        End date.
     output_ws : str
         Folder path of the output tar.gz files.
     variables : list
         CIMIS variables to download ('ETo', 'Rs', 'Tdew', 'Tn', 'Tx', 'U2').
         'K', 'Rnl', 'Rso' can be downloaded but are not needed.
         Set as ['all'] to download all variables.
-    start_date : str
-        ISO format date string (YYYY-MM-DD).
-    end_date : str
-        ISO format date string (YYYY-MM-DD).
     overwrite_flag : bool, optional
         If True, overwrite existing files (the default is False).
 
@@ -40,25 +40,13 @@ def main(output_ws=os.getcwd(), variables=['all'],
 
     """
     logging.info('\nDownloading CIMIS data\n')
+    logging.debug('  Start date: {}'.format(start_dt))
+    logging.debug('  End date:   {}'.format(end_dt))
 
     # Site URL
     site_url = 'http://cimis.casil.ucdavis.edu/cimis/'
 
-    # If a date is not set, process 2017
-    try:
-        start_dt = dt.datetime.strptime(start_date, '%Y-%m-%d')
-        logging.debug('  Start date: {}'.format(start_dt))
-    except:
-        start_dt = dt.datetime(2017, 1, 1)
-        logging.info('  Start date: {}'.format(start_dt))
-    try:
-        end_dt = dt.datetime.strptime(end_date, '%Y-%m-%d')
-        logging.debug('  End date:   {}'.format(end_dt))
-    except:
-        end_dt = dt.datetime(2017, 12, 31)
-        logging.info('  End date:   {}'.format(end_dt))
-
-    # CIMIS rasters to extract
+     # CIMIS rasters to extract
     data_full_list = ['ETo', 'Rso', 'Rs', 'Tdew', 'Tn', 'Tx', 'U2']
     if not variables:
         logging.error('\nERROR: variables parameter is empty\n')
@@ -140,31 +128,32 @@ def main(output_ws=os.getcwd(), variables=['all'],
 
 def arg_parse():
     """Base all default folders from script location
-        scripts: ./pyMETRIC/tools/cimis
-        tools:   ./pyMETRIC/tools
-        output:  ./pyMETRIC/cimis
+        scripts: ./pymetric/tools/cimis
+        tools:   ./pymetric/tools
+        output:  ./pymetric/cimis
     """
     script_folder = sys.path[0]
     code_folder = os.path.dirname(script_folder)
     project_folder = os.path.dirname(code_folder)
     cimis_folder = os.path.join(project_folder, 'cimis')
+    gz_folder = os.path.join(cimis_folder, 'input_gz')
 
     parser = argparse.ArgumentParser(
         description='Download daily CIMIS data',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
-        '--gz', default=os.path.join(cimis_folder, 'input_gz'),
-        metavar='PATH', help='Output tar.gz root folder path')
+        '--start', required=True, type=_utils.valid_date, metavar='YYYY-MM-DD',
+        help='Start date')
+    parser.add_argument(
+        '--end', required=True, type=_utils.valid_date, metavar='YYYY-MM-DD',
+        help='End date')
+    parser.add_argument(
+        '--gz', default=gz_folder, metavar='PATH',
+        help='Output tar.gz root folder path')
     parser.add_argument(
         '-v', '--vars', default=['all'], nargs='+', metavar='ETo',
         choices=['ETo', 'Rso', 'Rs', 'Tdew', 'Tn', 'Tx', 'U2', 'All'],
         help='CIMIS variables to download')
-    parser.add_argument(
-        '--start', default='2017-01-01', type=_utils.valid_date,
-        help='Start date (format YYYY-MM-DD)', metavar='DATE')
-    parser.add_argument(
-        '--end', default='2017-12-31', type=_utils.valid_date,
-        help='End date (format YYYY-MM-DD)', metavar='DATE')
     parser.add_argument(
         '-o', '--overwrite', default=False, action="store_true",
         help='Force overwrite of existing files')
@@ -176,6 +165,7 @@ def arg_parse():
     # Convert relative paths to absolute paths
     if args.gz and os.path.isdir(os.path.abspath(args.gz)):
         args.gz = os.path.abspath(args.gz)
+
     return args
 
 
@@ -189,6 +179,5 @@ if __name__ == '__main__':
     logging.info('{:<20s} {}'.format(
         'Script:', os.path.basename(sys.argv[0])))
 
-    main(output_ws=args.gz, variables=args.vars,
-         start_date=args.start, end_date=args.end,
-         overwrite_flag=args.overwrite)
+    main(start_dt=args.start, end_dt=args.end, output_ws=args.gz,
+         variables=args.vars, overwrite_flag=args.overwrite)

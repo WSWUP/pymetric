@@ -20,14 +20,17 @@ import refet
 import _utils
 
 
-def main(img_ws=os.getcwd(), ancillary_ws=os.getcwd(), output_ws=os.getcwd(),
-         etr_flag=False, eto_flag=False, start_date=None, end_date=None,
-         extent_path=None, output_extent=None, stats_flag=True,
-         overwrite_flag=False, use_cimis_eto_flag=False):
+def main(start_dt, end_dt, img_ws, ancillary_ws, output_ws,
+         etr_flag=False, eto_flag=False, extent_path=None, output_extent=None,
+         stats_flag=True, overwrite_flag=False, use_cimis_eto_flag=False):
     """Compute daily ETr/ETo from CIMIS data
 
     Parameters
     ----------
+    start_dt : datetime
+        Start date.
+    end_dt : datetime
+        End date.
     img_ws : str
         Root folder of GRIDMET data.
     ancillary_ws : str
@@ -38,10 +41,6 @@ def main(img_ws=os.getcwd(), ancillary_ws=os.getcwd(), output_ws=os.getcwd(),
         If True, compute alfalfa reference ET (ETr).
     eto_flag : bool, optional
         If True, compute grass reference ET (ETo).
-    start_date : str, optional
-        ISO format date (YYYY-MM-DD).
-    end_date : str, optional
-        ISO format date (YYYY-MM-DD).
     extent_path : str, optional
         File path defining the output extent.
     output_extent : list, optional
@@ -60,6 +59,9 @@ def main(img_ws=os.getcwd(), ancillary_ws=os.getcwd(), output_ws=os.getcwd(),
 
     """
     logging.info('\nComputing CIMIS ETo/ETr')
+    logging.debug('  Start date: {}'.format(start_dt))
+    logging.debug('  End date:   {}'.format(end_dt))
+
     np.seterr(invalid='ignore')
 
     # Use CIMIS ETo raster directly instead of computing from components
@@ -70,20 +72,6 @@ def main(img_ws=os.getcwd(), ancillary_ws=os.getcwd(), output_ws=os.getcwd(),
     if not etr_flag and not eto_flag:
         logging.info('  ETo/ETr flag(s) not set, defaulting to ETr')
         etr_flag = True
-
-    # If a date is not set, process 2017
-    try:
-        start_dt = dt.datetime.strptime(start_date, '%Y-%m-%d')
-        logging.debug('  Start date: {}'.format(start_dt))
-    except:
-        start_dt = dt.datetime(2017, 1, 1)
-        logging.info('  Start date: {}'.format(start_dt))
-    try:
-        end_dt = dt.datetime.strptime(end_date, '%Y-%m-%d')
-        logging.debug('  End date:   {}'.format(end_dt))
-    except:
-        end_dt = dt.datetime(2017, 12, 31)
-        logging.info('  End date:   {}'.format(end_dt))
 
     etr_folder = 'etr'
     eto_folder = 'eto'
@@ -439,39 +427,41 @@ def main(img_ws=os.getcwd(), ancillary_ws=os.getcwd(), output_ws=os.getcwd(),
 
 def arg_parse():
     """Base all default folders from script location
-        scripts: ./pyMETRIC/tools/cimis
-        tools:   ./pyMETRIC/tools
-        output:  ./pyMETRIC/cimis
+        scripts: ./pymetric/tools/cimis
+        tools:   ./pymetric/tools
+        output:  ./pymetric/cimis
     """
     script_folder = sys.path[0]
     code_folder = os.path.dirname(script_folder)
     project_folder = os.path.dirname(code_folder)
     cimis_folder = os.path.join(project_folder, 'cimis')
+    img_folder = os.path.join(cimis_folder, 'input_img')
+    ancillary_folder = os.path.join(cimis_folder, 'ancillary')
 
     parser = argparse.ArgumentParser(
         description='CIMIS daily ETr',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
-        '--img', default=os.path.join(cimis_folder, 'input_img'),
-        metavar='PATH', help='Input IMG raster folder path')
+        '--start', required=True, type=_utils.valid_date, metavar='YYYY-MM-DD',
+        help='Start date')
     parser.add_argument(
-        '--ancillary', default=os.path.join(cimis_folder, 'ancillary'),
-        metavar='PATH', help='Ancillary raster folder path')
+        '--end', required=True, type=_utils.valid_date, metavar='YYYY-MM-DD',
+        help='End date')
     parser.add_argument(
-        '--output', default=cimis_folder,
-        metavar='PATH', help='Output raster folder path')
+        '--img', default=img_folder, metavar='PATH',
+        help='Input IMG raster folder path')
+    parser.add_argument(
+        '--ancillary', default=ancillary_folder, metavar='PATH',
+        help='Ancillary raster folder path')
+    parser.add_argument(
+        '--output', default=cimis_folder, metavar='PATH',
+        help='Output raster folder path')
     parser.add_argument(
         '--etr', default=False, action="store_true",
         help='Compute alfalfa reference ET (ETr)')
     parser.add_argument(
         '--eto', default=False, action="store_true",
         help='Compute grass reference ET (ETo)')
-    parser.add_argument(
-        '--start', default='2017-01-01', type=_utils.valid_date,
-        help='Start date (format YYYY-MM-DD)', metavar='DATE')
-    parser.add_argument(
-        '--end', default='2017-12-31', type=_utils.valid_date,
-        help='End date (format YYYY-MM-DD)', metavar='DATE')
     parser.add_argument(
         '--extent', default=None, metavar='PATH',
         help='Subset extent path')
@@ -480,14 +470,14 @@ def arg_parse():
         metavar=('xmin', 'ymin', 'xmax', 'ymax'),
         help='Subset extent in decimal degrees')
     parser.add_argument(
-        '-o', '--overwrite', default=False, action="store_true",
-        help='Force overwrite of existing files')
-    parser.add_argument(
         '--stats', default=False, action="store_true",
         help='Compute raster statistics')
     parser.add_argument(
         '--use_cimis_eto', default=False, action="store_true",
         help='Use CIMIS ETo if ETr/ETo cannot be computed')
+    parser.add_argument(
+        '-o', '--overwrite', default=False, action="store_true",
+        help='Force overwrite of existing files')
     parser.add_argument(
         '-d', '--debug', default=logging.INFO, const=logging.DEBUG,
         help='Debug level logging', action="store_const", dest="loglevel")
@@ -498,6 +488,7 @@ def arg_parse():
         args.img = os.path.abspath(args.img)
     if args.ancillary and os.path.isdir(os.path.abspath(args.ancillary)):
         args.ancillary = os.path.abspath(args.ancillary)
+
     return args
 
 
@@ -511,9 +502,9 @@ if __name__ == '__main__':
     logging.info('{:<20s} {}'.format(
         'Script:', os.path.basename(sys.argv[0])))
 
-    main(img_ws=args.img, ancillary_ws=args.ancillary, output_ws=args.output,
+    main(start_dt=args.start, end_dt=args.end,
+         img_ws=args.img, ancillary_ws=args.ancillary, output_ws=args.output,
          etr_flag=args.etr, eto_flag=args.eto,
-         start_date=args.start, end_date=args.end,
          extent_path=args.extent, output_extent=args.te,
          stats_flag=args.stats, overwrite_flag=args.overwrite,
          use_cimis_eto_flag=args.use_cimis_eto)

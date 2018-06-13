@@ -17,13 +17,16 @@ from osgeo import gdal
 import _utils
 
 
-def main(cimis_ws=os.getcwd(), gridmet_ws=None, ancillary_ws=os.getcwd(),
-         etr_flag=False, eto_flag=False, start_date=None, end_date=None,
-         stats_flag=True, overwrite_flag=False):
+def main(start_dt, end_dt, cimis_ws, gridmet_ws, ancillary_ws,
+         etr_flag=False, eto_flag=False, stats_flag=True, overwrite_flag=False):
     """Fill missing CIMIS days with projected data from GRIDMET
 
     Parameters
     ----------
+    start_dt : datetime
+        Start date.
+    end_dt : datetime
+        End date.
     cimis_ws : str
         Root folder path of CIMIS data.
     gridmet_ws : str
@@ -34,10 +37,6 @@ def main(cimis_ws=os.getcwd(), gridmet_ws=None, ancillary_ws=os.getcwd(),
         If True, compute alfalfa reference ET (ETr).
     eto_flag : bool, optional
         If True, compute grass reference ET (ETo).
-    start_date : str, optional
-        ISO format date (YYYY-MM-DD).
-    end_date : str, optional
-        ISO format date (YYYY-MM-DD).
     stats_flag : bool, optional
         If True, compute raster statistics (the default is True).
     overwrite_flag : bool, optional
@@ -54,39 +53,27 @@ def main(cimis_ws=os.getcwd(), gridmet_ws=None, ancillary_ws=os.getcwd(),
 
     """
     logging.info('\nFilling CIMIS with GRIDMET')
-    cimis_re = re.compile(
-        '(?P<VAR>etr)_(?P<YYYY>\d{4})_daily_(?P<GRID>\w+).img$')
-    # gridmet_re = re.compile(
-    #     '(?P<VAR>ppt)_(?P<YYY>\d{4})_daily_(?P<GRID>\w+).img$')
-    gridmet_fmt = 'etr_{}_daily_gridmet.img'
+    logging.debug('  Start date: {}'.format(start_dt))
+    logging.debug('  End date:   {}'.format(end_dt))
+    logging.debug('  CIMIS: {}'.format(cimis_ws))
+    logging.debug('  GRIDMET: {}'.format(gridmet_ws))
 
     # Compute ETr and/or ETo
     if not etr_flag and not eto_flag:
         logging.info('  ETo/ETr flag(s) not set, defaulting to ETr')
         etr_flag = True
 
-    logging.debug('  CIMIS: {}'.format(cimis_ws))
-    logging.debug('  GRIDMET: {}'.format(gridmet_ws))
-
-    # If a date is not set, process 2017
-    try:
-        start_dt = dt.datetime.strptime(start_date, '%Y-%m-%d')
-        logging.debug('  Start date: {}'.format(start_dt))
-    except:
-        start_dt = dt.datetime(2017, 1, 1)
-        logging.info('  Start date: {}'.format(start_dt))
-    try:
-        end_dt = dt.datetime.strptime(end_date, '%Y-%m-%d')
-        logging.debug('  End date:   {}'.format(end_dt))
-    except:
-        end_dt = dt.datetime(2017, 12, 31)
-        logging.info('  End date:   {}'.format(end_dt))
-
     # Get GRIDMET spatial reference and cellsize from elevation raster
     # gridmet_elev_raster = os.path.join(ancillary_ws, 'gridmet_elev.img')
 
     # Get CIMIS spatial reference and cellsize from mask raster
     cimis_mask_raster = os.path.join(ancillary_ws, 'cimis_mask.img')
+
+    cimis_re = re.compile(
+        '(?P<VAR>etr)_(?P<YYYY>\d{4})_daily_(?P<GRID>\w+).img$')
+    # gridmet_re = re.compile(
+    #     '(?P<VAR>ppt)_(?P<YYY>\d{4})_daily_(?P<GRID>\w+).img$')
+    gridmet_fmt = 'etr_{}_daily_gridmet.img'
 
     # Resample type
     # 0 = GRA_NearestNeighbour, Nearest neighbour (select on one input pixel)
@@ -346,38 +333,36 @@ def main(cimis_ws=os.getcwd(), gridmet_ws=None, ancillary_ws=os.getcwd(),
 
 def arg_parse():
     """Base all default folders from script location
-        scripts: ./pyMETRIC/tools/cimis
-        tools:   ./pyMETRIC/tools
-        output:  ./pyMETRIC/cimis
-        gridmet: ./pyMETRIC/gridmet
+        scripts: ./pymetric/tools/cimis
+        tools:   ./pymetric/tools
+        output:  ./pymetric/cimis
+        gridmet: ./pymetric/gridmet
     """
     script_folder = sys.path[0]
     code_folder = os.path.dirname(script_folder)
     project_folder = os.path.dirname(code_folder)
     cimis_folder = os.path.join(project_folder, 'cimis')
     gridmet_folder = os.path.join(project_folder, 'gridmet')
+    ancillary_folder = os.path.join(cimis_folder, 'ancillary')
 
     parser = argparse.ArgumentParser(
         description='Fill CIMIS with GRIDMET',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
-        '--cimis', default=cimis_folder,
-        metavar='PATH', help='Input CIMIS root folder path')
+        '--start', required=True, type=_utils.valid_date, metavar='YYYY-MM-DD',
+        help='Start date')
     parser.add_argument(
-        '--gridmet', default=gridmet_folder,
-        metavar='PATH', help='Input GRIDMET root folder path')
+        '--end', required=True, type=_utils.valid_date, metavar='YYYY-MM-DD',
+        help='End date')
     parser.add_argument(
-        '--ancillary', default=os.path.join(cimis_folder, 'ancillary'),
-        metavar='PATH', help='Ancillary raster folder path')
+        '--cimis', default=cimis_folder, metavar='PATH',
+        help='Input CIMIS root folder path')
     parser.add_argument(
-        '-d', '--debug', default=logging.INFO, const=logging.DEBUG,
-        help='Debug level logging', action="store_const", dest="loglevel")
+        '--gridmet', default=gridmet_folder, metavar='PATH',
+        help='Input GRIDMET root folder path')
     parser.add_argument(
-        '--start', default='2017-01-01', type=_utils.valid_date,
-        help='Start date (format YYYY-MM-DD)', metavar='DATE')
-    parser.add_argument(
-        '--end', default='2017-12-31', type=_utils.valid_date,
-        help='End date (format YYYY-MM-DD)', metavar='DATE')
+        '--ancillary', default=ancillary_folder, metavar='PATH',
+        help='Ancillary raster folder path')
     parser.add_argument(
         '--eto', default=False, action="store_true",
         help='Compute grass reference ET (ETo)')
@@ -385,11 +370,14 @@ def arg_parse():
         '--etr', default=False, action="store_true",
         help='Compute alfalfa reference ET (ETr)')
     parser.add_argument(
+        '--stats', default=False, action="store_true",
+        help='Compute raster statistics')
+    parser.add_argument(
         '-o', '--overwrite', default=False, action="store_true",
         help='Force overwrite of existing files')
     parser.add_argument(
-        '--stats', default=False, action="store_true",
-        help='Compute raster statistics')
+        '-d', '--debug', default=logging.INFO, const=logging.DEBUG,
+        help='Debug level logging', action="store_const", dest="loglevel")
     args = parser.parse_args()
 
     # Convert relative paths to absolute paths
@@ -399,6 +387,7 @@ def arg_parse():
         args.gridmet = os.path.abspath(args.gridmet)
     if args.ancillary and os.path.isdir(os.path.abspath(args.ancillary)):
         args.ancillary = os.path.abspath(args.ancillary)
+
     return args
 
 
@@ -412,7 +401,7 @@ if __name__ == '__main__':
     logging.info('{:<20s} {}'.format(
         'Script:', os.path.basename(sys.argv[0])))
 
-    main(cimis_ws=args.cimis, gridmet_ws=args.gridmet,
-         ancillary_ws=args.ancillary, etr_flag=args.etr, eto_flag=args.eto,
-         start_date=args.start, end_date=args.end, stats_flag=not args.stats,
-         overwrite_flag=args.overwrite)
+    main(start_dt=args.start, end_dt=args.end, cimis_ws=args.cimis,
+         gridmet_ws=args.gridmet, ancillary_ws=args.ancillary,
+         etr_flag=args.etr, eto_flag=args.eto,
+         stats_flag=not args.stats, overwrite_flag=args.overwrite)

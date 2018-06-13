@@ -17,22 +17,21 @@ import numpy as np
 import _utils
 
 
-def main(input_ws=os.getcwd(), output_ws=os.getcwd(),
-         start_date=None, end_date=None,
+def main(start_dt, end_dt, input_ws, output_ws,
          remove_gz_flag=False, remove_ascii_flag=True,
          stats_flag=False, overwrite_flag=False):
     """Extract CIMIS data from tar.gz files
 
     Parameters
     ----------
+    start_dt : datetime
+        Start date.
+    end_dt : datetime
+        End date.
     input_ws : str
         Folder path of the input tar.gz files.
     output_ws : str
         Folder path of the output IMG rasters.
-    start_date : str, optional
-        ISO format date string (YYYY-MM-DD).
-    end_date : str, optional
-        ISO format date string (YYYY-MM-DD).
     remove_gz_flag : bool, optional
         If True, remove downloaded .gz files.
     remove_ascii_flag : bool, optional
@@ -48,20 +47,8 @@ def main(input_ws=os.getcwd(), output_ws=os.getcwd(),
 
     """
     logging.info('\nExtracting CIMIS data')
-
-    # If a date is not set, process 2017
-    try:
-        start_dt = dt.datetime.strptime(start_date, '%Y-%m-%d')
-        logging.debug('  Start date: {}'.format(start_dt))
-    except:
-        start_dt = dt.datetime(2017, 1, 1)
-        logging.info('  Start date: {}'.format(start_dt))
-    try:
-        end_dt = dt.datetime.strptime(end_date, '%Y-%m-%d')
-        logging.debug('  End date:   {}'.format(end_dt))
-    except:
-        end_dt = dt.datetime(2017, 12, 31)
-        logging.info('  End date:   {}'.format(end_dt))
+    logging.debug('  Start date: {}'.format(start_dt))
+    logging.debug('  End date:   {}'.format(end_dt))
 
     # CIMIS rasters to extract
     data_list = ['ETo', 'Rso', 'Rs', 'Tdew', 'Tn', 'Tx', 'U2']
@@ -179,30 +166,32 @@ def main(input_ws=os.getcwd(), output_ws=os.getcwd(),
 
 def arg_parse():
     """Base all default folders from script location
-        scripts: ./pyMETRIC/tools/cimis
-        tools:   ./pyMETRIC/tools
-        output:  ./pyMETRIC/cimis
+        scripts: ./pymetric/tools/cimis
+        tools:   ./pymetric/tools
+        output:  ./pymetric/cimis
     """
     script_folder = sys.path[0]
     code_folder = os.path.dirname(script_folder)
     project_folder = os.path.dirname(code_folder)
     cimis_folder = os.path.join(project_folder, 'cimis')
+    gz_folder = os.path.join(cimis_folder, 'input_gz')
+    img_folder = os.path.join(cimis_folder, 'input_img')
 
     parser = argparse.ArgumentParser(
         description='CIMIS extract/convert',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
-        '--gz', default=os.path.join(cimis_folder, 'input_gz'),
-        metavar='PATH', help='Input tar.gz root folder path')
+        '--start', required=True, type=_utils.valid_date, metavar='YYYY-MM-DD',
+        help='Start date')
     parser.add_argument(
-        '--img', default=os.path.join(cimis_folder, 'input_img'),
-        metavar='PATH', help='Output IMG raster folder path')
+        '--end', required=True, type=_utils.valid_date, metavar='YYYY-MM-DD',
+        help='End date')
     parser.add_argument(
-        '--start', default='2017-01-01', type=_utils.valid_date,
-        help='Start date (format YYYY-MM-DD)', metavar='DATE')
+        '--gz', default=gz_folder, metavar='PATH',
+        help='Input tar.gz root folder path')
     parser.add_argument(
-        '--end', default='2017-12-31', type=_utils.valid_date,
-        help='End date (format YYYY-MM-DD)', metavar='DATE')
+        '--img', default=img_folder, metavar='PATH',
+        help='Output IMG raster folder path')
     parser.add_argument(
         '--stats', default=False, action="store_true",
         help='Compute raster statistics')
@@ -219,6 +208,7 @@ def arg_parse():
         args.gz = os.path.abspath(args.gz)
     if args.img and os.path.isdir(os.path.abspath(args.img)):
         args.img = os.path.abspath(args.img)
+
     return args
 
 
@@ -232,6 +222,6 @@ if __name__ == '__main__':
     logging.info('{:<20s} {}'.format(
         'Script:', os.path.basename(sys.argv[0])))
 
-    main(input_ws=args.gz, output_ws=args.img,
-         start_date=args.start, end_date=args.end,
+    main(start_dt=args.start, end_dt=args.end,
+         input_ws=args.gz, output_ws=args.img,
          stats_flag=args.stats, overwrite_flag=args.overwrite)

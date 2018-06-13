@@ -19,15 +19,17 @@ from osgeo import gdal
 import _utils
 
 
-def main(netcdf_ws=os.getcwd(), ancillary_ws=os.getcwd(),
-         output_ws=os.getcwd(), etr_flag=False, eto_flag=False,
-         start_date=None, end_date=None,
-         extent_path=None, output_extent=None,
+def main(start_dt, end_dt, netcdf_ws, ancillary_ws, output_ws,
+         etr_flag=False, eto_flag=False, extent_path=None, output_extent=None,
          stats_flag=True, overwrite_flag=False):
     """Compute daily ETr/ETo from GRIDMET data
 
     Parameters
     ----------
+    start_dt : datetime
+        Start date.
+    end_dt : datetime
+        End date.
     netcdf_ws : str
         Folder of GRIDMET netcdf files.
     ancillary_ws : str
@@ -38,10 +40,6 @@ def main(netcdf_ws=os.getcwd(), ancillary_ws=os.getcwd(),
         If True, compute alfalfa reference ET (ETr) (the default is False).
     eto_flag : str, optional
         If True, compute grass reference ET (ETo) (the default is False).
-    start_date : str, optional
-        ISO format date (YYYY-MM-DD).
-    end_date : str, optional
-        ISO format date (YYYY-MM-DD).
     extent_path : str, optional
         File path defining the output extent.
     output_extent : list, optional
@@ -57,26 +55,15 @@ def main(netcdf_ws=os.getcwd(), ancillary_ws=os.getcwd(),
     
     """
     logging.info('\nComputing GRIDMET ETo/ETr')
+    logging.debug('  Start date: {}'.format(start_dt))
+    logging.debug('  End date:   {}'.format(end_dt))
+
     np.seterr(invalid='ignore')
 
     # Compute ETr and/or ETo
     if not etr_flag and not eto_flag:
         logging.info('  ETo/ETr flag(s) not set, defaulting to ETr')
         etr_flag = True
-
-    # If a date is not set, process 2017
-    try:
-        start_dt = dt.datetime.strptime(start_date, '%Y-%m-%d')
-        logging.debug('  Start date: {}'.format(start_dt))
-    except:
-        start_dt = dt.datetime(2017, 1, 1)
-        logging.info('  Start date: {}'.format(start_dt))
-    try:
-        end_dt = dt.datetime.strptime(end_date, '%Y-%m-%d')
-        logging.debug('  End date:   {}'.format(end_dt))
-    except:
-        end_dt = dt.datetime(2017, 12, 31)
-        logging.info('  End date:   {}'.format(end_dt))
 
     # Save GRIDMET lat, lon, and elevation arrays
     elev_raster = os.path.join(ancillary_ws, 'gridmet_elev.img')
@@ -610,39 +597,41 @@ def main(netcdf_ws=os.getcwd(), ancillary_ws=os.getcwd(),
 
 def arg_parse():
     """Base all default folders from script location
-        scripts: ./pyMETRIC/tools/gridmet
-        tools:   ./pyMETRIC/tools
-        output:  ./pyMETRIC/gridmet
+        scripts: ./pymetric/tools/gridmet
+        tools:   ./pymetric/tools
+        output:  ./pymetric/gridmet
     """
     script_folder = sys.path[0]
     code_folder = os.path.dirname(script_folder)
     project_folder = os.path.dirname(code_folder)
     gridmet_folder = os.path.join(project_folder, 'gridmet')
+    ancillary_folder = os.path.join(gridmet_folder, 'ancillary')
+    netcdf_folder = os.path.join(gridmet_folder, 'netcdf')
 
     parser = argparse.ArgumentParser(
         description='GRIDMET daily reference ETr/ETo',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
-        '--netcdf', default=os.path.join(gridmet_folder, 'netcdf'),
-        metavar='PATH', help='Input netCDF folder path')
+        '--start', required=True, type=_utils.valid_date, metavar='YYYY-MM-DD',
+        help='Start date')
     parser.add_argument(
-        '--ancillary', default=os.path.join(gridmet_folder, 'ancillary'),
-        metavar='PATH', help='Ancillary raster folder path')
+        '--end', required=True, type=_utils.valid_date, metavar='YYYY-MM-DD',
+        help='End date')
     parser.add_argument(
-        '--output', default=gridmet_folder,
-        metavar='PATH', help='Output raster folder path')
+        '--netcdf', default=netcdf_folder, metavar='PATH',
+        help='Input netCDF folder path')
+    parser.add_argument(
+        '--ancillary', default=ancillary_folder, metavar='PATH',
+        help='Ancillary raster folder path')
+    parser.add_argument(
+        '--output', default=gridmet_folder, metavar='PATH',
+        help='Output raster folder path')
     parser.add_argument(
         '--etr', default=False, action="store_true",
         help='Compute alfalfa reference ET (ETr)')
     parser.add_argument(
         '--eto', default=False, action="store_true",
         help='Compute grass reference ET (ETo)')
-    parser.add_argument(
-        '--start', default='2017-01-01', type=_utils.valid_date,
-        help='Start date (format YYYY-MM-DD)', metavar='DATE')
-    parser.add_argument(
-        '--end', default='2017-12-31', type=_utils.valid_date,
-        help='End date (format YYYY-MM-DD)', metavar='DATE')
     parser.add_argument(
         '--extent', default=None, metavar='PATH',
         help='Subset extent shapefile or raster path')
@@ -670,6 +659,7 @@ def arg_parse():
         args.output = os.path.abspath(args.output)
     if args.extent and os.path.isfile(os.path.abspath(args.extent)):
         args.extent = os.path.abspath(args.extent)
+
     return args
 
 
@@ -683,8 +673,7 @@ if __name__ == '__main__':
     logging.info('{:<20s} {}'.format(
         'Script:', os.path.basename(sys.argv[0])))
 
-    main(netcdf_ws=args.netcdf, ancillary_ws=args.ancillary,
-         output_ws=args.output, eto_flag=args.eto, etr_flag=args.etr,
-         start_date=args.start, end_date=args.end,
-         extent_path=args.extent, output_extent=args.te,
+    main(start_dt=args.start, end_dt=args.end, netcdf_ws=args.netcdf,
+         ancillary_ws=args.ancillary, output_ws=args.output, eto_flag=args.eto,
+         etr_flag=args.etr, extent_path=args.extent, output_extent=args.te,
          stats_flag=args.stats, overwrite_flag=args.overwrite)

@@ -95,9 +95,9 @@ def main(output_folder, version='140', overwrite_flag=False):
 
 def arg_parse():
     """Base all default folders from script location
-        scripts: ./pyMETRIC/tools/download
-        tools:   ./pyMETRIC/tools
-        output:  ./pyMETRIC/landfire
+        scripts: ./pymetric/tools/download
+        tools:   ./pymetric/tools
+        output:  ./pymetric/landfire
     """
     script_folder = sys.path[0]
     code_folder = os.path.dirname(script_folder)
