@@ -12,8 +12,7 @@ import sys
 import _utils
 
 
-def main(netcdf_ws=os.getcwd(), variables=['all'],
-         start_date=None, end_date=None,
+def main(start_dt, end_dt, netcdf_ws, variables=['all'],
          overwrite_flag=False):
     """Download DAYMET netcdf files
 
@@ -21,15 +20,15 @@ def main(netcdf_ws=os.getcwd(), variables=['all'],
 
     Parameters
     ----------
+    start_dt : datetime
+        Start date.
+    end_dt : datetime
+        End date.
     netcdf_ws : str
         Root folder of DAYMET data.
     variables : list, optional
         DAYMET variables to download ('prcp', 'srad', 'vp', 'tmmn', 'tmmx').
         Set as ['all'] to download all available variables.
-    start_date : str, optional
-        ISO format date (YYYY-MM-DD).
-    end_date : str, optional
-        ISO format date (YYYY-MM-DD).
     overwrite_flag : bool, optional
         If True, overwrite existing files (the default is False).
 
@@ -43,22 +42,10 @@ def main(netcdf_ws=os.getcwd(), variables=['all'],
 
     """
     logging.info('\nDownloading DAYMET data')
-    site_url = 'http://thredds.daac.ornl.gov/thredds/fileServer/ornldaac/1328'
+    logging.debug('  Start date: {}'.format(start_dt))
+    logging.debug('  End date:   {}'.format(end_dt))
 
-    try:
-        start_dt = dt.datetime.strptime(start_date, '%Y-%m-%d')
-        logging.debug('  Start date: {}'.format(start_dt))
-    except Exception as e:
-        start_dt = dt.datetime(2017, 1, 1)
-        logging.info('  Start date: {}'.format(start_dt))
-        logging.debug(e)
-    try:
-        end_dt = dt.datetime.strptime(end_date, '%Y-%m-%d')
-        logging.debug('  End date:   {}'.format(end_dt))
-    except Exception as e:
-        end_dt = dt.datetime(2017, 12, 31)
-        logging.info('  End date:   {}'.format(end_dt))
-        logging.debug(e)
+    site_url = 'http://thredds.daac.ornl.gov/thredds/fileServer/ornldaac/1328'
 
     # DAYMET rasters to extract
     var_full_list = ['prcp', 'srad', 'vp', 'tmin', 'tmax']
@@ -123,42 +110,44 @@ def main(netcdf_ws=os.getcwd(), variables=['all'],
 
 def arg_parse():
     """Base all default folders from script location
-        scripts: ./pyMETRIC/tools/daymet
-        tools:   ./pyMETRIC/tools
-        output:  ./pyMETRIC/daymet
+        scripts: ./pymetric/tools/daymet
+        tools:   ./pymetric/tools
+        output:  ./pymetric/daymet
     """
     script_folder = sys.path[0]
     code_folder = os.path.dirname(script_folder)
     project_folder = os.path.dirname(code_folder)
     daymet_folder = os.path.join(project_folder, 'daymet')
+    netcdf_folder = os.path.join(daymet_folder, 'netcdf')
 
     parser = argparse.ArgumentParser(
         description='Download daily DAYMET data',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
-        '--netcdf', default=os.path.join(daymet_folder, 'netcdf'),
-        metavar='PATH', help='Output netCDF folder path')
+        '--start', required=True, type=_utils.valid_date, metavar='YYYY-MM-DD',
+        help='Start date')
+    parser.add_argument(
+        '--end', required=True, type=_utils.valid_date, metavar='YYYY-MM-DD',
+        help='End date')
+    parser.add_argument(
+        '--netcdf', default=netcdf_folder, metavar='PATH',
+        help='Output netCDF folder path')
     parser.add_argument(
         '--vars', default=['all'], nargs='+',
         choices=['all', 'prcp', 'srad', 'vp', 'tmin', 'tmax'],
         help='DAYMET variables to download')
     parser.add_argument(
-        '--start', default='2017-01-01', type=_utils.valid_date,
-        help='Start date (format YYYY-MM-DD)', metavar='DATE')
-    parser.add_argument(
-        '--end', default='2017-12-31', type=_utils.valid_date,
-        help='End date (format YYYY-MM-DD)', metavar='DATE')
-    parser.add_argument(
         '-o', '--overwrite', default=False, action="store_true",
         help='Force overwrite of existing files')
     parser.add_argument(
-        '--debug', default=logging.INFO, const=logging.DEBUG,
+        '-d', '--debug', default=logging.INFO, const=logging.DEBUG,
         help='Debug level logging', action="store_const", dest="loglevel")
     args = parser.parse_args()
 
     # Convert relative paths to absolute paths
     if args.netcdf and os.path.isdir(os.path.abspath(args.netcdf)):
         args.netcdf = os.path.abspath(args.netcdf)
+
     return args
 
 
@@ -172,6 +161,5 @@ if __name__ == '__main__':
     logging.info('{:<20s} {}'.format(
         'Script:', os.path.basename(sys.argv[0])))
 
-    main(netcdf_ws=args.netcdf, variables=args.vars,
-         start_date=args.start, end_date=args.end,
-         overwrite_flag=args.overwrite)
+    main(start_dt=args.start, end_dt=args.end, netcdf_ws=args.netcdf,
+         variables=args.vars, overwrite_flag=args.overwrite)

@@ -18,8 +18,7 @@ from osgeo import gdal
 import _utils
 
 
-def main(netcdf_ws=os.getcwd(), ancillary_ws=os.getcwd(),
-         output_ws=os.getcwd(), variables=['prcp'],
+def main(netcdf_ws, ancillary_ws, output_ws, variables=['prcp'],
          daily_flag=False, monthly_flag=True, annual_flag=False,
          start_year=1981, end_year=2010,
          extent_path=None, output_extent=None,
@@ -35,18 +34,19 @@ def main(netcdf_ws=os.getcwd(), ancillary_ws=os.getcwd(),
     output_ws : str
         Folder of output rasters.
     variables : list, optional
-        DAYMET variables to download ('prcp', 'srad', 'vp', 'tmmn', 'tmmx').
+        DAYMET variables to download (the default is ['prcp']).
+        Choices: 'prcp', 'srad', 'vp', 'tmmn', 'tmmx', 'all.
         Set as ['all'] to process all variables.
     daily_flag : bool, optional
-        If True, compute daily (DOY) climatologies.
+        If True, compute daily (DOY) climatologies (the default is False).
     monthly_flag : bool, optional
-        If True, compute monthly climatologies.
+        If True, compute monthly climatologies (the default is True).
     annual_flag : bool, optional
-        If True, compute annual climatologies.
+        If True, compute annual climatologies (the default is False).
     start_year : int, optional
-        Climatology start year.
+        Climatology start year (the default is 1981).
     end_year : int, optional
-        Climatology end year.
+        Climatology end year (the default is 2010).
     extent_path : str, optional
         File path a raster defining the output extent.
     output_extent : list, optional
@@ -62,6 +62,8 @@ def main(netcdf_ws=os.getcwd(), ancillary_ws=os.getcwd(),
 
     """
     logging.info('\nGenerating DAYMET climatologies')
+    logging.debug('  Start date: {}'.format(start_dt))
+    logging.debug('  End date:   {}'.format(end_dt))
 
     daily_fmt = 'daymet_{var}_30yr_normal_{doy:03d}.img'
     monthly_fmt = 'daymet_{var}_30yr_normal_{month:02d}.img'
@@ -69,20 +71,6 @@ def main(netcdf_ws=os.getcwd(), ancillary_ws=os.getcwd(),
     # daily_fmt = 'daymet_{var}_normal_{start}_{end}_{doy:03d}.img'
     # monthly_fmt = 'daymet_{var}_normal_{start}_{end}_{month:02d}.img'
     # annual_fmt = 'daymet_{var}_normal_{start}_{end}.img'
-
-    # If a date is not set, process 1981-2010 climatology
-    try:
-        start_dt = dt.datetime(start_year, 1, 1)
-        logging.debug('  Start date: {}'.format(start_dt))
-    except:
-        start_dt = dt.datetime(1981, 1, 1)
-        logging.info('  Start date: {}'.format(start_dt))
-    try:
-        end_dt = dt.datetime(end_year, 12, 31)
-        logging.debug('  End date:   {}'.format(end_dt))
-    except:
-        end_dt = dt.datetime(2010, 12, 31)
-        logging.info('  End date:   {}'.format(end_dt))
 
     # Get DAYMET spatial reference from an ancillary raster
     mask_raster = os.path.join(ancillary_ws, 'daymet_mask.img')
@@ -341,27 +329,29 @@ def main(netcdf_ws=os.getcwd(), ancillary_ws=os.getcwd(),
 
 def arg_parse():
     """Base all default folders from script location
-        scripts: ./pyMETRIC/tools/daymet
-        tools:   ./pyMETRIC/tools
-        output:  ./pyMETRIC/daymet
+        scripts: ./pymetric/tools/daymet
+        tools:   ./pymetric/tools
+        output:  ./pymetric/daymet
     """
     script_folder = sys.path[0]
     code_folder = os.path.dirname(script_folder)
     project_folder = os.path.dirname(code_folder)
     daymet_folder = os.path.join(project_folder, 'daymet')
+    ancillary_folder = os.path.join(daymet_folder, 'ancillary')
+    netcdf_folder = os.path.join(daymet_folder, 'netcdf')
 
     parser = argparse.ArgumentParser(
         description='DAYMET climatologies',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
-        '--netcdf', default=os.path.join(daymet_folder, 'netcdf'),
-        metavar='PATH', help='Input netCDF folder path')
+        '--netcdf', default=netcdf_folder, metavar='PATH',
+        help='Input netCDF folder path')
     parser.add_argument(
-        '--ancillary', default=os.path.join(daymet_folder, 'ancillary'),
-        metavar='PATH', help='Ancillary raster folder path')
+        '--ancillary', default=ancillary_folder, metavar='PATH',
+        help='Ancillary raster folder path')
     parser.add_argument(
-        '--output', default=daymet_folder,
-        metavar='PATH', help='Output raster folder path')
+        '--output', default=daymet_folder, metavar='PATH',
+        help='Output raster folder path')
     parser.add_argument(
         '--vars', default=['prcp'], nargs='+',
         choices=['prcp', 'tmmn', 'tmmx'],
@@ -409,6 +399,7 @@ def arg_parse():
         args.output = os.path.abspath(args.output)
     if args.extent and os.path.isfile(os.path.abspath(args.extent)):
         args.extent = os.path.abspath(args.extent)
+
     return args
 
 

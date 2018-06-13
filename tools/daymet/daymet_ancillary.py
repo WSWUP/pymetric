@@ -13,8 +13,7 @@ import drigo
 import numpy as np
 
 
-def main(ancillary_ws=os.getcwd(), zero_elev_nodata_flag=False,
-         overwrite_flag=False):
+def main(ancillary_ws, zero_elev_nodata_flag=False, overwrite_flag=False):
     """Process DAYMET ancillary data
 
     Parameters
@@ -179,21 +178,22 @@ def main(ancillary_ws=os.getcwd(), zero_elev_nodata_flag=False,
 
 def arg_parse():
     """Base all default folders from script location
-        scripts: ./pyMETRIC/tools/daymet
-        tools:   ./pyMETRIC/tools
-        output:  ./pyMETRIC/daymet
+        scripts: ./pymetric/tools/daymet
+        tools:   ./pymetric/tools
+        output:  ./pymetric/daymet
     """
     script_folder = sys.path[0]
     code_folder = os.path.dirname(script_folder)
     project_folder = os.path.dirname(code_folder)
     daymet_folder = os.path.join(project_folder, 'daymet')
+    ancillary_folder = os.path.join(daymet_folder, 'ancillary')
 
     parser = argparse.ArgumentParser(
         description='Download/prep DAYMET ancillary data',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
-        '--ancillary', default=os.path.join(daymet_folder, 'ancillary'),
-        metavar='PATH', help='Ancillary raster folder path')
+        '--ancillary', default=ancillary_folder, metavar='PATH',
+        help='Ancillary raster folder path')
     parser.add_argument(
         '--zero', default=False, action="store_true",
         help='Set elevation nodata values to 0')
@@ -208,6 +208,7 @@ def arg_parse():
     # Convert relative paths to absolute paths
     if args.ancillary and os.path.isdir(os.path.abspath(args.ancillary)):
         args.ancillary = os.path.abspath(args.ancillary)
+
     return args
 
 
