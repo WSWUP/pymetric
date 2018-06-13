@@ -1,6 +1,6 @@
 ## Installation
 
-pyMETRIC is most easily installed by cloning the [GitHub repository](https://github.com/cgmorton/pyMETRIC).
+pyMETRIC is most easily installed by cloning the [GitHub repository](https://github.com/DRI-WSWUP/pymetric).
 
 Most of the documentation and examples are written assuming you are running pyMETRIC on a Windows PC and that the pyMETRIC repository was cloned directly to the D: drive.  If you are using a different operating system or cloned the repository to a different location, you will need adjust commands, drive letters, and paths accordingly.
 
@@ -44,12 +44,12 @@ After installing Miniconda, make sure to add the [conda-forge](https://conda-for
 
 The user is strongly encouraged to setup a dedicated conda environment for pyMETRIC:
 ```
-conda create -n pyMETRIC python=3.6
+> conda create -n pymetric python=3.6
 ```
 
 The environment must be "activated" before use:
 ```
-activate pyMETRIC
+> activate pymetric
 ```
 
 Most of the external modules can then be installed by calling:
@@ -59,14 +59,14 @@ Most of the external modules can then be installed by calling:
 
 The Landsat578 , refet, and drigo modules must be installed separately with pip:
 ```
-> pip install Landsat578 refet drigo
+> pip install Landsat578 refet drigo --no-deps
 ```
 
 ## Environment Variables
 
 #### PYTHONPATH
 
-Many of the pyMETRIC scripts reference the "common" functions in the [pyMETRIC/code/support](code/support) folder.  To be able to access these functions, you will need to add/append this path to the PYTHONPATH environment variable.
+Many of the pyMETRIC scripts reference the "common" functions in the [pymetric/code/support](code/support) folder.  To be able to access these functions, you will need to add/append this path to the PYTHONPATH environment variable.
 
 The environment variable can be set at the command line.  First check if PYTHONPATH is already set by typing:
 ```
@@ -74,11 +74,11 @@ echo %PYTHONPATH%
 ```
 If PYTHONPATH is not set, type the following in the command prompt:
 ```
-> setx PYTHONPATH "D:\pyMETRIC\code\support"
+> setx PYTHONPATH "D:\pymetric\code\support"
 ```
 To append to an existing PYTHONPATH, type:
 ```
-setx PYTHONPATH "D:\pyMETRIC\code\support;%PYTHONPATH%"
+setx PYTHONPATH "D:\pymetric\code\support;%PYTHONPATH%"
 ```
 
 #### GDAL_DATA

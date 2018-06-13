@@ -52,6 +52,8 @@ def main(start_dt, end_dt, img_ws, ancillary_ws, output_ws,
     use_cimis_eto_flag : bool, optional
         If True, use CIMIS ETo raster if one of the component rasters is
         missing and ETo/ETr cannot be computed (te default is False).
+        If False, this will only be applied if any of the inputs are missing
+        and ETo can't be computed.
 
     Returns
     -------
@@ -63,10 +65,6 @@ def main(start_dt, end_dt, img_ws, ancillary_ws, output_ws,
     logging.debug('  End date:   {}'.format(end_dt))
 
     np.seterr(invalid='ignore')
-
-    # Use CIMIS ETo raster directly instead of computing from components
-    # Currently this will only be applied if one of the inputs is missing
-    use_cimis_eto_flag = True
 
     # Compute ETr and/or ETo
     if not etr_flag and not eto_flag:
@@ -110,32 +108,6 @@ def main(start_dt, end_dt, img_ws, ancillary_ws, output_ws,
         os.makedirs(etr_ws)
     if eto_flag and not os.path.isdir(eto_ws):
         os.makedirs(eto_ws)
-
-    # Check ETr/ETo functions
-    test_flag = False
-
-    # Check that the daily_refet_func produces the correct values
-    if test_flag:
-        doy_test = 245
-        elev_test = 1050.0
-        lat_test = 39.9396 * math.pi / 180
-        tmin_test = 11.07
-        tmax_test = 34.69
-        rs_test = 22.38
-        u2_test = 1.94
-        zw_test = 2.5
-        tdew_test = -3.22
-        ea_test = refet.calcs.saturation_vapor_pressure_func(tdew_test)
-        pair_test = 101.3 * np.power((285 - 0.0065 * elev_test) / 285, 5.26)
-        q_test = 0.622 * ea_test / (pair_test - (0.378 * ea_test))
-        refet_obj = refet.Daily(
-            tmin=tmin_test, tmax=tmax_test, q=q_test, rs=rs_test, u2=u2_test,
-            zw=zw_test, elev=elev_test, doy=doy_test, lat=lat_test)
-        etr = float(refet_obj.etr())
-        eto = float(refet_obj.eto())
-        print('ETr: 8.89', etr)
-        print('ETo: 6.16', eto)
-        sys.exit()
 
     # Get CIMIS grid properties from mask
     cimis_mask_ds = gdal.Open(mask_raster)
@@ -346,17 +318,17 @@ def main(start_dt, end_dt, img_ws, ancillary_ws, output_ws,
 
 
                 # Compute Ea from Tdew
-                ea_array = refet.calcs.saturation_vapor_pressure_func(tdew_array)
+                ea_array = refet.calcs._sat_vapor_pressure(tdew_array)
 
                 # # Calculate q from tdew by first calculating ea from tdew
-                # ea_array = refet.calcs.saturation_vapor_pressure_func(tdew_array)
+                # ea_array = refet.calcs._sat_vapor_pressure(tdew_array)
                 # pair_array = refet.calcs.air_pressure_func(elev_array)
                 # q_array = 0.622 * ea_array / (pair_array - (0.378 * ea_array))
                 # del es_array, pair_array, tdew_array
 
                 # # Calculate rhmin/rhmax from tdew
-                # ea_tmax = refet._calcs.saturation_vapor_pressure_func(tmax_array)
-                # ea_tmin = refet._calcs.saturation_vapor_pressure_func(tmin_array)
+                # ea_tmax = refet._calcs._sat_vapor_pressure(tmax_array)
+                # ea_tmin = refet._calcs._sat_vapor_pressure(tmin_array)
                 # rhmin = ea_tdew * 2 / (ea_tmax + ea_tmin);
                 # rhmax = ea_tdew * 2 / (ea_tmax + ea_tmin);
                 # del ea_tmax, ea_tmin
