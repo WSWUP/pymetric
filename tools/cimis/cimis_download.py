@@ -26,9 +26,9 @@ def main(start_dt, end_dt, output_ws, variables=['all'],
     end_dt : datetime
         End date.
     output_ws : str
-        Folder path of the output tar.gz files.
+        Folder path of the output ascii files.
     variables : list
-        CIMIS variables to download ('ETo', 'Rs', 'Tdew', 'Tn', 'Tx', 'U2').
+        Choices: 'ETo', 'Rs', 'Tdew', 'Tn', 'Tx', 'U2', 'all'
         'K', 'Rnl', 'Rso' can be downloaded but are not needed.
         Set as ['all'] to download all variables.
     overwrite_flag : bool, optional
@@ -37,6 +37,12 @@ def main(start_dt, end_dt, output_ws, variables=['all'],
     Returns
     -------
     None
+
+    Notes
+    -----
+    The file on the CIMIS server do not appeared to be compressed even though
+      they have a .asc.gz file extension.
+    The files will be saved directly to ASCII type.
 
     """
     logging.info('\nDownloading CIMIS data\n')
@@ -108,7 +114,13 @@ def main(start_dt, end_dt, output_ws, variables=['all'],
                 continue
 
             file_url = '{}/{}'.format(date_url, file_name)
-            save_path = os.path.join(date_ws, file_name)
+
+            # DEADBEEF - The file on the CIMIS server do not appeared to be
+            #   compressed even though they have a .asc.gz file extension.
+            # Saving the files directly to ASCII type.
+            save_path = os.path.join(
+                date_ws, file_name.replace('.asc.gz', '.asc'))
+            # save_path = os.path.join(date_ws, file_name)
 
             logging.info('  {}'.format(os.path.basename(save_path)))
             logging.debug('    {}'.format(file_url))
@@ -136,7 +148,7 @@ def arg_parse():
     code_folder = os.path.dirname(script_folder)
     project_folder = os.path.dirname(code_folder)
     cimis_folder = os.path.join(project_folder, 'cimis')
-    gz_folder = os.path.join(cimis_folder, 'input_gz')
+    ascii_folder = os.path.join(cimis_folder, 'input_asc')
 
     parser = argparse.ArgumentParser(
         description='Download daily CIMIS data',
@@ -148,8 +160,8 @@ def arg_parse():
         '--end', required=True, type=_utils.valid_date, metavar='YYYY-MM-DD',
         help='End date')
     parser.add_argument(
-        '--gz', default=gz_folder, metavar='PATH',
-        help='Output tar.gz root folder path')
+        '--ascii', default=ascii_folder, metavar='PATH',
+        help='Output ascii root folder path')
     parser.add_argument(
         '-v', '--vars', default=['all'], nargs='+', metavar='ETo',
         choices=['ETo', 'Rso', 'Rs', 'Tdew', 'Tn', 'Tx', 'U2', 'All'],
@@ -163,8 +175,8 @@ def arg_parse():
     args = parser.parse_args()
 
     # Convert relative paths to absolute paths
-    if args.gz and os.path.isdir(os.path.abspath(args.gz)):
-        args.gz = os.path.abspath(args.gz)
+    if args.ascii and os.path.isdir(os.path.abspath(args.ascii)):
+        args.ascii = os.path.abspath(args.ascii)
 
     return args
 
@@ -179,5 +191,5 @@ if __name__ == '__main__':
     logging.info('{:<20s} {}'.format(
         'Script:', os.path.basename(sys.argv[0])))
 
-    main(start_dt=args.start, end_dt=args.end, output_ws=args.gz,
+    main(start_dt=args.start, end_dt=args.end, output_ws=args.ascii,
          variables=args.vars, overwrite_flag=args.overwrite)

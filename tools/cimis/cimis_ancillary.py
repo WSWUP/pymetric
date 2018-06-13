@@ -40,9 +40,7 @@ def main(ancillary_ws, overwrite_flag=False):
 
     # DEM for air pressure calculation
     # http://topotools.cr.usgs.gov/gmted_viewer/gmted2010_global_grids.php
-    elev_full_url = (
-        'http://edcintl.cr.usgs.gov/downloads/sciweb1/shared/'
-        'topo/downloads/GMTED/Grid_ZipFiles/mn30_grd.zip')
+    elev_full_url = 'http://edcintl.cr.usgs.gov/downloads/sciweb1/shared/topo/downloads/GMTED/Grid_ZipFiles/mn30_grd.zip'
     elev_full_zip = os.path.join(ancillary_ws, 'mn30_grd.zip')
     elev_full_raster = os.path.join(ancillary_ws, 'mn30_grd')
 
@@ -54,8 +52,8 @@ def main(ancillary_ws, overwrite_flag=False):
 
     # Spatial reference parameters
     cimis_proj4 = (
-        "+proj=aea +lat_1=34 +lat_2=40.5 +lat_0=0 +lon_0=-120 +x_0=0 "
-        "+y_0=-4000000 +ellps=GRS80 +datum=NAD83 +units=m +no_defs")
+        '+proj=aea +lat_1=34 +lat_2=40.5 +lat_0=0 +lon_0=-120 +x_0=0 '
+        '+y_0=-4000000 +ellps=GRS80 +datum=NAD83 +units=m +no_defs')
     cimis_osr = drigo.proj4_osr(cimis_proj4)
     # cimis_epsg = 3310  # NAD_1983_California_Teale_Albers
     # cimis_osr = drigo.epsg_osr(cimis_epsg)
@@ -87,6 +85,7 @@ def main(ancillary_ws, overwrite_flag=False):
         _utils.url_download(mask_url, mask_ascii)
 
         # DEADBEEF - The files do not appeared to be compressed even though
+        #   they have a .asc.gz file extension on the server.
         # logging.debug("    {}".format(mask_gz))
         # _utils.url_download(mask_url, mask_gz)
         #

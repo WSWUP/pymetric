@@ -1,11 +1,10 @@
 #--------------------------------
 # Name:         cimis_extract_convert.py
-# Purpose:      Extract CIMIS ASCII files from .gz files
+# Purpose:      Extract/convert CIMIS data from ASCII to IMG rasters
 #--------------------------------
 
 import argparse
 import datetime as dt
-import gzip
 import logging
 import os
 import re
@@ -17,10 +16,9 @@ import numpy as np
 import _utils
 
 
-def main(start_dt, end_dt, input_ws, output_ws,
-         remove_gz_flag=False, remove_ascii_flag=True,
+def main(start_dt, end_dt, input_ws, output_ws, remove_ascii_flag=False,
          stats_flag=False, overwrite_flag=False):
-    """Extract CIMIS data from tar.gz files
+    """Extract/convert CIMIS data from ASCII to IMG rasters
 
     Parameters
     ----------
@@ -29,13 +27,11 @@ def main(start_dt, end_dt, input_ws, output_ws,
     end_dt : datetime
         End date.
     input_ws : str
-        Folder path of the input tar.gz files.
+        Folder path of the input ascii files.
     output_ws : str
         Folder path of the output IMG rasters.
-    remove_gz_flag : bool, optional
-        If True, remove downloaded .gz files.
     remove_ascii_flag : bool, optional
-        If True, remove extracted ascii files.
+        If True, remove extracted ascii files (the default is False).
     stats_flag : bool, optional
         If True, compute raster statistics (the default is True).
     overwrite_flag : bool, optional
@@ -55,8 +51,8 @@ def main(start_dt, end_dt, input_ws, output_ws,
 
     # Spatial reference parameters
     cimis_proj4 = (
-        "+proj=aea +lat_1=34 +lat_2=40.5 +lat_0=0 +lon_0=-120 " +
-        "+x_0=0 +y_0=-4000000 +ellps=GRS80 +datum=NAD83 +units=m +no_defs")
+        '+proj=aea +lat_1=34 +lat_2=40.5 +lat_0=0 +lon_0=-120 '
+        '+x_0=0 +y_0=-4000000 +ellps=GRS80 +datum=NAD83 +units=m +no_defs')
     cimis_osr = drigo.proj4_osr(cimis_proj4)
     # cimis_epsg = 3310  # NAD_1983_California_Teale_Albers
     # cimis_osr = drigo.epsg_osr(cimis_epsg)
@@ -64,9 +60,9 @@ def main(start_dt, end_dt, input_ws, output_ws,
     cimis_proj = cimis_osr.ExportToWkt()
 
     # Set data types to upper case for comparison
-    data_list = map(lambda x: x.lower(), data_list)
+    data_list = list(map(lambda x: x.lower(), data_list))
 
-    # Look for .asc.gz files
+    # Look for ascii files
     for year_str in sorted(os.listdir(input_ws)):
         logging.info('{}'.format(year_str))
         if not re.match('^\d{4}$', year_str):
@@ -98,18 +94,17 @@ def main(start_dt, end_dt, input_ws, output_ws,
 
             for file_item in sorted(os.listdir(date_ws)):
                 logging.debug('  {}'.format(file_item))
-                if not file_item.endswith('.asc.gz'):
+                if not file_item.endswith('.asc'):
                     logging.debug(
-                        '  Invalid file type (not .asc.gz), skipping')
+                        '  Invalid file type (not .asc), skipping')
                     continue
-                gz_path = os.path.join(date_ws, file_item)
-                asc_path = gz_path.replace(
-                    input_ws, output_ws).replace('.gz', '')
-                raster_path = gz_path.replace(
-                    input_ws, output_ws).replace('.asc.gz', '.img')
+
+                asc_path = os.path.join(date_ws, file_item)
+                raster_path = asc_path.replace(input_ws, output_ws)\
+                    .replace('.asc', '.img')
 
                 # Only process selected raster types
-                if file_item.replace('.asc.gz', '').lower() not in data_list:
+                if file_item.replace('.asc', '').lower() not in data_list:
                     logging.debug('  Unused file/variable, skipping')
                     continue
 
@@ -127,27 +122,11 @@ def main(start_dt, end_dt, input_ws, output_ws,
                 if not os.path.isdir(os.path.dirname(raster_path)):
                     os.makedirs(os.path.dirname(raster_path))
 
-                # Uncompress '.gz' file to a new file
-                # DEADBEEF - This needs to catch specific exceptions!
-                try:
-                    input_f = gzip.open(gz_path, 'rb')
-                    input_data = input_f.read()
-                    input_f.close()
-                except:
-                    logging.error("  ERROR EXTRACTING FILE")
-                try:
-                    with open(asc_path, 'wb') as output_f:
-                        output_f.write(input_data)
-                    if remove_gz_flag:
-                        os.remove(gz_path)
-                except:
-                    logging.error("  ERROR WRITING FILE")
-
                 # # Set spatial reference of the ASCII files
                 # if build_prj_flag:
                 #     output_osr.MorphToESRI()
                 #     cimis_proj = output_osr.ExportToWkt()
-                #     prj_file = open(asc_path.replace('.asc','.prj'), 'w')
+                #     prj_file = open(asc_path.replace('.asc', '.prj'), 'w')
                 #     prj_file.write(cimis_proj)
                 #     prj_file.close()
 
@@ -159,7 +138,7 @@ def main(start_dt, end_dt, input_ws, output_ws,
                     os.remove(asc_path)
 
                 # Cleanup
-                del gz_path, asc_path, raster_path
+                del asc_path, raster_path
 
     logging.debug('\nScript Complete')
 
@@ -174,7 +153,7 @@ def arg_parse():
     code_folder = os.path.dirname(script_folder)
     project_folder = os.path.dirname(code_folder)
     cimis_folder = os.path.join(project_folder, 'cimis')
-    gz_folder = os.path.join(cimis_folder, 'input_gz')
+    asc_folder = os.path.join(cimis_folder, 'input_asc')
     img_folder = os.path.join(cimis_folder, 'input_img')
 
     parser = argparse.ArgumentParser(
@@ -187,8 +166,8 @@ def arg_parse():
         '--end', required=True, type=_utils.valid_date, metavar='YYYY-MM-DD',
         help='End date')
     parser.add_argument(
-        '--gz', default=gz_folder, metavar='PATH',
-        help='Input tar.gz root folder path')
+        '--ascii', default=asc_folder, metavar='PATH',
+        help='Input ascii root folder path')
     parser.add_argument(
         '--img', default=img_folder, metavar='PATH',
         help='Output IMG raster folder path')
@@ -204,8 +183,8 @@ def arg_parse():
     args = parser.parse_args()
 
     # Convert relative paths to absolute paths
-    if args.gz and os.path.isdir(os.path.abspath(args.gz)):
-        args.gz = os.path.abspath(args.gz)
+    if args.ascii and os.path.isdir(os.path.abspath(args.ascii)):
+        args.ascii = os.path.abspath(args.ascii)
     if args.img and os.path.isdir(os.path.abspath(args.img)):
         args.img = os.path.abspath(args.img)
 
@@ -223,5 +202,5 @@ if __name__ == '__main__':
         'Script:', os.path.basename(sys.argv[0])))
 
     main(start_dt=args.start, end_dt=args.end,
-         input_ws=args.gz, output_ws=args.img,
+         input_ws=args.ascii, output_ws=args.img,
          stats_flag=args.stats, overwrite_flag=args.overwrite)
