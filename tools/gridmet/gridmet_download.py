@@ -36,18 +36,10 @@ def main(start_dt, end_dt, netcdf_ws, variables=['etr', 'pr'],
     
     """
     logging.info('Downloading GRIDMET data\n')
-    site_url = 'https://www.northwestknowledge.net/metdata/data'
-
-    try:
-        start_dt = dt.datetime.strptime(start_date, '%Y-%m-%d')
-    except Exception as e:
-        logging.exception(str(e))
-    try:
-        end_dt = dt.datetime.strptime(end_date, '%Y-%m-%d')
-    except Exception as e:
-        logging.exception(str(e))
     logging.debug('  Start date: {}'.format(start_dt))
     logging.debug('  End date:   {}'.format(end_dt))
+
+    site_url = 'https://www.northwestknowledge.net/metdata/data'
 
     # GRIDMET rasters to extract
     data_full_list = ['eto', 'etr', 'pr', 'srad', 'sph', 'tmmn', 'tmmx', 'vs']
@@ -169,5 +161,5 @@ if __name__ == '__main__':
     logging.info('{:<20s} {}'.format(
         'Script:', os.path.basename(sys.argv[0])))
 
-    main(start_date=args.start, end_date=args.end, netcdf_ws=args.netcdf,
+    main(start_dt=args.start, end_dt=args.end, netcdf_ws=args.netcdf,
          variables=args.vars, overwrite_flag=args.overwrite)
