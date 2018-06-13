@@ -137,21 +137,22 @@ def main(ancillary_ws=os.getcwd(), zero_elev_nodata_flag=False,
 
 def arg_parse():
     """Base all default folders from script location
-        scripts: ./pyMETRIC/tools/gridmet
-        tools:   ./pyMETRIC/tools
-        output:  ./pyMETRIC/gridmet
+        scripts: ./pymetric/tools/gridmet
+        tools:   ./pymetric/tools
+        output:  ./pymetric/gridmet
     """
     script_folder = sys.path[0]
     code_folder = os.path.dirname(script_folder)
     project_folder = os.path.dirname(code_folder)
     gridmet_folder = os.path.join(project_folder, 'gridmet')
+    ancillary_folder = os.path.join(gridmet_folder, 'ancillary')
 
     parser = argparse.ArgumentParser(
         description='Process GRIDMET ancillary data',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
-        '--ancillary', default=os.path.join(gridmet_folder, 'ancillary'),
-        metavar='PATH', help='Ancillary raster folder path')
+        '--ancillary', default=ancillary_folder, metavar='PATH',
+        help='Ancillary raster folder path')
     parser.add_argument(
         '--zero', default=False, action="store_true",
         help='Set elevation nodata values to 0')
@@ -166,6 +167,7 @@ def arg_parse():
     # Convert relative paths to absolute paths
     if args.ancillary and os.path.isdir(os.path.abspath(args.ancillary)):
         args.ancillary = os.path.abspath(args.ancillary)
+
     return args
 
 

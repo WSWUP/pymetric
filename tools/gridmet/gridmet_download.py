@@ -12,21 +12,21 @@ import sys
 import _utils
 
 
-def main(netcdf_ws=os.getcwd(), variables=['etr', 'pr'],
-         start_date=None, end_date=None, overwrite_flag=False):
+def main(start_dt, end_dt, netcdf_ws, variables=['etr', 'pr'],
+         overwrite_flag=False):
     """Download GRIDMET netcdf files
 
     Parameters
     ----------
+    start_dt : datetime
+        Start date.
+    end_dt : str
+        End date..
     netcdf_ws : str
         Folder of GRIDMET netcdf files.
     variable : list, optional
         GRIDMET variables to download (the default is ['etr', 'ppt']).
         Choices: 'eto', 'etr', 'pr', 'srad', 'sph', 'tmmn', 'tmmx', 'vs'
-    start_date : str, optional
-        ISO format date (YYYY-MM-DD).
-    end_date : str, optional
-        ISO format date (YYYY-MM-DD).
     overwrite_flag : bool, optional
         If True, overwrite existing files (the default is False).
 
@@ -38,19 +38,16 @@ def main(netcdf_ws=os.getcwd(), variables=['etr', 'pr'],
     logging.info('Downloading GRIDMET data\n')
     site_url = 'https://www.northwestknowledge.net/metdata/data'
 
-    # If a date is not set, process 2017
     try:
         start_dt = dt.datetime.strptime(start_date, '%Y-%m-%d')
-        logging.debug('  Start date: {}'.format(start_dt))
-    except:
-        start_dt = dt.datetime(2017, 1, 1)
-        logging.info('  Start date: {}'.format(start_dt))
+    except Exception as e:
+        logging.exception(str(e))
     try:
         end_dt = dt.datetime.strptime(end_date, '%Y-%m-%d')
-        logging.debug('  End date:   {}'.format(end_dt))
-    except:
-        end_dt = dt.datetime(2017, 12, 31)
-        logging.info('  End date:   {}'.format(end_dt))
+    except Exception as e:
+        logging.exception(str(e))
+    logging.debug('  Start date: {}'.format(start_dt))
+    logging.debug('  End date:   {}'.format(end_dt))
 
     # GRIDMET rasters to extract
     data_full_list = ['eto', 'etr', 'pr', 'srad', 'sph', 'tmmn', 'tmmx', 'vs']
@@ -121,31 +118,32 @@ def main(netcdf_ws=os.getcwd(), variables=['etr', 'pr'],
 
 def arg_parse():
     """Base all default folders from script location
-        scripts: ./pyMETRIC/tools/gridmet
-        tools:   ./pyMETRIC/tools
-        output:  ./pyMETRIC/gridmet
+        scripts: ./pymetric/tools/gridmet
+        tools:   ./pymetric/tools
+        output:  ./pymetric/gridmet
     """
     script_folder = sys.path[0]
     code_folder = os.path.dirname(script_folder)
     project_folder = os.path.dirname(code_folder)
     gridmet_folder = os.path.join(project_folder, 'gridmet')
+    netcdf_folder = os.path.join(gridmet_folder, 'netcdf')
 
     parser = argparse.ArgumentParser(
         description='Download daily GRIDMET data',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
-        '--netcdf', default=os.path.join(gridmet_folder, 'netcdf'),
-        metavar='PATH', help='Output netCDF folder path')
+        '--start', required=True, type=_utils.valid_date, metavar='YYYY-MM-DD',
+        help='Start date')
+    parser.add_argument(
+        '--end', required=True, type=_utils.valid_date, metavar='YYYY-MM-DD',
+        help='End date')
+    parser.add_argument(
+        '--netcdf', default=netcdf_folder, metavar='PATH',
+        help='Output netCDF folder path')
     parser.add_argument(
         '--vars', default=['etr', 'pr'], nargs='+',
         choices=['etr', 'eto', 'pr', 'srad', 'sph', 'tmmn', 'tmmx', 'vs'],
         help='GRIDMET variables to download')
-    parser.add_argument(
-        '--start', default='2017-01-01', type=_utils.valid_date,
-        help='Start date (format YYYY-MM-DD)', metavar='DATE')
-    parser.add_argument(
-        '--end', default='2017-12-31', type=_utils.valid_date,
-        help='End date (format YYYY-MM-DD)', metavar='DATE')
     parser.add_argument(
         '-o', '--overwrite', default=False, action="store_true",
         help='Force overwrite of existing files')
@@ -157,6 +155,7 @@ def arg_parse():
     # Convert relative paths to absolute paths
     if args.netcdf and os.path.isdir(os.path.abspath(args.netcdf)):
         args.netcdf = os.path.abspath(args.netcdf)
+
     return args
 
 
@@ -170,6 +169,5 @@ if __name__ == '__main__':
     logging.info('{:<20s} {}'.format(
         'Script:', os.path.basename(sys.argv[0])))
 
-    main(netcdf_ws=args.netcdf, variables=args.vars,
-         start_date=args.start, end_date=args.end,
-         overwrite_flag=args.overwrite)
+    main(start_date=args.start, end_date=args.end, netcdf_ws=args.netcdf,
+         variables=args.vars, overwrite_flag=args.overwrite)
