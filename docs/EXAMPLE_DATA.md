@@ -262,7 +262,7 @@ D:\pymetric>python tools\nldas\nldas_ancillary.py
 
 In order to download the NLDAS hourly data, you will need to create an [Earthdata login](https://urs.earthdata.nasa.gov/).  Once your account is created with Earthdata, data access to Goddard Earth Sciences Data and Information Services Center (GES DISC) must be enabled for your account.  To approve access:
 1. [Navigate to your Earthdata profile page](https://urs.earthdata.nasa.gov/)
-2. Select "My Applications"
+2. Select "Applications -> Authorized Apps"
 3. Click the "APPROVE MORE APPLICATIONS" button
 4. Approve "NASA GESDISC DATA ARCHIVE"
 
