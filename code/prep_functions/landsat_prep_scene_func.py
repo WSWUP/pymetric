@@ -239,14 +239,14 @@ def main(image_ws, ini_path, blocksize=2048, smooth_flag=False,
     # QA band must exist
     if (calc_fmask_common_flag and image.qa_band not in dn_image_dict.keys()):
         logging.warning(
-            ('\nQA band does not exist but calc_fmask_common_flag=True' +
-             '\n  Setting calc_fmask_common_flag=False\n  {}').format(
-                 os.path.basename(image.qa_input_raster)))
+             '\nQA band does not exist but calc_fmask_common_flag=True'
+             '\n  Setting calc_fmask_common_flag=False\n  {}'.format(
+                 image.qa_band))
         calc_fmask_common_flag = False
     if cloud_mask_flag and not os.path.isdir(cloud_mask_ws):
         logging.warning(
-            ('\ncloud_mask_ws is not a directory but cloud_mask_flag=True.' +
-             '\n  Setting cloud_mask_flag=False\n   {}').format(cloud_mask_ws))
+             '\ncloud_mask_ws is not a directory but cloud_mask_flag=True.'
+             '\n  Setting cloud_mask_flag=False\n   {}'.format(cloud_mask_ws))
         cloud_mask_flag = False
 
     # Check for Landsat TOA images
@@ -254,14 +254,14 @@ def main(image_ws, ini_path, blocksize=2048, smooth_flag=False,
         (set(list(image.band_toa_dict.keys()) + [image.thermal_band, image.qa_band]) !=
             set(dn_image_dict.keys()))):
         logging.warning(
-            '\nMissing Landsat images but calc_refl_toa_flag=True' +
+            '\nMissing Landsat images but calc_refl_toa_flag=True'
             '\n  Setting calc_refl_toa_flag=False')
         calc_refl_toa_flag = False
 
     # Check for Landsat brightness temperature image
     if calc_ts_bt_flag and image.thermal_band not in dn_image_dict.keys():
         logging.warning(
-            '\nThermal band image does not exist but calc_ts_bt_flag=True' +
+            '\nThermal band image does not exist but calc_ts_bt_flag=True'
             '\n  Setting calc_ts_bt_flag=False')
         calc_ts_bt_flag = False
         # DEADBEEF - Should the function return False if Ts doesn't exist?
@@ -272,36 +272,36 @@ def main(image_ws, ini_path, blocksize=2048, smooth_flag=False,
         metric_ea_input_ws = config.get('INPUTS', 'metric_ea_input_folder')
         if not os.path.isdir(metric_ea_input_ws):
             logging.warning(
-                ('\nHourly Ea folder does not exist but calc_metric_ea_flag=True' +
-                 '\n  Setting calc_metric_ea_flag=False\n  {}').format(
+                 '\nHourly Ea folder does not exist but calc_metric_ea_flag=True'
+                 '\n  Setting calc_metric_ea_flag=False\n  {}'.format(
                      metric_ea_input_ws))
             calc_metric_ea_flag = False
     if calc_metric_wind_flag:
         metric_wind_input_ws = config.get('INPUTS', 'metric_wind_input_folder')
         if not os.path.isdir(metric_wind_input_ws):
             logging.warning(
-                ('\nHourly wind folder does not exist but calc_metric_wind_flag=True' +
-                 '\n  Setting calc_metric_wind_flag=False\n  {}').format(
+                 '\nHourly wind folder does not exist but calc_metric_wind_flag=True'
+                 '\n  Setting calc_metric_wind_flag=False\n  {}'.format(
                      metric_wind_input_ws))
             calc_metric_wind_flag = False
     if calc_metric_etr_flag:
         metric_etr_input_ws = config.get('INPUTS', 'metric_etr_input_folder')
         if not os.path.isdir(metric_etr_input_ws):
             logging.warning(
-                ('\nHourly ETr folder does not exist but calc_metric_etr_flag=True' +
-                 '\n  Setting calc_metric_etr_flag=False\n  {}').format(
+                 '\nHourly ETr folder does not exist but calc_metric_etr_flag=True'
+                 '\n  Setting calc_metric_etr_flag=False\n  {}'.format(
                      metric_etr_input_ws))
             calc_metric_etr_flag = False
     if calc_metric_tair_flag:
         metric_tair_input_ws = config.get('INPUTS', 'metric_tair_input_folder')
         if not os.path.isdir(metric_tair_input_ws):
             logging.warning(
-                ('\nHourly Tair folder does not exist but calc_metric_tair_flag=True' +
-                 '\n  Setting calc_metric_tair_flag=False\n  {}').format(
+                 '\nHourly Tair folder does not exist but calc_metric_tair_flag=True'
+                 '\n  Setting calc_metric_tair_flag=False\n  {}'.format(
                      metric_tair_input_ws))
             calc_metric_tair_flag = False
     if (calc_metric_ea_flag or calc_metric_wind_flag or
-        calc_metric_etr_flag or calc_metric_tair_flag):
+            calc_metric_etr_flag or calc_metric_tair_flag):
         metric_hourly_re = re.compile(config.get('INPUTS', 'metric_hourly_re'))
         metric_daily_re = re.compile(config.get('INPUTS', 'metric_daily_re'))
 
@@ -313,20 +313,20 @@ def main(image_ws, ini_path, blocksize=2048, smooth_flag=False,
         ppt_input_re = re.compile(config.get('INPUTS', 'ppt_input_re'))
         if not os.path.isfile(awc_input_path):
             logging.warning(
-                ('\nAWC raster does not exist but calc_swb_ke_flag=True' +
-                 '\n  Setting calc_swb_ke_flag=False\n  {}').format(
+                 '\nAWC raster does not exist but calc_swb_ke_flag=True'
+                 '\n  Setting calc_swb_ke_flag=False\n  {}'.format(
                      awc_input_path))
             calc_swb_ke_flag = False
         if not os.path.isdir(etr_input_ws):
             logging.warning(
-                ('\nDaily ETr folder does not exist but calc_swb_ke_flag=True' +
-                 '\n  Setting calc_swb_ke_flag=False\n  {}').format(
+                 '\nDaily ETr folder does not exist but calc_swb_ke_flag=True'
+                 '\n  Setting calc_swb_ke_flag=False\n  {}'.format(
                      etr_input_ws))
             calc_swb_ke_flag = False
         if not os.path.isdir(ppt_input_ws):
             logging.warning(
-                ('\nDaily PPT folder does not exist but calc_swb_ke_flag=True' +
-                 '\n  Setting calc_swb_ke_flag=False\n  {}').format(
+                 '\nDaily PPT folder does not exist but calc_swb_ke_flag=True'
+                 '\n  Setting calc_swb_ke_flag=False\n  {}'.format(
                      ppt_input_ws))
             calc_swb_ke_flag = False
 
@@ -397,8 +397,8 @@ def main(image_ws, ini_path, blocksize=2048, smooth_flag=False,
         fmask_mask = (fmask_array >= 2) & (fmask_array <= 4)
         if fmask_erode_flag:
             logging.info(
-                ('  Eroding and dilating Fmask clouds, shadows, and snow ' +
-                 '{} cells\n    to remove errantly masked pixels.').format(
+                 '  Eroding and dilating Fmask clouds, shadows, and snow '
+                 '{} cells\n    to remove errantly masked pixels.'.format(
                     fmask_erode_cells))
             fmask_mask = ndimage.binary_erosion(
                 fmask_mask, iterations=fmask_erode_cells,
@@ -826,8 +826,10 @@ def main(image_ws, ini_path, blocksize=2048, smooth_flag=False,
                 output_array, resample_method,
                 input_osr, input_cs, common_gcs_extent,
                 common_osr, env.cellsize, common_extent, output_nodata=None)
+
             # Apply common area mask
             output_array[~common_array] = np.nan
+
             # Reduce the file size by rounding to the nearest n digits
             if rounding_flag:
                 output_array = np.around(output_array, rounding_digits)
@@ -1019,7 +1021,7 @@ def hourly_interpolate_func(prev_array, next_array,
     image_next_dt : datetime
         Datetime of the next array.
     image_dt : datetime
-        Datetime to interpolate to
+        Datetime to interpolate to.
     output_extent: gdal_common.extent
         Extent to clip output.
 
