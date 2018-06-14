@@ -23,6 +23,7 @@ __pycache__/
 /fields
 /gridmet
 /landfire
+/landsat/*/
 /nlcd
 /nldas/*/
 /refet

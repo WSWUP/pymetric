@@ -40,10 +40,14 @@ def main(scene_list_path, output_folder, start_dt=None, end_dt=None,
     """
 
     base_url = 'http://storage.googleapis.com/gcp-public-data-landsat'
-    url_fmt = '{url}/{sensor}/{collection}/{path}/{row}/{id}/{tif}'
+    url_fmt = '{url}/{sensor}/{collection}/{path}/{row}/{id}/{file}'
 
     # Landsat Collection 1 Product ID
     landsat_re = re.compile(
+        '^(?P<SENSOR>LT04|LT05|LE07|LC08)_(?P<DATA_TYPE>\w{4})_'
+        '(?P<PATH>\d{3})(?P<ROW>\d{3})_(?P<ACQ_DATE>\d{8})_(?:\w{8})'
+        '_(?P<NUMBER>\w{2})_(?P<CATEGORY>\w{2})')
+    pre_c1_re = re.compile(
         '^(?P<SENSOR>LT04|LT05|LE07|LC08)_(?P<DATA_TYPE>\w{4})_'
         '(?P<PATH>\d{3})(?P<ROW>\d{3})_(?P<ACQ_DATE>\d{8})_(?:\w{8})'
         '_(?P<NUMBER>\w{2})_(?P<CATEGORY>\w{2})')
@@ -70,15 +74,28 @@ def main(scene_list_path, output_folder, start_dt=None, end_dt=None,
     logging.debug('\n{}\n'.format(', '.join(product_id_list)))
 
     bands = {
-        'LT05': ['1', '2', '3', '4', '5', '6', '7'],
-        'LE07': ['1', '2', '3', '4', '5', '6_VCID_1', '6_VCID_2', '7', '8'],
-        'LC08': ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11'],
+        'LT05': ['B1.TIF', 'B2.TIF', 'B3.TIF', 'B4.TIF', 'B5.TIF',
+                 'B6.TIF', 'B7.TIF', 'BQA.TIF', 'MTL.txt'],
+        'LE07': ['B1.TIF', 'B2.TIF', 'B3.TIF', 'B4.TIF', 'B5.TIF',
+                 'B6_VCID_1.TIF', 'B6_VCID_2.TIF', 'B7.TIF', 'B8.TIF',
+                 'BQA.TIF', 'MTL.txt'],
+        'LC08': ['B1.TIF', 'B2.TIF', 'B3.TIF', 'B4.TIF', 'B5.TIF',
+                 'B6.TIF', 'B7.TIF', 'B8.TIF', 'B9.TIF', 'B10.TIF', 'B11.TIF',
+                 'BQA.TIF', 'MTL.txt'],
     }
 
     for product_id in product_id_list:
         logging.info(product_id)
-        sensor, type, path, row, date, number, category = landsat_re.match(
-            product_id).groups()
+
+        id_match = landsat_re.match(product_id)
+        if not id_match and pre_c1_re.match(product_id):
+            logging.error(
+                '\nThe scene list does appear to contain LANDSAT_PRODUCT_IDs'
+                '  (i.e. LE07_L1TP_043030_20150101_20160905_01_T1)'
+                '  Exiting')
+            return False
+
+        sensor, type, path, row, date, number, category = id_match.groups()
         # print(sensor, type, path, row, date, number, category)
 
         year_folder = os.path.join(
@@ -89,19 +106,19 @@ def main(scene_list_path, output_folder, start_dt=None, end_dt=None,
 
         for band in bands[product_id[:4]]:
             logging.debug('  Band {}'.format(band))
-            image_name = '{}_B{}.TIF'.format(product_id, band)
-            image_url = url_fmt.format(
+            file_name = '{}_{}'.format(product_id, band)
+            file_url = url_fmt.format(
                 url=base_url, sensor=sensor, collection=number, path=path,
-                row=row, id=product_id, tif=image_name)
-            image_path = os.path.join(
+                row=row, id=product_id, file=file_name)
+            file_path = os.path.join(
                 output_folder, str(int(path)), str(int(row)), date[:4], product_id,
-                image_name)
+                file_name)
             # logging.info('  {}'.format(image_name))
-            logging.debug('  {}'.format(image_url))
-            logging.debug('  {}'.format(image_path))
+            logging.debug('  {}'.format(file_url))
+            logging.debug('  {}'.format(file_path))
 
-            if overwrite_flag or not os.path.isfile(image_path):
-                _fetch_image(image_url, image_path)
+            if overwrite_flag or not os.path.isfile(file_path):
+                _fetch_image(file_url, file_path)
 
         output_path = os.path.join(year_folder, product_id + '.tar.gz')
         if ((overwrite_flag or not os.path.isfile(output_path)) and
@@ -109,7 +126,7 @@ def main(scene_list_path, output_folder, start_dt=None, end_dt=None,
             logging.info('  Zipping'.format(band))
             logging.debug('  {}'.format(output_path))
             with tarfile.open(output_path, "w:gz") as tar:
-                tar.add(product_folder, arcname=os.path.basename(product_folder))
+                tar.add(product_folder, arcname='.')
 
         if os.path.isdir(product_folder) and os.path.isfile(output_path):
             shutil.rmtree(product_folder)
