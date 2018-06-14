@@ -67,7 +67,9 @@ def main(ini_path, tile_list=None, blocksize=2048, smooth_flag=True,
     logging.debug('  Project: {}'.format(project_ws))
 
     func_path = config.get('INPUTS', 'prep_scene_func')
-    skip_list_path = read_param('skip_list_path', '', config, 'INPUTS')
+    keep_list_path = read_param('keep_list_path', '', config, 'INPUTS')
+    # DEADBEEF - Remove if keep list works
+    # skip_list_path = read_param('skip_list_path', '', config, 'INPUTS')
 
     # Only allow new terminal windows on Windows
     if os.name is not 'nt':
@@ -97,16 +99,28 @@ def main(ini_path, tile_list=None, blocksize=2048, smooth_flag=True,
     if smooth_flag:
         call_args.append('--smooth')
 
-    # Read skip list
-    if skip_list_path:
-        logging.debug('\nReading scene skip list')
-        with open(skip_list_path) as skip_list_f:
-            skip_list = skip_list_f.readlines()
-            skip_list = [image_id.strip() for image_id in skip_list
+    # Read keep list
+    if keep_list_path:
+        logging.debug('\nReading scene keep list')
+        with open(keep_list_path) as keep_list_f:
+            keep_list = keep_list_f.readlines()
+            keep_list = [image_id.strip() for image_id in keep_list
                          if image_re.match(image_id.strip())]
     else:
-        logging.debug('\nSkip list not set in INI')
-        skip_list = []
+        logging.debug('\nScene keep list not set in INI')
+        keep_list = []
+
+    # DEADBEEF - Remove if keep list works
+    # # Read skip list
+    # if skip_list_path:
+    #     logging.debug('\nReading scene skip list')
+    #     with open(skip_list_path) as skip_list_f:
+    #         skip_list = skip_list_f.readlines()
+    #         skip_list = [image_id.strip() for image_id in skip_list
+    #                      if image_re.match(image_id.strip())]
+    # else:
+    #     logging.debug('\nScene skip list not set in INI')
+    #     skip_list = []
 
     # Process each image
     mp_list = []
@@ -122,7 +136,9 @@ def main(ini_path, tile_list=None, blocksize=2048, smooth_flag=True,
             image_id for image_id in sorted(os.listdir(tile_ws))
             if (os.path.isdir(os.path.join(tile_ws, image_id)) and
                 image_re.match(image_id) and
-                image_id not in skip_list)]
+                image_id in keep_list)]
+            # DEADBEEF - Remove if keep list works
+            #     image_id not in skip_list)]
         if not image_id_list:
             logging.debug('  No available images, skipping')
             continue

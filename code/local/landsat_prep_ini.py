@@ -89,6 +89,8 @@ def main(ini_path, tile_list=None, overwrite_flag=False):
         'utm_path',
         os.path.join(os.path.dirname(footprint_path), 'wrs2_tile_utm_zones.json'),
         config, 'INPUTS')
+    keep_list_path = python_common.read_param(
+        'keep_list_path', '', config, 'INPUTS')
     skip_list_path = python_common.read_param(
         'skip_list_path', '', config, 'INPUTS')
 
@@ -302,6 +304,8 @@ def main(ini_path, tile_list=None, overwrite_flag=False):
             folder_check(metric_etr_input_ws)
             if calc_metric_tair_flag:
                 folder_check(metric_tair_input_ws)
+    if keep_list_path:
+        file_check(keep_list_path)
     if skip_list_path:
         file_check(skip_list_path)
 
@@ -433,8 +437,8 @@ def main(ini_path, tile_list=None, overwrite_flag=False):
                 metric_hourly_weather == 'REFET' and
                 yr_tile_name not in refet_params_dict.keys()):
             logging.error(
-                ('    The year {} & path/row {} is not in the ' +
-                 'RefET parameters csv, skipping').format(year, tile_name))
+                '    The year {} & path/row {} is not in the '
+                'RefET parameters csv, skipping'.format(year, tile_name))
             continue
 
         if metric_flag and not os.path.isfile(tile_metric_ini):

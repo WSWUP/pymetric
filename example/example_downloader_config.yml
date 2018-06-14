@@ -13,13 +13,13 @@ return_list: True
 zipped: True
 max_cloud_percent: 100
 
-# pymetric directory structure: e.g. D:/pyMETRIC/harney/landsat/<path>/<row>/<year>
+# pymetric directory structure: e.g. D:\pymetric\example\landsat\<path>\<row>\<year>
 # using pymetric_root and clear_scenes overrides all other arguments
 # leave both blank to disable
 
 # "pymetric_root" refers to the project folder.  If this field is populated,
 # Landsat scenes will be downloaded and placed in directory structure with
-# the following format: D:/pyMETRIC/harney/landsat/<path>/<row>/<year>
+# the following format: D:\pymetric\example\landsat\<path>\<row>\<year>
 # If "pymetric_root" is left blank, Landsat scenes will be downloaded into the
 # current working directory
 

@@ -69,8 +69,11 @@ def main(ini_path, tile_list=None, overwrite_flag=False, mp_procs=1):
         'utm_path',
         os.path.join(os.path.dirname(footprint_path), 'wrs2_tile_utm_zones.json'),
         config, 'INPUTS')
-    skip_list_path = python_common.read_param(
-        'skip_list_path', '', config, 'INPUTS')
+    keep_list_path = python_common.read_param(
+        'keep_list_path', '', config, 'INPUTS')
+    # DEADBEEF - Remove if keep list works
+    # skip_list_path = python_common.read_param(
+    #     'skip_list_path', '', config, 'INPUTS')
 
     landsat_flag = python_common.read_param(
         'landsat_flag', True, config, 'INPUTS')
@@ -188,8 +191,11 @@ def main(ini_path, tile_list=None, overwrite_flag=False, mp_procs=1):
             logging.error('\n  {} does not exist'.format(landfire_input_path))
     if field_flag:
         file_check(field_input_path)
-    if skip_list_path:
-        file_check(skip_list_path)
+    if keep_list_path:
+        file_check(keep_list_path)
+    # DEADBEEF - Remove if keep list works
+    # if skip_list_path:
+    #     file_check(skip_list_path)
 
     # Build output folders
     if not os.path.isdir(project_ws):
@@ -299,16 +305,28 @@ def main(ini_path, tile_list=None, overwrite_flag=False, mp_procs=1):
                 not os.path.isdir(os.path.join(field_output_ws, tile_name))):
             os.makedirs(os.path.join(field_output_ws, tile_name))
 
-    # Read skip list
-    if (landsat_flag or ledaps_flag) and skip_list_path:
-        logging.debug('\nReading scene skiplist')
-        with open(skip_list_path) as skip_list_f:
-            skip_list = skip_list_f.readlines()
-            skip_list = [scene.strip() for scene in skip_list
-                         if image_re.match(scene.strip())]
+    # Read keep list
+    if keep_list_path:
+        logging.debug('\nReading scene keep list')
+        with open(keep_list_path) as keep_list_f:
+            keep_list = keep_list_f.readlines()
+            keep_list = [image_id.strip() for image_id in keep_list
+                         if image_re.match(image_id.strip())]
     else:
-        logging.debug('\nSkip list not set in INI')
-        skip_list = []
+        logging.debug('\nScene keep list not set in INI')
+        keep_list = []
+
+    # DEADBEEF - Remove if keep list works
+    # # Read skip list
+    # if (landsat_flag or ledaps_flag) and skip_list_path:
+    #     logging.debug('\nReading scene skiplist')
+    #     with open(skip_list_path) as skip_list_f:
+    #         skip_list = skip_list_f.readlines()
+    #         skip_list = [scene.strip() for scene in skip_list
+    #                      if image_re.match(scene.strip())]
+    # else:
+    #     logging.debug('\nScene skip list not set in INI')
+    #     skip_list = []
 
     # Copy and unzip raw Landsat scenes
     # Use these for thermal band, MTL file (scene time), and to run FMask
@@ -343,7 +361,7 @@ def main(ini_path, tile_list=None, overwrite_flag=False, mp_procs=1):
                 orig_data_ws = os.path.join(
                     image_output_ws, orig_data_folder_name)
 
-                if skip_list and scene_id in skip_list:
+                if keep_list and scene_id not in keep_list:
                     logging.debug('    {} - Skipping scene'.format(scene_id))
                     # DEADBEEF - Should the script always remove the scene
                     #   if it is in the skip list?
@@ -352,6 +370,17 @@ def main(ini_path, tile_list=None, overwrite_flag=False, mp_procs=1):
                         # input('Press ENTER to delete {}'.format(scene_id))
                         shutil.rmtree(image_output_ws)
                     continue
+
+                # DEADBEEF - Remove if keep list works
+                # if skip_list and scene_id in skip_list:
+                #     logging.debug('    {} - Skipping scene'.format(scene_id))
+                #     # DEADBEEF - Should the script always remove the scene
+                #     #   if it is in the skip list?
+                #     # Maybe only if overwrite is set?
+                #     if os.path.isdir(image_output_ws):
+                #         # input('Press ENTER to delete {}'.format(scene_id))
+                #         shutil.rmtree(image_output_ws)
+                #     continue
 
                 # If orig_data_ws doesn't exist, don't check images
                 if not os.path.isdir(orig_data_ws):

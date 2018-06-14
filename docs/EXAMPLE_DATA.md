@@ -44,43 +44,51 @@ The first step in setting up the pyMETRIC codes is identifying or constructing a
 
 A shapefile has been provided within this distribution to be used with the example workflow of pyMETRIC.  This example study area shapefile is located in \pymetric\example\study_area, and encompasses the area of the Harney Basin, Oregon.  This study area was derived from the USGS National Hydrography Dataset (WBDHU8).
 
-## Landsat skip/keep lists
+## Landsat clear scene "keep" lists
 
-Before running pyMETRIC, it is important to identify Landsat images that should not be processed at all due to excessive clouds, smoke, haze, snow, shadows, or general bad data in the study area.  Many of the pyMETRIC tools are expecting or will honor a text file of Landsat scene IDs that should be skipped.  This file is typically refered to as a "skip list" in the documentation and INI files.
+Before running pyMETRIC, it is important to identify Landsat images that should be processed and are free of excessive clouds, smoke, haze, snow, shadows, or general bad data in the study area.  Many of the pyMETRIC tools are expecting or will honor a text file of Landsat scene IDs that should processed.  This file is typically referred to as a "keep list" in the documentation and INI files.
 
-One approach for generating this skip list is to the use the [Cloud Free Scene Counts tools](https://github.com/Open-ET/cloud-free-scene-counts).  The Landsat path/row used in the example for those tools is also 43/30.
+One approach for generating this keep list is to the use the [Cloud Free Scene Counts tools](https://github.com/DRI-WSWUP/cloud-free-scene-counts).  The Landsat path/row used in the example for those tools is also 43/30.
 
-For the purpose of this example, we will directly use the list of "cloudy" scenes in 2015 identified at the end of the [Cloud Free Scene Counts example](https://github.com/Open-ET/cloud-free-scene-counts/blob/master/EXAMPLE.md).  The following list of 28 Landsat scene IDs should be pasted into a file called "cloudy_scenes.txt" and saved in "D:\pymetric\example\landsat":
+For the purpose of this example, we will directly use the list of clear scenes in 2015 identified at the end of the [Cloud Free Scene Counts example](https://github.com/DRI-WSWUP/cloud-free-scene-counts/blob/master/EXAMPLE.md).  The following list of 36 Landsat scene IDs should be pasted into a file called "clear_scenes.txt" and saved in "D:\pymetric\example\landsat":
 
 ```
 LE07_043030_20150101
-LC08_043030_20150109
-LE07_043030_20150117
-LE07_043030_20150202
+LC08_043030_20150125
+LO08_043030_20150210
+LE07_043030_20150218
 LC08_043030_20150226
-LC08_043030_20150314
+LE07_043030_20150306
 LE07_043030_20150322
 LC08_043030_20150330
 LE07_043030_20150407
+LC08_043030_20150415
+LE07_043030_20150423
+LC08_043030_20150501
+LE07_043030_20150509
 LC08_043030_20150517
 LE07_043030_20150525
 LC08_043030_20150602
+LE07_043030_20150610
 LC08_043030_20150618
+LE07_043030_20150626
 LC08_043030_20150704
 LE07_043030_20150712
+LC08_043030_20150720
+LE07_043030_20150728
 LC08_043030_20150805
+LE07_043030_20150813
+LC08_043030_20150821
 LE07_043030_20150829
-LE07_043030_20150914
+LC08_043030_20150906
+LC08_043030_20150922
 LC08_043030_20151008
+LE07_043030_20151016
 LC08_043030_20151024
 LE07_043030_20151101
 LC08_043030_20151109
-LE07_043030_20151117
-LC08_043030_20151125
 LE07_043030_20151203
 LC08_043030_20151211
-LE07_043030_20151219
-LC08_043030_20151227
 ```
 
 ## Landsat Images

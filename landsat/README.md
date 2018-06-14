@@ -1,18 +1,18 @@
 # Landsat
 
-## Landsat skip/keep lists
+## Landsat clear scene "keep" lists
 
-Before running pyMETRIC, it is important to identify Landsat images that should not be processed at all due to excessive clouds, smoke, haze, snow, shadows, or general bad data in the study area.  Many of the pyMETRIC tools are expecting or will honor a text file of Landsat scene IDs that should be skippped.  This file is typically refered to as a "skip list" in the documentation and INI files.
+Before running pyMETRIC, it is important to identify Landsat images that should be processed and are free of excessive clouds, smoke, haze, snow, shadows, or general bad data in the study area.  Many of the pyMETRIC tools are expecting or will honor a text file of Landsat scene IDs that should processed.  This file is typically referred to as a "keep list" in the documentation and INI files.
 
-One approach for generating this skip list is to the use the [Cloud Free Scene Counts tools](https://github.com/Open-ET/cloud-free-scene-counts).  The Landsat path/row used in the example for those tools is 43/30 (the same path row used in the Harney example).  An [example skip list file](../harney/landsat/skip_list.txt) can be found in the Harney example folder../harney/landsat/skip_list.txt).
+One approach for generating this keep list is to the use the [Cloud Free Scene Counts tools](https://github.com/DRI-WSWUP/cloud-free-scene-counts).  The Landsat path/row used in the example for those tools is also 43/30.  An [example keep list file](../example/landsat/clear_scenes.txt) can be found in the Harney example folder../example/landsat/clear_scenes.txt).
 
 ## Landsat Images
 
 `Note: Landsat tar.gz files will need to be stored in nested separate folders by path, row, and year`
 
-The Landsat images can be downloaded using the [Landsat578 tool](https://github.com/dgketchum/Landsat578).  This tool will need to be installed with pip (see the [pyMETRIC README](README)) and a credentials file will need to be generated before using (see the [Landsat 578 README](https://github.com/dgketchum/Landsat578/blob/master/README.md)).
+The Landsat images can be downloaded using the [Landsat578 tool](https://github.com/dgketchum/Landsat578).  This tool will need to be installed with pip (see the [pyMETRIC README](README)).
 
 The Landsat 7 and 8 images from 2015 for the study area can be downloaded using the following commands.  The Landsat images are being downloaded to the non-project landsat folder so that they can be used by other projects, but they could be downloaded directly to the project folder instead.
 ```
-D:\pyMETRIC>landsat -conf harney\harney_downloader_config.yml
+D:\pymetric>landsat -conf example\example_downloader_config.yml
 ```
