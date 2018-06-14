@@ -10,12 +10,12 @@ All of the example script calls listed below assume that the pyMETRIC repository
 
 After cloning the repository, the first step is to create a project folder if it doesn't exists.  This can be done from the command line (using the following command) or in the file explorer.
 ```
-D:\pymetric>mkdir harney
+D:\pymetric>mkdir example
 ```
 
 ## Script Parameters
 
-Most of the setup/prep scripts listed below will need to have command line arguments passed to them.  For the most part, the arguments are standaradized between scripts, but the user is strongly encouraged to look at the possible arguments by first passing the help "-h" argument to the script.
+Most of the setup/prep scripts listed below will need to have command line arguments passed to them.  For the most part, the arguments are standardized between scripts, but the user is strongly encouraged to look at the possible arguments by first passing the help "-h" argument to the script.
 For example, adding an "-h" or "--help" argument to the script call:
 ```
 D:\pymetric>python tools\download\download_ned.py -h
@@ -42,7 +42,7 @@ Almost all of the scripts will have the "-h", "--overwrite" (or "-o"), and "--de
 
 The first step in setting up the pyMETRIC codes is identifying or constructing a study area shapefile.  The study area shapefile path can then be passed to many of the following prep scripts using the "--extent" command line argument, in order to limit the spatial extent of the rasters.
 
-A shapefile has been provided within this distribution to be used with the example workflow of pyMETRIC.  This example study area shapefile is located in \pymetric\harney\study_area , and encompasses the area of the Harney Basin, Oregon.  This study area was derived from the USGS National Hydrography Dataset (WBDHU8).
+A shapefile has been provided within this distribution to be used with the example workflow of pyMETRIC.  This example study area shapefile is located in \pymetric\example\study_area, and encompasses the area of the Harney Basin, Oregon.  This study area was derived from the USGS National Hydrography Dataset (WBDHU8).
 
 ## Landsat skip/keep lists
 
@@ -50,7 +50,7 @@ Before running pyMETRIC, it is important to identify Landsat images that should 
 
 One approach for generating this skip list is to the use the [Cloud Free Scene Counts tools](https://github.com/Open-ET/cloud-free-scene-counts).  The Landsat path/row used in the example for those tools is also 43/30.
 
-For the purpose of this example, we will directly use the list of "cloudy" scenes in 2015 identified at the end of the [Cloud Free Scene Counts example](https://github.com/Open-ET/cloud-free-scene-counts/blob/master/EXAMPLE.md).  The following list of 28 Landsat scene IDs should be pasted into a file called "cloudy_scenes.txt" and saved in "D:\pymetric\harney\landsat":
+For the purpose of this example, we will directly use the list of "cloudy" scenes in 2015 identified at the end of the [Cloud Free Scene Counts example](https://github.com/Open-ET/cloud-free-scene-counts/blob/master/EXAMPLE.md).  The following list of 28 Landsat scene IDs should be pasted into a file called "cloudy_scenes.txt" and saved in "D:\pymetric\example\landsat":
 
 ```
 LE07_043030_20150101
@@ -102,9 +102,9 @@ pip install -U Landsat578
 ```
 
 The Landsat 7 and 8 images from 2015 for the study area can be downloaded using a configuration file that provides
-the location of the clear_scenes.txt (the scenes determined as usable by the user, using the [Cloud Free Scene Counts tools](https://github.com/Open-ET/cloud-free-scene-counts)) and the root of the project (i.e, D:\pymetric\harney).
+the location of the clear_scenes.txt (the scenes determined as usable by the user, using the [Cloud Free Scene Counts tools](https://github.com/Open-ET/cloud-free-scene-counts)) and the root of the project (i.e, D:\pymetric\example).
 
-An example configuration is located at: "D:\pymetric\harney\harney_downloader_config.yml"
+An example configuration is located at: "D:\pymetric\example\example_downloader_config.yml"
 To create a blank configuration file, please refer to the [Landsat 578 README](https://github.com/dgketchum/Landsat578/blob/master/README.md)
 
 Example contents of the Landsat 578 configuration file:
@@ -123,29 +123,29 @@ return_list: True
 zipped: True
 max_cloud_percent: 100
 
-# pymetric directory structure: e.g. D:/pymetric/harney/landsat/<path>/<row>/<year>
+# pymetric directory structure: e.g. D:\pymetric\harney\landsat\<path>\<row>\<year>
 # using pymetric_root and clear_scenes overrides all other arguments
 # leave both blank to disable
 
 # "pymetric_root" refers to the project folder.  If this field is populated, 
 # Landsat scenes will be downloaded and placed in directory structure with 
-# the following format: D:/pymetric/harney/landsat/<path>/<row>/<year>
+# the following format: D:\pymetric\example\landsat\<path>\<row>\<year>
 # If "pymetric_root" is left blank, Landsat scenes will be downloaded into the 
 # current working directory
 
-# An unmodified config file may be generated by entering "landsat -conf harney" in the command prompt window
-pymetric_root: D:\pymetric\harney\
-clear_scenes: D:\pymetric\harney\landsat\clear_scenes.txt
+# An unmodified config file may be generated by entering "landsat -conf example" in the command prompt window
+pymetric_root: D:\pymetric\example\
+clear_scenes: D:\pymetric\example\landsat\clear_scenes.txt
 ```
 
 To download the Landsat scenes required for the pyMETRIC example, run the following command:
 ```
-D:\pymetric>landsat -conf harney\harney_downloader_config.yml
+D:\pymetric>landsat -conf example\example_downloader_config.yml
 ```
 
 This will create the directory structure pyMETRIC is expecting, e.g., 
 ```
-D:\pymetric\harney\landsat\43\30\2015\LC70430302015101LGN01.tgz
+D:\pymetric\example\landsat\43\30\2015\LC70430302015101LGN01.tgz
 ```
 and download the zipped Landsat images.
 
@@ -164,7 +164,7 @@ D:\pymetric>python tools\download\download_footprints.py
 
 The following command will download the 1x1 degree 1-arcsecond (~30m) resolution NED tiles that intersect the study area.  By default, the NED tiles will be saved to the folder ".\dem\tiles".
 ```
-D:\pymetric>python tools\download\download_ned.py --extent harney\study_area\harney_wgs84z11.shp
+D:\pymetric>python tools\download\download_ned.py --extent example\study_area\harney_wgs84z11.shp
 ```
 
 The NED tiles are being downloaded from the [USGS FTP server](ftp://rockyftp.cr.usgs.gov/vdelivery/Datasets/Staged/Elevation/1/IMG) and can be downloaded manually also.
@@ -220,8 +220,8 @@ D:\pymetric>python tools\gridmet\gridmet_download.py --start 2014-10-01 --end 20
 
 The following commands will generate daily reference ET (from the components variables) and precipitation IMG rasters.
 ```
-D:\pymetric>python tools\gridmet\gridmet_daily_refet.py --start 2014-10-01 --end 2015-12-31 --extent harney\study_area\harney_wgs84z11.shp
-D:\pymetric>python tools\gridmet\gridmet_daily_ppt.py --start 2014-10-01 --end 2015-12-31 --extent harney\study_area\harney_wgs84z11.shp
+D:\pymetric>python tools\gridmet\gridmet_daily_refet.py --start 2014-10-01 --end 2015-12-31 --extent example\study_area\harney_wgs84z11.shp
+D:\pymetric>python tools\gridmet\gridmet_daily_ppt.py --start 2014-10-01 --end 2015-12-31 --extent example\study_area\harney_wgs84z11.shp
 ```
 
 ### Spatial CIMIS
@@ -243,13 +243,13 @@ D:\pymetric>python tools\cimis\cimis_extract_convert.py --start 2014-10-01 --end
 
 The following commands will generate daily reference ET (from the components variables)
 ```
-D:\pymetric>python tools\cimis\cimis_daily_refet.py --start 2014-10-01 --end 2015-12-31 --extent harney\study_area\harney_wgs84z11.shp
+D:\pymetric>python tools\cimis\cimis_daily_refet.py --start 2014-10-01 --end 2015-12-31 --extent example\study_area\harney_wgs84z11.shp
 ```
 
 GRIDMET (or anothere data set) must still be used for the precipitation, since it is not provided with Spatial CIMIS.
 ```
 D:\pymetric>python tools\gridmet\gridmet_download.py --start 2014-10-01 --end 2015-12-31 --vars pr
-D:\pymetric>python tools\gridmet\gridmet_daily_ppt.py --start 2014-10-01 --end 2015-12-31 --extent harney\study_area\harney_wgs84z11.shp
+D:\pymetric>python tools\gridmet\gridmet_daily_ppt.py --start 2014-10-01 --end 2015-12-31 --extent example\study_area\harney_wgs84z11.shp
 ```
 
 ## Hourly Weather Data
@@ -271,7 +271,7 @@ In order to download the NLDAS hourly data, you will need to create an [Earthdat
 Begin downloading the NLDAS hourly GRB files.  All of the NLDAS variables for a single hour are stored in a single GRB file.  The "--landsat" parameter is set in order to limit the download to only those dates and times that are needed for the Landsat images in the study area and time period.  If you don't specify the "--landsat" parameter, the script will attempt to download all hourly data within the "--start" and "--end" range.
 
 ```
-D:\pymetric>python tools\nldas\nldas_download.py <USERNAME> <PASSWORD> --start 2015-01-01 --end 2015-12-31  --landsat harney\landsat\clear_scenes.txt
+D:\pymetric>python tools\nldas\nldas_download.py <USERNAME> <PASSWORD> --start 2015-01-01 --end 2015-12-31  --landsat example\landsat\clear_scenes.txt
 ```
 
 #### Reference ET (ETr)
@@ -281,19 +281,19 @@ This code also supports the processing of both houlry ETo (Grass reference evapo
 The "--landsat" argument is optional at this point, since GRB files were only downloaded for Landsat dates in the previous step.  This flag can be useful for other projects if you have downloaded a more complete set of NLDAS data.
 
 ```
-D:\pymetric>python tools\nldas\nldas_hourly_refet.py --start 2015-01-01 --end 2015-12-31 --extent harney\study_area\harney_wgs84z11.shp --landsat harney\landsat\clear_scenes.txt
+D:\pymetric>python tools\nldas\nldas_hourly_refet.py --start 2015-01-01 --end 2015-12-31 --extent example\study_area\harney_wgs84z11.shp --landsat example\landsat\clear_scenes.txt
 ```
 
 #### Vapor Pressure
 
 ```
-D:\pymetric>python tools\nldas\nldas_hourly_ea.py --start 2015-01-01 --end 2015-12-31 --extent harney\study_area\harney_wgs84z11.shp --landsat harney\landsat\clear_scenes.txt
+D:\pymetric>python tools\nldas\nldas_hourly_ea.py --start 2015-01-01 --end 2015-12-31 --extent example\study_area\harney_wgs84z11.shp --landsat example\landsat\clear_scenes.txt
 ```
 
 #### Wind Speed
 
 ```
-D:\pymetric>python tools\nldas\nldas_hourly_wind.py --start 2015-01-01 --end 2015-12-31 --extent harney\study_area\harney_wgs84z11.shp --landsat harney\landsat\clear_scenes.txt
+D:\pymetric>python tools\nldas\nldas_hourly_wind.py --start 2015-01-01 --end 2015-12-31 --extent example\study_area\harney_wgs84z11.shp --landsat example\landsat\clear_scenes.txt
 ```
 
 #### Additional Parameters
@@ -320,7 +320,7 @@ python D:\pymetric\tools\gridmet\gridmet_download.py --start 2015-01-01 --end 20
 python D:\pymetric\tools\gridmet\gridmet_daily_refet.py --start 2015-01-01 --end 2015-12-31 -o -te -120.1 42.4 -118.3 44.3 --netcdf D:\pymetric\gridmet\netcdf
 python D:\pymetric\tools\gridmet\gridmet_daily_temp.py --start 2015-01-01 --end 2015-12-31 -o -te -120.1 42.4 -118.3 44.3 --netcdf D:\pymetric\gridmet\netcdf
 python D:\pymetric\tools\gridmet\gridmet_daily_ppt.py --start 2015-01-01 --end 2015-12-31 -o -te -120.1 42.4 -118.3 44.3 --netcdf D:\pymetric\gridmet\netcdf
-python D:\pymetric\tools\gridmet\gridmet_daily_ea.py --start 2015-01-01 --end 2015-12-31 -o -te -120.1 42.4 -118.3 44.3 --netcdf D:\pyMETRIC\gridmet\netcdf
+python D:\pymetric\tools\gridmet\gridmet_daily_ea.py --start 2015-01-01 --end 2015-12-31 -o -te -120.1 42.4 -118.3 44.3 --netcdf D:\pymetric\gridmet\netcdf
 ```
 
 #### Download NLDAS data
@@ -330,27 +330,27 @@ This section will perform the downloading and processing of hourly meteorologica
 __Please note that that an [Earthdata username and password](https://urs.earthdata.nasa.gov/) must be acquired in order to download NLDAS data.__
 
 ```
-python D:\pyMETRIC\tools\nldas\nldas_ancillary.py
-python D:\pyMETRIC\tools\nldas\nldas_download.py <Earthdata USERNAME> <Earthdata PASSWORD> --start 2015-01-01 --end 2015-12-31
-python D:\pyMETRIC\tools\nldas\nldas_hourly_ea.py --start 2015-01-01 --end 2015-12-31 -te -120.1 42.4 -118.3 44.3 --grb D:\pyMETRIC\nldas\grb
-python D:\pyMETRIC\tools\nldas\nldas_hourly_refet.py --start 2015-01-01 --end 2015-12-31 -te -120.1 42.4 -118.3 44.3 --grb D:\pyMETRIC\nldas\grb
-python D:\pyMETRIC\tools\nldas\nldas_hourly_wind.py --start 2015-01-01 --end 2015-12-31 -te -120.1 42.4 -118.3 44.3 --grb D:\pyMETRIC\nldas\grb
+python D:\pymetric\tools\nldas\nldas_ancillary.py
+python D:\pymetric\tools\nldas\nldas_download.py <Earthdata USERNAME> <Earthdata PASSWORD> --start 2015-01-01 --end 2015-12-31
+python D:\pymetric\tools\nldas\nldas_hourly_ea.py --start 2015-01-01 --end 2015-12-31 -te -120.1 42.4 -118.3 44.3 --grb D:\pymetric\nldas\grb
+python D:\pymetric\tools\nldas\nldas_hourly_refet.py --start 2015-01-01 --end 2015-12-31 -te -120.1 42.4 -118.3 44.3 --grb D:\pymetric\nldas\grb
+python D:\pymetric\tools\nldas\nldas_hourly_wind.py --start 2015-01-01 --end 2015-12-31 -te -120.1 42.4 -118.3 44.3 --grb D:\pymetric\nldas\grb
 ```
 #### Download Landcover/Land surface data
 
 This section downloads land surface data. This data includes information on elevation, agricultural land delineation, land cover, and Landsat footprints.
 
 ```
-python D:\pyMETRIC\tools\download\download_footprints.py
-python D:\pyMETRIC\tools\download\download_ned.py --extent D:\pyMETRIC\harney\study_area\harney_wgs84z11.shp
-python D:\pyMETRIC\tools\download\download_cdl.py --year 2015
-python D:\pyMETRIC\tools\download\download_landfire.py
-python D:\pyMETRIC\tools\download\download_nlcd.py
+python D:\pymetric\tools\download\download_footprints.py
+python D:\pymetric\tools\download\download_ned.py --extent D:\pymetric\example\study_area\harney_wgs84z11.shp
+python D:\pymetric\tools\download\download_cdl.py --year 2015
+python D:\pymetric\tools\download\download_landfire.py
+python D:\pymetric\tools\download\download_nlcd.py --year 2011
 ```
 
 #### Landsat data download and prep
 
 pyMETRIC uses the [Landsat578](https://github.com/dgketchum/Landsat578) package for downloading Landsat imagery products.
 ```
-D:\pyMETRIC>landsat -conf harney\harney_downloader_config.yml
+D:\pymetric>landsat -conf example\example_downloader_config.yml
 ```

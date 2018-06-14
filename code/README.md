@@ -1,7 +1,7 @@
 ### ini_templates
 -------------
 Contains several .ini (input) templates to be used with pyMETRIC.   
-__NOTE: As of 12/20/17 these templates may not be fully compatible with the most recent updates to pyMETRIC.  For the most current .ini example please use [\pyMETRIC\harney\landsat_2015.ini](\pyMETRIC\harney\landsat_2015.ini)__
+__NOTE: As of 12/20/17 these templates may not be fully compatible with the most recent updates to pyMETRIC.  For the most current .ini example please use [\pyMETRIC\example\landsat_2015.ini](\pyMETRIC\example\landsat_2015.ini)__
 
 ### interp_functions
 -------------

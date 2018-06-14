@@ -12,7 +12,7 @@ usgs_creds: D:\pymetric\usgs.txt
 # pymetric directory structure: e.g. D:/pyMETRIC/harney/landsat/path/row/year
 # mutually exclusive with output, put None if output is specified, and zipped: True
 # make sure to leave output_path, satellite, path, row, latitude, and logitude empty
-pymetric_root: D:\pymetric\harney
+pymetric_root: D:\pymetric\example
 clear_scenes: D:\pymetric\misc\clear_scenes.txt
 return_list: False
 zipped: True

@@ -28,7 +28,7 @@ D:\PYMETRIC36
 |   +---ppt
 |   +---tmmn
 |   \---tmmx
-+---harney
++—example
 |   +---2015
 |   |   +---ET
 |   |   |   +---LINEAR_ANNUAL
