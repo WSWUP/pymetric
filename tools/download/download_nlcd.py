@@ -13,7 +13,7 @@ import zipfile
 import _utils
 
 
-def main(output_folder, year=2011, overwrite_flag=False):
+def main(output_folder, year='2011', overwrite_flag=False):
     """Download NLCD raster
 
     Parameters
