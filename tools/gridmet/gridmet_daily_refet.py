@@ -49,7 +49,7 @@ def main(start_dt, end_dt, netcdf_ws, ancillary_ws, output_ws,
     overwrite_flag : bool, optional
         If True, overwrite existing files (the default is False).
     et_scaler : float or list of floats, optional
-        Single value or comma separated list of 12 monthly values
+        Single value or comma separated list of 12 monthly values (Jan-Dec)
 
     Returns
     -------
@@ -315,8 +315,6 @@ def main(start_dt, end_dt, netcdf_ws, ancillary_ws, output_ws,
                     eto_ds, 1, mask_extent=gridmet_extent, return_nodata=False)
                 # Apply BiasCorrection/Scaler based on month
                 if et_scaler is not None:
-                    # print('Scaling ETr Data. Month: {}, Scaler: {}').format(
-                    #     month, et_scaler[month-1])
                     eto_array *= et_scaler[month-1]
                 # Save
                 drigo.array_to_comp_raster(
@@ -347,8 +345,6 @@ def main(start_dt, end_dt, netcdf_ws, ancillary_ws, output_ws,
 
                 # Apply BiasCorrection/Scaler based on month
                 if et_scaler is not None:
-                    # print('Scaling ETr Data. Month: {}, Scaler: {}').format(
-                    #     month, et_scaler[month-1])
                     etr_array *= et_scaler[month-1]
 
                 drigo.array_to_comp_raster(
@@ -677,7 +673,7 @@ def arg_parse():
         help='Force overwrite of existing files')
     parser.add_argument(
         '-s', '--et_scaler', default=None, type=str, metavar='',
-        help='Single value or list of 12 monthly correction factors')
+        help='Single value or list of 12 monthly correction factors (Jan-Dec)')
     parser.add_argument(
         '-d', '--debug', default=logging.INFO, const=logging.DEBUG,
         help='Debug level logging', action="store_const", dest="loglevel")
