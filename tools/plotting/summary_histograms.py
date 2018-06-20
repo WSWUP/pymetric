@@ -23,16 +23,16 @@ def main(csv_path, fid_list='', bin_min=0, bin_max=5, bin_size=0.25):
     Returns:
         None
     """
-    logging.info('\nReading Daily csv: {}'.format(csv_path))
+    logging.info('\nReading input csv file: {}'.format(csv_path))
 
     # Check if csv file exist
     if not csv_path:
         logging.error(
-            'ERROR: Daily csv file does not exist')
+            'ERROR: csv file does not exist')
         sys.exit()
     # Attempt to read csv_file
     try:
-        daily_df = pd.read_csv(csv_path, sep=',')
+        input_df = pd.read_csv(csv_path, sep=',')
     except:
         logging.error('Error reading file. Check csv path.')
         sys.exit()
@@ -73,7 +73,7 @@ def main(csv_path, fid_list='', bin_min=0, bin_max=5, bin_size=0.25):
     if fid_list:
         fid_skiplist = sorted(list(parse_int_set(fid_list)))
         print('Skipping FIDs: {}'.format(fid_skiplist))
-        daily_df = daily_df[~daily_df['FID'].isin(fid_skiplist)]
+        input_df = input_df[~input_df['FID'].isin(fid_skiplist)]
 
     logging.info('\nCreating Summary Histogram Plots')
     # Unit Conversions
@@ -81,20 +81,21 @@ def main(csv_path, fid_list='', bin_min=0, bin_max=5, bin_size=0.25):
     mm2ft = 0.00328084 #From Google
 
     # Add Acres
-    daily_df['Area_acres'] = daily_df.PIXELS * pix2acre
+    input_df['Area_acres'] = input_df.PIXELS * pix2acre
     # Add FT Fields
-    daily_df['ET_FT'] = daily_df.ET_MM * mm2ft
-    daily_df['ETR_FT'] = daily_df.ETR_MM * mm2ft
+    input_df['ET_FT'] = input_df.ET_MM * mm2ft
+    input_df['ETR_FT'] = input_df.ETR_MM * mm2ft
     # Daily Volume Field
-    daily_df['Volume_acft'] = daily_df.Area_acres * daily_df.ET_FT
+    input_df['Volume_acft'] = input_df.Area_acres * input_df.ET_FT
 
     # Growing Season Start/End Months (inclusive)
     start_month = 4
     end_month = 10
 
     # Create Growing Season Only Dataframe
-    gs_df = daily_df[(daily_df['MONTH'] >= start_month) &
-                     (daily_df['MONTH'] <= end_month)]
+    if 'MONTH' in input_df.columns:
+        gs_df = input_df[(input_df['MONTH'] >= start_month) &
+                         (input_df['MONTH'] <= end_month)]
 
     # Dictionary to control agg of each variable
     a = {'FID': 'mean',
@@ -111,10 +112,11 @@ def main(csv_path, fid_list='', bin_min=0, bin_max=5, bin_size=0.25):
          'Volume_acft': 'sum'}
 
     # GS Grouped Dataframe
-    gs_grp_df = gs_df.groupby('FID', as_index=True).agg(a)
+    if 'MONTH' in input_df.columns:
+        gs_grp_df = gs_df.groupby('FID', as_index=True).agg(a)
 
     # Annual Grouped Dataframe
-    ann_grp_df = daily_df.groupby('FID', as_index=True).agg(a)
+    ann_grp_df = input_df.groupby('FID', as_index=True).agg(a)
 
     # Field Count Histogram Function
     def field_count_hist(grp_df, grp_name):
@@ -150,8 +152,8 @@ def main(csv_path, fid_list='', bin_min=0, bin_max=5, bin_size=0.25):
         an1Text = (
                 'Year {:.0f}\n' +
                 'Mean ET = {:.1f} ft\n' +
-                'Total Area = {:,.1f} acres\n' +
-                'Total ET Volume = {:,.1f} ac-ft').format(
+                'Total Area = {:.1f} acres\n' +
+                'Total ET Volume = {:.1f} ac-ft').format(
             y, m, total_area, total_vol)
         at = AnchoredText(
             an1Text, prop=dict(size=ann_font_size), frameon=True, loc=2)
@@ -219,13 +221,15 @@ def main(csv_path, fid_list='', bin_min=0, bin_max=5, bin_size=0.25):
         fig.clf()
         return True
 
-    # Field-count Plots
-    field_count_hist(gs_grp_df, 'Growing Season ET')
+    # Annual Plots    
+    acreage_histogram(ann_grp_df, 'Annual ET')
     field_count_hist(ann_grp_df, 'Annual ET')
 
-    # Acreage-based Plots
-    acreage_histogram(gs_grp_df, 'Growing Season ET')
-    acreage_histogram(ann_grp_df, 'Annual ET')
+    # Growing Season Plots
+    if 'MONTH' in input_df.columns:
+        field_count_hist(gs_grp_df, 'Growing Season ET')
+        acreage_histogram(gs_grp_df, 'Growing Season ET')
+    
 
 def arg_parse():
     """"""
