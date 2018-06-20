@@ -47,10 +47,7 @@ def main(scene_list_path, output_folder, start_dt=None, end_dt=None,
         '^(?P<SENSOR>LT04|LT05|LE07|LC08)_(?P<DATA_TYPE>\w{4})_'
         '(?P<PATH>\d{3})(?P<ROW>\d{3})_(?P<ACQ_DATE>\d{8})_(?:\w{8})'
         '_(?P<NUMBER>\w{2})_(?P<CATEGORY>\w{2})')
-    pre_c1_re = re.compile(
-        '^(?P<SENSOR>LT04|LT05|LE07|LC08)_(?P<DATA_TYPE>\w{4})_'
-        '(?P<PATH>\d{3})(?P<ROW>\d{3})_(?P<ACQ_DATE>\d{8})_(?:\w{8})'
-        '_(?P<NUMBER>\w{2})_(?P<CATEGORY>\w{2})')
+    pre_c1_re = re.compile('^(LT04|LT05|LE07|LC08)_\d{6}_\d{8}')
 
     logging.info('\nReading dates from scene keep list file')
     logging.info('  {}\n'.format(scene_list_path))
