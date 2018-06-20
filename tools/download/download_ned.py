@@ -7,13 +7,14 @@ import argparse
 import datetime as dt
 import logging
 import os
+import re
 import sys
 import zipfile
 
 import drigo
 from osgeo import ogr
 
-import _utils
+import _utils as utils
 
 
 def main(extent_path, output_folder, overwrite_flag=False):
@@ -46,10 +47,6 @@ def main(extent_path, output_folder, overwrite_flag=False):
     site_folder = 'vdelivery/Datasets/Staged/Elevation/1/IMG'
     # site_url = 'ftp://rockyftp.cr.usgs.gov/vdelivery/Datasets/Staged/Elevation/1/IMG'
 
-    zip_fmt = 'n{:02d}w{:03d}.zip'
-    tile_fmt = 'imgn{:02d}w{:03d}_1.img'
-    # tile_fmt = 'imgn{:02d}w{:03d}_13.img'
-
     # Use 1 degree snap point and "cellsize" to get 1x1 degree tiles
     tile_osr = drigo.epsg_osr(4326)
     tile_x, tile_y, tile_cs = 0, 0, 1
@@ -77,7 +74,7 @@ def main(extent_path, output_folder, overwrite_flag=False):
         input_extent = drigo.Extent(input_geom.GetEnvelope())
         input_extent = input_extent.ogrenv_swap()
         input_ftr = input_layer.GetNextFeature()
-        logging.debug('Input Extent: {}'.format(input_extent))
+        logging.debug('Input Extent:  {}'.format(input_extent))
 
         # Project study area extent to input raster coordinate system
         output_extent = drigo.project_extent(
@@ -88,7 +85,7 @@ def main(extent_path, output_folder, overwrite_flag=False):
         tile_extent = output_extent.copy()
         tile_extent.adjust_to_snap(
             'EXPAND', tile_x, tile_y, tile_cs)
-        logging.debug('Tile Extent: {}'.format(tile_extent))
+        logging.debug('Tile Extent:   {}'.format(tile_extent))
 
         # Get list of avaiable tiles that intersect the extent
         lat_lon_list.extend([
@@ -97,28 +94,46 @@ def main(extent_path, output_folder, overwrite_flag=False):
             for lat in range(int(tile_extent.ymax), int(tile_extent.ymin), -1)])
     lat_lon_list = sorted(list(set(lat_lon_list)))
 
+    # Retrieve a list of files available on the FTP server (keyed by lat/lon)
+    zip_files = {
+        m.group(1): x
+        for x in utils.ftp_file_list(site_url, site_folder)
+        for m in [re.search('[\w]*(n\d{2}w\d{3})[\w]*.zip', x)] if m}
+    # logging.debug(zip_files)
+
     # Attempt to download the tiles
     logging.info('')
     for lat_lon in lat_lon_list:
         logging.info('Tile: {}'.format(lat_lon))
-        zip_name = zip_fmt.format(*lat_lon)
+        lat_lon_key = 'n{:02d}w{:03d}'.format(*lat_lon)
+
+        try:
+            zip_name = zip_files[lat_lon_key]
+        except KeyError:
+            logging.exception('Error finding zip file for {}'.format(lat_lon))
         zip_url = '/'.join([site_url, site_folder, zip_name])
         zip_path = os.path.join(output_folder, zip_name)
-        tile_name = tile_fmt.format(*lat_lon)
-        tile_path = os.path.join(output_folder, tile_name)
+
+        tile_path = os.path.join(output_folder, '{}.img'.format(lat_lon_key))
 
         logging.debug('  {}'.format(zip_url))
         logging.debug('  {}'.format(zip_path))
+        logging.debug('  {}'.format(tile_path))
         if os.path.isfile(tile_path) and not overwrite_flag:
-            logging.debug('  skipping')
+            logging.debug('  Skipping')
             continue
-        _utils.ftp_download(site_url, site_folder, zip_name, zip_path)
 
-        logging.debug('  extracting')
+        utils.ftp_download(site_url, site_folder, zip_name, zip_path)
+
+        logging.debug('  Extracting')
         try:
             zip_f = zipfile.ZipFile(zip_path)
-            zip_f.extract(tile_name, output_folder)
+            img_name = [x for x in zip_f.namelist()
+                        if re.search('[\w]*(n\d{2}w\d{3})[\w]*.img$', x)][0]
+            img_path = os.path.join(output_folder, img_name)
+            zip_f.extract(img_name, output_folder)
             zip_f.close()
+            os.rename(img_path, tile_path)
         except Exception as e:
             logging.info('  Unhandled exception: {}'.format(e))
 

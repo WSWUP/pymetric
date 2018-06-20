@@ -21,6 +21,21 @@ def ftp_download(site_url, site_folder, file_name, output_path):
         logging.info('  Unhandled exception: {}'.format(e))
 
 
+def ftp_file_list(site_url, site_folder):
+    """"""
+    try:
+        ftp = FTP()
+        ftp.connect(site_url)
+        ftp.login()
+        ftp.cwd('{}'.format(site_folder))
+        files = ftp.nlst()
+        ftp.quit()
+    except Exception as e:
+        logging.info('  Unhandled exception: {}'.format(e))
+        files = []
+    return files
+
+
 def url_download(download_url, output_path, verify=True):
     """Download file from a URL using requests module"""
     response = requests.get(download_url, stream=True, verify=verify)
