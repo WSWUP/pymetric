@@ -59,8 +59,7 @@ def main(username, password, grb_ws, scene_list_path=None,
     #     '\w{8}_\w{2}_\w{2}')
 
     # Landsat Custom Scene ID
-    landsat_re = re.compile(
-        '^(?:LT04|LT05|LE07|LC08)_\d{6}_(?P<DATE>\d{8})')
+    landsat_re = re.compile('^(?:LT04|LT05|LE07|LC08)_\d{6}_(?P<DATE>\d{8})')
 
     # Process Landsat scene list and start/end input parameters
     if not scene_list_path and (not start_dt or not end_dt):
@@ -68,7 +67,10 @@ def main(username, password, grb_ws, scene_list_path=None,
             '\nERROR: A Landsat scene list or start/end dates must be set, '
             'exiting\n')
         return False
-    if scene_list_path is not None and os.path.isfile(scene_list_path):
+    if scene_list_path:
+        if not os.path.isfile(scene_list_path):
+            logging.error('\nERROR: The Landsat scene list does not exist\n')
+            return False
         # Build a date list from the Landsat scene keep list file
         logging.info('\nReading dates from scene keep list file')
         logging.info('  {}'.format(scene_list_path))
@@ -81,6 +83,7 @@ def main(username, password, grb_ws, scene_list_path=None,
         logging.debug('  {}'.format(', '.join(date_list)))
     else:
         date_list = []
+
     if start_dt and end_dt:
         logging.debug('  Start date: {}'.format(start_dt))
         logging.debug('  End date:   {}'.format(end_dt))
