@@ -131,7 +131,7 @@ return_list: True
 zipped: True
 max_cloud_percent: 100
 
-# pymetric directory structure: e.g. D:\pymetric\harney\landsat\<path>\<row>\<year>
+# pymetric directory structure: e.g. D:\pymetric\example\landsat\<path>\<row>\<year>
 # using pymetric_root and clear_scenes overrides all other arguments
 # leave both blank to disable
 
@@ -172,7 +172,7 @@ D:\pymetric>python tools\download\download_footprints.py
 
 The following command will download the 1x1 degree 1-arcsecond (~30m) resolution NED tiles that intersect the study area.  By default, the NED tiles will be saved to the folder ".\dem\tiles".
 ```
-D:\pymetric>python tools\download\download_ned.py --extent example\study_area\harney_wgs84z11.shp
+D:\pymetric>python tools\download\download_ned.py --extent example\study_area\wrs2_p043r030.shp
 ```
 
 The NED tiles are being downloaded from the [USGS FTP server](ftp://rockyftp.cr.usgs.gov/vdelivery/Datasets/Staged/Elevation/1/IMG) and can be downloaded manually also.
@@ -228,8 +228,8 @@ D:\pymetric>python tools\gridmet\gridmet_download.py --start 2014-10-01 --end 20
 
 The following commands will generate daily reference ET (from the components variables) and precipitation IMG rasters.
 ```
-D:\pymetric>python tools\gridmet\gridmet_daily_refet.py --start 2014-10-01 --end 2015-12-31 --extent example\study_area\harney_wgs84z11.shp
-D:\pymetric>python tools\gridmet\gridmet_daily_ppt.py --start 2014-10-01 --end 2015-12-31 --extent example\study_area\harney_wgs84z11.shp
+D:\pymetric>python tools\gridmet\gridmet_daily_refet.py --start 2014-10-01 --end 2015-12-31 --extent example\study_area\wrs2_p043r030.shp
+D:\pymetric>python tools\gridmet\gridmet_daily_ppt.py --start 2014-10-01 --end 2015-12-31 --extent example\study_area\wrs2_p043r030.shp
 ```
 
 ### Spatial CIMIS
@@ -251,13 +251,13 @@ D:\pymetric>python tools\cimis\cimis_extract_convert.py --start 2014-10-01 --end
 
 The following commands will generate daily reference ET (from the components variables)
 ```
-D:\pymetric>python tools\cimis\cimis_daily_refet.py --start 2014-10-01 --end 2015-12-31 --extent example\study_area\harney_wgs84z11.shp
+D:\pymetric>python tools\cimis\cimis_daily_refet.py --start 2014-10-01 --end 2015-12-31 --extent example\study_area\wrs2_p043r030.shp
 ```
 
 GRIDMET (or anothere data set) must still be used for the precipitation, since it is not provided with Spatial CIMIS.
 ```
 D:\pymetric>python tools\gridmet\gridmet_download.py --start 2014-10-01 --end 2015-12-31 --vars pr
-D:\pymetric>python tools\gridmet\gridmet_daily_ppt.py --start 2014-10-01 --end 2015-12-31 --extent example\study_area\harney_wgs84z11.shp
+D:\pymetric>python tools\gridmet\gridmet_daily_ppt.py --start 2014-10-01 --end 2015-12-31 --extent example\study_area\wrs2_p043r030.shp
 ```
 
 ## Hourly Weather Data
@@ -289,19 +289,19 @@ This code also supports the processing of both houlry ETo (Grass reference evapo
 The "--landsat" argument is optional at this point, since GRB files were only downloaded for Landsat dates in the previous step.  This flag can be useful for other projects if you have downloaded a more complete set of NLDAS data.
 
 ```
-D:\pymetric>python tools\nldas\nldas_hourly_refet.py --start 2015-01-01 --end 2015-12-31 --extent example\study_area\harney_wgs84z11.shp --landsat example\landsat\clear_scenes.txt
+D:\pymetric>python tools\nldas\nldas_hourly_refet.py --start 2015-01-01 --end 2015-12-31 --extent example\study_area\wrs2_p043r030.shp --landsat example\landsat\clear_scenes.txt
 ```
 
 #### Vapor Pressure
 
 ```
-D:\pymetric>python tools\nldas\nldas_hourly_ea.py --start 2015-01-01 --end 2015-12-31 --extent example\study_area\harney_wgs84z11.shp --landsat example\landsat\clear_scenes.txt
+D:\pymetric>python tools\nldas\nldas_hourly_ea.py --start 2015-01-01 --end 2015-12-31 --extent example\study_area\wrs2_p043r030.shp --landsat example\landsat\clear_scenes.txt
 ```
 
 #### Wind Speed
 
 ```
-D:\pymetric>python tools\nldas\nldas_hourly_wind.py --start 2015-01-01 --end 2015-12-31 --extent example\study_area\harney_wgs84z11.shp --landsat example\landsat\clear_scenes.txt
+D:\pymetric>python tools\nldas\nldas_hourly_wind.py --start 2015-01-01 --end 2015-12-31 --extent example\study_area\wrs2_p043r030.shp --landsat example\landsat\clear_scenes.txt
 ```
 
 #### Additional Parameters
@@ -350,7 +350,7 @@ This section downloads land surface data. This data includes information on elev
 
 ```
 python D:\pymetric\tools\download\download_footprints.py
-python D:\pymetric\tools\download\download_ned.py --extent D:\pymetric\example\study_area\harney_wgs84z11.shp
+python D:\pymetric\tools\download\download_ned.py --extent D:\pymetric\example\study_area\wrs2_p043r030.shp
 python D:\pymetric\tools\download\download_cdl.py --year 2015
 python D:\pymetric\tools\download\download_landfire.py
 python D:\pymetric\tools\download\download_nlcd.py --year 2011
