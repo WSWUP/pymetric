@@ -21,7 +21,7 @@ import _utils
 
 def main(start_dt, end_dt, netcdf_ws, ancillary_ws, output_ws,
          etr_flag=False, eto_flag=False, extent_path=None, output_extent=None,
-         stats_flag=True, overwrite_flag=False, scaler=None):
+         stats_flag=True, overwrite_flag=False, scalar=None):
     """Compute daily ETr/ETo from GRIDMET data
 
     Parameters
@@ -48,7 +48,7 @@ def main(start_dt, end_dt, netcdf_ws, ancillary_ws, output_ws,
         If True, compute raster statistics (the default is True).
     overwrite_flag : bool, optional
         If True, overwrite existing files (the default is False).
-    scaler : float or list of floats, optional
+    scalar : float or list of floats, optional
         Single value or comma separated list of 12 monthly values (Jan-Dec)
 
     Returns
@@ -90,21 +90,21 @@ def main(start_dt, end_dt, netcdf_ws, ancillary_ws, output_ws,
     # gridmet_band_dict['vs'] = 'wind_speed'
 
     # Read Monthly ETr/ETo scaling factors
-    if scaler is not None:
+    if scalar is not None:
         logging.info('Scaling ETo/ETr Values')
-        scaler = [float(i) for i in scaler.split(',')]
+        scalar = [float(i) for i in scalar.split(',')]
         logging.info('Monthly Scaling Factor(s):\n{}'
-            .format(str(scaler).strip('[]')))
+            .format(str(scalar).strip('[]')))
 
-        # Check the length of scaler list (1 or 12)
-        if not (len(scaler) == 1 or len(scaler) == 12):
-            logging.error('Scaler list must contain 1 or 12 factors.'
-                  '\nCurrent Length: {}. Exiting.'.format(len(scaler)))
+        # Check the length of scalar list (1 or 12)
+        if not (len(scalar) == 1 or len(scalar) == 12):
+            logging.error('scalar list must contain 1 or 12 factors.'
+                  '\nCurrent Length: {}. Exiting.'.format(len(scalar)))
             sys.exit()
 
-        # If length of scaler list is 1, copy value for each month (12x)
-        if len(scaler) is 1:
-            scaler *= 12
+        # If length of scalar list is 1, copy value for each month (12x)
+        if len(scalar) is 1:
+            scalar = scalar * 12
 
     # Get extent/geo from elevation raster
     gridmet_ds = gdal.Open(elev_raster)
@@ -314,9 +314,9 @@ def main(start_dt, end_dt, netcdf_ws, ancillary_ws, output_ws,
                 # Then extract the subset from the in memory dataset
                 eto_array = drigo.raster_ds_to_array(
                     eto_ds, 1, mask_extent=gridmet_extent, return_nodata=False)
-                # Apply BiasCorrection/Scaler based on month
-                if scaler is not None:
-                    eto_array *= scaler[month-1]
+                # Apply BiasCorrection/scalar based on month
+                if scalar is not None:
+                    eto_array *= scalar[month-1]
                 # Save
                 drigo.array_to_comp_raster(
                     eto_array.astype(np.float32), eto_raster,
@@ -344,9 +344,9 @@ def main(start_dt, end_dt, netcdf_ws, ancillary_ws, output_ws,
                 etr_array = drigo.raster_ds_to_array(
                     etr_ds, 1, mask_extent=gridmet_extent, return_nodata=False)
 
-                # Apply BiasCorrection/Scaler based on month
-                if scaler is not None:
-                    etr_array *= scaler[month-1]
+                # Apply BiasCorrection/scalar based on month
+                if scalar is not None:
+                    etr_array *= scalar[month-1]
 
                 drigo.array_to_comp_raster(
                     etr_array.astype(np.float32), etr_raster,
@@ -673,7 +673,7 @@ def arg_parse():
         '-o', '--overwrite', default=False, action="store_true",
         help='Force overwrite of existing files')
     parser.add_argument(
-        '-s', '--scaler', default=None, type=str, metavar='',
+        '-s', '--scalar', default=None, type=str, metavar='',
         help='Single value or list of 12 monthly correction factors (Jan-Dec)')
     parser.add_argument(
         '-d', '--debug', default=logging.INFO, const=logging.DEBUG,
@@ -707,4 +707,4 @@ if __name__ == '__main__':
          ancillary_ws=args.ancillary, output_ws=args.output, eto_flag=args.eto,
          etr_flag=args.etr, extent_path=args.extent, output_extent=args.te,
          stats_flag=args.stats, overwrite_flag=args.overwrite,
-         scaler=args.scaler)
+         scalar=args.scalar)
