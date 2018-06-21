@@ -985,7 +985,7 @@ def landsat_files_check(image_ws):
         return True
     # Output from prep_path_row
     elif (dn_image_dict and
-          set(image.band_toa_dict.keys() + [image.thermal_band]) ==
+          set(list(image.band_toa_dict.keys()) + [image.thermal_band]) ==
           set(dn_image_dict.keys())):
         return True
     else:
