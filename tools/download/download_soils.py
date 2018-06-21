@@ -44,7 +44,7 @@ def main(output_folder, overwrite_flag=False):
         logging.info('  {}'.format(output_path))
         _utils.url_download(download_url, output_path)
     else:
-        logging.debug('\nAWC raster already downloaded')
+        logging.info('\nAWC raster already downloaded')
 
 
 def arg_parse():

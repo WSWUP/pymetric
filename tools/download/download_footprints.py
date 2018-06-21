@@ -49,7 +49,7 @@ def main(output_folder, overwrite_flag=False):
         logging.info('  {}'.format(zip_path))
         _utils.url_download(download_url, zip_path)
     else:
-        logging.debug('\nFootprint shapefile already downloaded')
+        logging.info('\nFootprint shapefile already downloaded')
 
     if ((overwrite_flag or not os.path.isfile(output_path)) and
             os.path.isfile(zip_path)):
@@ -58,7 +58,7 @@ def main(output_folder, overwrite_flag=False):
         with zipfile.ZipFile(zip_path) as zf:
             zf.extractall(output_folder)
     else:
-        logging.debug('\nFootprint shapefile already extracted')
+        logging.info('\nFootprint shapefile already extracted')
 
 
 def arg_parse():

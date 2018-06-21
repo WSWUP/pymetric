@@ -45,14 +45,14 @@ def main(year, output_folder, overwrite_flag=False):
         logging.info('  {}'.format(zip_path))
         _utils.ftp_download(site_url, site_folder, zip_name, zip_path)
     else:
-        logging.debug('\nCDL raster already downloaded')
+        logging.info('\nCDL raster already downloaded')
 
     if os.path.isfile(zip_path):
         logging.info('\nExtracting CDL files')
         with zipfile.ZipFile(zip_path) as zf:
             zf.extractall(output_folder)
     else:
-        logging.debug('\nCDL raster already extracted')
+        logging.info('\nCDL raster already extracted')
 
 
 def arg_parse():

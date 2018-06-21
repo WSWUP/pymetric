@@ -55,7 +55,7 @@ def main(output_folder, year='2011', overwrite_flag=False):
         logging.info('  {}'.format(zip_path))
         _utils.url_download(download_url, zip_path)
     else:
-        logging.debug('\nNLCD raster already downloaded')
+        logging.info('\nNLCD raster already downloaded')
 
     if ((overwrite_flag or not os.path.isfile(output_path)) and
             os.path.isfile(zip_path)):
@@ -64,7 +64,7 @@ def main(output_folder, year='2011', overwrite_flag=False):
         with zipfile.ZipFile(zip_path) as zf:
             zf.extractall(output_folder)
     else:
-        logging.debug('\nNLCD raster already extracted')
+        logging.info('\nNLCD raster already extracted')
 
 
 def arg_parse():

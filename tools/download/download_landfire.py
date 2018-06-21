@@ -55,7 +55,7 @@ def main(output_folder, version='140', overwrite_flag=False):
         logging.info('  {}'.format(zip_path))
         _utils.url_download(download_url, zip_path)
     else:
-        logging.debug('\nLANDFIRE raster already downloaded')
+        logging.info('\nLANDFIRE raster already downloaded')
 
     if os.path.isfile(zip_path):
         logging.info('\nExtracting LANDFIRE files')
@@ -90,7 +90,7 @@ def main(output_folder, version='140', overwrite_flag=False):
                 with source, target:
                     shutil.copyfileobj(source, target)
     else:
-        logging.debug('\nLANDFIRE raster already extracted')
+        logging.info('\nLANDFIRE raster already extracted')
 
 
 def arg_parse():
