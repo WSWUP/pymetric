@@ -1025,11 +1025,12 @@ def metric_interpolate(year_ws, ini_path, mc_iter=None, bs=None,
             et_field: np.nansum,
             ppt_field: np.nansum}
         if zones_name_field.upper() != 'FID':
-            daily_zones_df = block_zones_df.groupby(
-                ['FID', zones_name_field, 'DATE'], as_index=False).agg(daily_f)
+            daily_zones_df = block_zones_df\
+                .groupby(['FID', zones_name_field, 'DATE'], as_index=False)\
+                .agg(daily_f)
         else:
-            daily_zones_df = block_zones_df.groupby(
-                ['FID', 'DATE'], as_index=False).agg(daily_f)
+            daily_zones_df = block_zones_df\
+                .groupby(['FID', 'DATE'], as_index=False).agg(daily_f)
         daily_zones_df[scale_fields] = daily_zones_df[scale_fields].divide(
             daily_zones_df['PIXELS'], axis="index")
 
@@ -1081,17 +1082,19 @@ def metric_interpolate(year_ws, ini_path, mc_iter=None, bs=None,
             ppt_field: np.nansum}
         if zones_name_field.upper() != 'FID':
             monthly_zones_df = daily_zones_df.groupby(
-                ['FID', zones_name_field, 'MONTH'],
+                ['FID', zones_name_field, 'YEAR', 'MONTH'],
                 as_index=False).agg(monthly_f)
         else:
-            monthly_zones_df = daily_zones_df.groupby(
-                ['FID', 'MONTH'], as_index=False).agg(monthly_f)
+            monthly_zones_df = daily_zones_df\
+                .groupby(['FID', 'YEAR', 'MONTH'], as_index=False)\
+                .agg(monthly_f)
         # monthly_zones_df.columns = monthly_zones_df.columns.droplevel(1)
         # Recompute ETrF from ET and ETr
         monthly_zones_df[etrf_field] = (
             monthly_zones_df[et_field] / monthly_zones_df[etr_field])
         monthly_zones_df.sort_values(
-            ['FID', 'MONTH'], ascending=[True, True], inplace=True)
+            ['FID', 'YEAR', 'MONTH'], ascending=[True, True, True],
+            inplace=True)
         monthly_zones_df = monthly_zones_df.reindex(
             monthly_zone_header_list, axis=1)
         monthly_zones_df.to_csv(
@@ -1111,8 +1114,8 @@ def metric_interpolate(year_ws, ini_path, mc_iter=None, bs=None,
                 ['FID', zones_name_field, 'YEAR'],
                 as_index=False).agg(annual_f)
         else:
-            annual_zones_df = daily_zones_df.groupby(
-                ['FID', 'YEAR'], as_index=False).agg(annual_f)
+            annual_zones_df = daily_zones_df\
+                .groupby(['FID', 'YEAR'], as_index=False).agg(annual_f)
         # annual_zones_df.columns = annual_zones_df.columns.droplevel(1)
         # Recompute ETrF from ET and ETr
         annual_zones_df[etrf_field] = (
