@@ -94,11 +94,6 @@ def main(ini_path, tile_list=None, overwrite_flag=False):
     skip_list_path = python_common.read_param(
         'skip_list_path', '', config, 'INPUTS')
 
-    # Ts and albedo corrections
-    ts_correction_flag = python_common.read_param(
-        'Ts_correction_flag', True, config, 'INPUTS')
-    k_value = python_common.read_param('K_value', 2, config, 'INPUTS')
-
     # tile_gcs_buffer = read_param('tile_buffer', 0.1, config)
 
     # Template input files for scripts
@@ -229,8 +224,10 @@ def main(ini_path, tile_list=None, overwrite_flag=False):
         min_spinup_days = python_common.read_param(
             'swb_min_spinup_days', 5, config, 'INPUTS')
 
-    # Weather data parameters
     if metric_flag:
+        zom_remap_path = config.get('INPUTS', 'zom_remap_path')
+
+        # Weather data parameters
         metric_hourly_weather_list = ['NLDAS', 'REFET']
         metric_hourly_weather = config.get(
             'INPUTS', 'metric_hourly_weather').upper()
@@ -286,6 +283,7 @@ def main(ini_path, tile_list=None, overwrite_flag=False):
     if metric_flag:
         file_check(metric_ini)
         file_check(pixel_rating_ini)
+        file_check(zom_remap_path)
     if interp_rasters_flag or interp_tables_flag or monte_carlo_flag:
         if etrf_input_ws is not None:
             folder_check(etrf_input_ws)
@@ -447,6 +445,8 @@ def main(ini_path, tile_list=None, overwrite_flag=False):
             config.read(metric_ini)
             # shutil.copy(metric_ini, tile_metric_ini)
             # config.read(tile_metric_ini)
+
+            config.set('INPUTS', 'zom_remap_path', zom_remap_path)
 
             if metric_hourly_weather == 'REFET':
                 # Add RefET options
@@ -655,10 +655,6 @@ def main(ini_path, tile_list=None, overwrite_flag=False):
             config.set('INPUTS', 'awc_input_path', awc_input_path)
             config.set('INPUTS', 'swb_spinup_days', spinup_days)
             config.set('INPUTS', 'swb_min_spinup_days', min_spinup_days)
-
-            # Albdeo and Ts correction
-            config.set('INPUTS', 'Ts_correction_flag', ts_correction_flag)
-            config.set('INPUTS', 'K_value ', k_value)
 
             logging.debug('  {}'.format(year_interpolator_ini))
             with open(year_interpolator_ini, 'w') as config_f:
