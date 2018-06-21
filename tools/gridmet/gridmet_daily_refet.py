@@ -21,7 +21,7 @@ import _utils
 
 def main(start_dt, end_dt, netcdf_ws, ancillary_ws, output_ws,
          etr_flag=False, eto_flag=False, extent_path=None, output_extent=None,
-         stats_flag=True, overwrite_flag=False):
+         stats_flag=True, overwrite_flag=False, scalar=None):
     """Compute daily ETr/ETo from GRIDMET data
 
     Parameters
@@ -48,6 +48,8 @@ def main(start_dt, end_dt, netcdf_ws, ancillary_ws, output_ws,
         If True, compute raster statistics (the default is True).
     overwrite_flag : bool, optional
         If True, overwrite existing files (the default is False).
+    scalar : float or list of floats, optional
+        Single value or comma separated list of 12 monthly values (Jan-Dec)
 
     Returns
     -------
@@ -86,6 +88,23 @@ def main(start_dt, end_dt, netcdf_ws, ancillary_ws, output_ws,
     # gridmet_band_dict['tmmn'] = 'air_temperature'
     # gridmet_band_dict['tmmx'] = 'air_temperature'
     # gridmet_band_dict['vs'] = 'wind_speed'
+
+    # Read Monthly ETr/ETo scaling factors
+    if scalar is not None:
+        logging.info('Scaling ETo/ETr Values')
+        scalar = [float(i) for i in scalar.split(',')]
+        logging.info('Monthly Scaling Factor(s):\n{}'
+            .format(str(scalar).strip('[]')))
+
+        # Check the length of scalar list (1 or 12)
+        if not (len(scalar) == 1 or len(scalar) == 12):
+            logging.error('scalar list must contain 1 or 12 factors.'
+                  '\nCurrent Length: {}. Exiting.'.format(len(scalar)))
+            sys.exit()
+
+        # If length of scalar list is 1, copy value for each month (12x)
+        if len(scalar) is 1:
+            scalar = scalar * 12
 
     # Get extent/geo from elevation raster
     gridmet_ds = gdal.Open(elev_raster)
@@ -271,6 +290,7 @@ def main(start_dt, end_dt, netcdf_ws, ancillary_ws, output_ws,
 
             doy = int(date_dt.strftime('%j'))
             doy_i = range(1, year_days + 1).index(doy)
+            month = date_dt.month
 
             if eto_flag:
                 # Arrays are being read as masked array with a fill value of -9999
@@ -294,7 +314,9 @@ def main(start_dt, end_dt, netcdf_ws, ancillary_ws, output_ws,
                 # Then extract the subset from the in memory dataset
                 eto_array = drigo.raster_ds_to_array(
                     eto_ds, 1, mask_extent=gridmet_extent, return_nodata=False)
-
+                # Apply BiasCorrection/scalar based on month
+                if scalar is not None:
+                    eto_array *= scalar[month-1]
                 # Save
                 drigo.array_to_comp_raster(
                     eto_array.astype(np.float32), eto_raster,
@@ -321,6 +343,11 @@ def main(start_dt, end_dt, netcdf_ws, ancillary_ws, output_ws,
                     output_proj=gridmet_proj)
                 etr_array = drigo.raster_ds_to_array(
                     etr_ds, 1, mask_extent=gridmet_extent, return_nodata=False)
+
+                # Apply BiasCorrection/scalar based on month
+                if scalar is not None:
+                    etr_array *= scalar[month-1]
+
                 drigo.array_to_comp_raster(
                     etr_array.astype(np.float32), etr_raster,
                     band=doy, stats_flag=False)
@@ -646,6 +673,9 @@ def arg_parse():
         '-o', '--overwrite', default=False, action="store_true",
         help='Force overwrite of existing files')
     parser.add_argument(
+        '-s', '--scalar', default=None, type=str, metavar='',
+        help='Single value or list of 12 monthly correction factors (Jan-Dec)')
+    parser.add_argument(
         '-d', '--debug', default=logging.INFO, const=logging.DEBUG,
         help='Debug level logging', action="store_const", dest="loglevel")
     args = parser.parse_args()
@@ -676,4 +706,5 @@ if __name__ == '__main__':
     main(start_dt=args.start, end_dt=args.end, netcdf_ws=args.netcdf,
          ancillary_ws=args.ancillary, output_ws=args.output, eto_flag=args.eto,
          etr_flag=args.etr, extent_path=args.extent, output_extent=args.te,
-         stats_flag=args.stats, overwrite_flag=args.overwrite)
+         stats_flag=args.stats, overwrite_flag=args.overwrite,
+         scalar=args.scalar)
