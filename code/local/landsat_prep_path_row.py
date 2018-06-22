@@ -970,6 +970,11 @@ def landsat_files_check(image_ws):
     dn_image_dict = et_common.landsat_band_image_dict(
         image.orig_data_ws, image.image_re)
 
+    # DEADBEEF - Script is always overwriting because dn_image_dict has QA band
+    # Quick fix until a better solution is identified for skipping QA band
+    if 'QA' in dn_image_dict.keys():
+        del dn_image_dict['QA']
+
     # Check if sets of rasters are present
     # Output from metric_model1
     if (os.path.isfile(image.albedo_sur_raster) and
