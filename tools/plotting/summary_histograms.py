@@ -62,8 +62,8 @@ def main(csv_path, output_folder, fid_list='', bin_min=0, bin_max=5,
                       '\nEnd Date: {}'.format(start_dt, end_dt))
         sys.exit()
 
-    if end_dt < start_dt:
-        logging.error('End date cannot be the same or before start date.'
+    if (start_dt and end_dt) and (end_dt < start_dt):
+        logging.error('End date cannot be before start date.'
                       ' Exiting.')
         sys.exit()
 
@@ -72,7 +72,7 @@ def main(csv_path, output_folder, fid_list='', bin_min=0, bin_max=5,
         if 'DATE' in input_df.columns:
             input_df['DATE'] = pd.to_datetime(input_df['DATE'])
             logging.info('\nFiltering By Date. Start: {:%Y-%m-%d}, '
-                         'End: {:%Y-%m-%d}').format(start_dt, end_dt)
+                         'End: {:%Y-%m-%d}'.format(start_dt, end_dt))
             input_df = input_df[(input_df['DATE'] >= start_dt) &
                                 (input_df['DATE'] <= end_dt)]
             if input_df.empty:
