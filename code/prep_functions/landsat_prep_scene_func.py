@@ -251,7 +251,8 @@ def main(image_ws, ini_path, blocksize=2048, smooth_flag=False,
 
     # Check for Landsat TOA images
     if (calc_refl_toa_flag and
-        (set(list(image.band_toa_dict.keys()) + [image.thermal_band, image.qa_band]) !=
+        (set(list(image.band_toa_dict.keys()) +
+                 [image.thermal_band, image.qa_band]) !=
             set(dn_image_dict.keys()))):
         logging.warning(
             '\nMissing Landsat images but calc_refl_toa_flag=True'
