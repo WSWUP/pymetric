@@ -204,7 +204,7 @@ if __name__ == '__main__':
     logging.info(log_f.format('Current Directory:', os.getcwd()))
     logging.info(log_f.format('Script:', os.path.basename(sys.argv[0])))
 
-    main(ini_path=args.ini, tile_list=args.path_row, stats_flag=args.stats,
-         overwrite_flag=args.overwrite, mp_procs=args.multiprocessing,
-         delay=args.delay, debug_flag=args.loglevel==logging.DEBUG,
-         new_window_flag=args.window)
+    main(ini_path=args.ini, tile_list=args.path_row, blocksize=args.blocksize,
+         stats_flag=args.stats, overwrite_flag=args.overwrite,
+         mp_procs=args.multiprocessing, delay=args.delay,
+         debug_flag=args.loglevel==logging.DEBUG, new_window_flag=args.window)
