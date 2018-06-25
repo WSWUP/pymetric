@@ -64,6 +64,8 @@ The Landsat578 , refet, and drigo modules must be installed separately with pip:
 
 ## Environment Variables
 
+### Windows
+
 #### PYTHONPATH
 
 Many of the pyMETRIC scripts reference the "common" functions in the [pymetric/code/support](code/support) folder.  To be able to access these functions, you will need to add/append this path to the PYTHONPATH environment variable.
@@ -83,19 +85,41 @@ setx PYTHONPATH "D:\pymetric\code\support;%PYTHONPATH%"
 
 #### GDAL_DATA
 
-In order to execute pyMETRIC code, the GDAL_DATA environmental variable may need to be set (*example*: GDAL_DATA = C:\Miniconda3\Library\share\gdal). **Depending on your specific installation of Python on pyMETRIC, you file path for GDAL_DATA may be different**
-
+In order to execute pyMETRIC code, the GDAL_DATA environmental variable may need to be set (*example*: GDAL_DATA = C:\Miniconda3\envs\pymetric\Library\share\gdal). **Depending on your specific installation of Python, you file path for GDAL_DATA may be different**
 
 On a Windows PC, the user environment variables can be set through the Control Panel (System -> Advanced system settings -> Environment Variables).  Assuming that pyMETRIC was cloned/installed directly to the D: drive and Python 3 is used, the GDAL_DATA environmental variable may be set as:
 ```
-C:\Miniconda3\Library\share\gdal
+C:\Miniconda3\envs\pymetric\Library\share\gdal
 ```
 
 This environment variable can also be set at the command line.  First check if GDAL_DATA is already set by typing:
 ```
 echo %GDAL_DATA%
 ```
+
 If GDAL_DATA is not set, type the following in the command prompt:
 ```
-> setx GDAL_DATA "C:\Miniconda3\Library\share\gdal"
+> setx GDAL_DATA "C:\Miniconda3\envs\pymetric\Library\share\gdal"
+```
+
+### Mac / Linux
+
+#### PYTHONPATH
+
+```
+echo $PYTHONPATH
+```
+
+```
+export PYTHONPATH=/Users/<USER>/pymetric/code/support
+```
+
+#### GDAL_DATA
+
+```
+echo $GDAL_DATA
+```
+
+```
+export GDAL_DATA=/Users/<USER>/miniconda3/envs/python3/share/gdal
 ```

@@ -49,6 +49,15 @@ def main(ini_path, tile_list=None, overwrite_flag=False, mp_procs=1):
     """
     logging.info('\nPrepare path/row data')
 
+    # Check the GDAL_DATA environment variable
+    # TODO: Move this to drigo
+    if "GDAL_DATA" not in os.environ:
+        raise Exception('The GDAL_DATA environment variable is not set\n')
+    elif not os.path.isdir(os.getenv("GDAL_DATA")):
+        raise Exception(
+            'The GDAL_DATA environment folder does not exist:\n'
+            '  {}'.format(os.getenv("GDAL_DATA")))
+
     # Open config file
     config = python_common.open_ini(ini_path)
 
