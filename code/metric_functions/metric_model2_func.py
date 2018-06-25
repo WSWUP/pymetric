@@ -24,7 +24,7 @@ import et_numpy
 from python_common import open_ini, read_param, remove_file
 
 
-def metric_model2(image_ws, ini_path,
+def metric_model2(image_ws, ini_path, bs=None,
                   mc_iter=None, kc_cold=None, kc_hot=None,
                   cold_xy=None, hot_xy=None, stats_flag=None,
                   overwrite_flag=None, ts_diff_threshold=4):
@@ -36,18 +36,26 @@ def metric_model2(image_ws, ini_path,
         Image folder path.
     ini_path : str
         METRIC config file path.
-    mc_iter : int
+    bs : int, optional
+        Processing block size (the default is None).  If set, this blocksize
+        parameter will be used instead of the value in the INI file.
+    mc_iter : int, optional
         Iteration number for Monte Carlo processing.
-    kc_cold : float
+    kc_cold : float, optional
         Kc value at the cold calibration point.
-    kc_hot : float
+    kc_hot : float, optional
         Kc value at the hot calibration point.
-    cold_xy : tuple
-        Location of the cold calibration point.
-    hot_xy : tuple
+    cold_xy : tuple, optional
+        Location of the cold calibration point (the default is None).
+    hot_xy : tuple, optional
         Location of the hot calibration point.
+    stats_flag : bool, optional
+        If True, compute raster statistics (the default is None).
     ovewrite_flag : bool, optional
         If True, overwrite existing files (the default is None).
+    ts_diff_threshold : float, optional
+        Minimum temperature difference in Kelvin between the hot and cold pixel
+        (the default is 4).
 
     Returns
     -------
@@ -94,7 +102,8 @@ def metric_model2(image_ws, ini_path,
         'dense_veg_min_albedo', 0.18, config, 'INPUTS')
 
     # Arrays are processed by block
-    bs = read_param('block_size', 1024, config, 'INPUTS')
+    if bs is None:
+        bs = read_param('block_size', 1024, config, 'INPUTS')
     logging.info(log_fmt.format('Block Size:', bs))
 
     # Raster pyramids/statistics
@@ -1748,6 +1757,9 @@ def arg_parse():
         '-i', '--ini', required=True,
         help='METRIC input file', metavar='PATH')
     parser.add_argument(
+        '-bs', '--blocksize', default=None, type=int,
+        help='Processing block size (overwrite INI blocksize parameter)')
+    parser.add_argument(
         '--debug', default=logging.INFO, const=logging.DEBUG,
         help='Debug level logging', action="store_const", dest="loglevel")
     parser.add_argument(
@@ -1816,8 +1828,8 @@ if __name__ == '__main__':
     # Delay
     sleep(random.uniform(0, max([0, args.delay])))
 
-    # METRIC Model 2
     metric_model2(image_ws=args.workspace, ini_path=args.ini,
                   mc_iter=args.iter, kc_cold=args.kc[0], kc_hot=args.kc[1],
                   cold_xy=args.xy_cold, hot_xy=args.xy_hot,
-                  stats_flag=args.stats, overwrite_flag=args.overwrite)
+                  bs=args.blocksize, stats_flag=args.stats,
+                  overwrite_flag=args.overwrite)

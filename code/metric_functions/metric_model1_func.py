@@ -25,15 +25,21 @@ import et_numpy
 from python_common import open_ini, read_param, remove_file
 
 
-def metric_model1(image_ws, ini_path, stats_flag=None, overwrite_flag=None):
+def metric_model1(image_ws, ini_path, bs=None, stats_flag=None,
+                  overwrite_flag=None):
     """METRIC Model 1 Version
 
     Parameters
     ----------
     image_ws : str
-        Image folder path
+        Image folder path.
     ini_path : str
-        METRIC config file path
+        METRIC config file path.
+    bs : int, optional
+        Processing block size (the default is None).  If set, this blocksize
+        parameter will be used instead of the value in the INI file.
+    stats_flag : bool, optional
+        If True, compute raster statistics (the default is None).
     ovewrite_flag : bool, optional
         If True, overwrite existing files (the default is None).
 
@@ -64,8 +70,10 @@ def metric_model1(image_ws, ini_path, stats_flag=None, overwrite_flag=None):
 
     # Get input parameters
     logging.debug('  Reading Input File')
+
     # Arrays are processed by block
-    bs = read_param('block_size', 1024, config)
+    if bs is None:
+        bs = read_param('block_size', 1024, config)
     logging.info(log_fmt.format('Block Size:', bs))
 
     # Raster pyramids/statistics
@@ -1083,6 +1091,9 @@ def arg_parse():
         '-i', '--ini', required=True,
         help='METRIC input file', metavar='PATH')
     parser.add_argument(
+        '-bs', '--blocksize', default=None, type=int,
+        help='Processing block size (overwrite INI blocksize parameter)')
+    parser.add_argument(
         '--debug', default=logging.INFO, const=logging.DEBUG,
         help='Debug level logging', action="store_const", dest="loglevel")
     parser.add_argument(
@@ -1138,6 +1149,6 @@ if __name__ == '__main__':
     # Delay
     sleep(random.uniform(0, max([0, args.delay])))
 
-    # METRIC Model 1
     metric_model1(image_ws=args.workspace, ini_path=args.ini,
-                  stats_flag=args.stats, overwrite_flag=args.overwrite)
+                  bs=args.blocksize, stats_flag=args.stats,
+                  overwrite_flag=args.overwrite)

@@ -24,7 +24,7 @@ import et_numpy
 import python_common
 
 
-def main(image_ws, ini_path, blocksize=2048, smooth_flag=False,
+def main(image_ws, ini_path, bs=2048, smooth_flag=False,
          stats_flag=False, overwrite_flag=False):
     """Prep a Landsat scene for METRIC
 
@@ -34,8 +34,8 @@ def main(image_ws, ini_path, blocksize=2048, smooth_flag=False,
         Landsat scene folder that will be prepped.
     ini_path : str
         File path of the input parameters file.
-    blocksize : int, optional
-        Size of blocks to process (the default is 2048).
+    bs : int, optional
+        Processing block size (the default is 2048).
     smooth_flag : bool, optional
         If True, dilate/erode image to remove fringe/edge pixels
         (the default is False).
@@ -521,10 +521,10 @@ def main(image_ws, ini_path, blocksize=2048, smooth_flag=False,
             logging.info('Processing by block')
             logging.debug('  Mask  cols/rows: {}/{}'.format(
                 common_cols, common_rows))
-            for b_i, b_j in drigo.block_gen(common_rows, common_cols, blocksize):
+            for b_i, b_j in drigo.block_gen(common_rows, common_cols, bs):
                 logging.debug('  Block  y: {:5d}  x: {:5d}'.format(b_i, b_j))
                 block_data_mask = drigo.array_to_block(
-                    common_array, b_i, b_j, blocksize).astype(np.bool)
+                    common_array, b_i, b_j, bs).astype(np.bool)
                 block_rows, block_cols = block_data_mask.shape
                 block_geo = drigo.array_offset_geo(common_geo, b_j, b_i)
                 block_extent = drigo.geo_extent(
@@ -1055,7 +1055,7 @@ def arg_parse():
     #    help='METRIC input file', metavar='FILE')
     parser.add_argument(
         '-bs', '--blocksize', default=2048, type=int,
-        help='Block size')
+        help='Processing block size')
     parser.add_argument(
         '--smooth', default=False, action="store_true",
         help='Dilate and erode image to remove fringe/edge pixels')
@@ -1092,6 +1092,6 @@ if __name__ == '__main__':
     # Delay
     sleep(random.uniform(0, max([0, args.delay])))
 
-    main(image_ws=args.workspace, ini_path=args.ini, blocksize=args.blocksize,
+    main(image_ws=args.workspace, ini_path=args.ini, bs=args.blocksize,
          smooth_flag=args.smooth, stats_flag=args.stats,
          overwrite_flag=args.overwrite)
