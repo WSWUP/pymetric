@@ -22,7 +22,8 @@ import et_image
 from python_common import open_ini, read_param, remove_file
 
 
-def pixel_rating(image_ws, ini_path, stats_flag=False, overwrite_flag=None):
+def pixel_rating(image_ws, ini_path, bs=None, stats_flag=False,
+                 overwrite_flag=None):
     """Calculate pixel rating
 
     Parameters
@@ -31,6 +32,9 @@ def pixel_rating(image_ws, ini_path, stats_flag=False, overwrite_flag=None):
         Image folder path.
     ini_path : str
         Pixel regions config file path.
+    bs : int, optional
+        Processing block size (the default is None).  If set, this blocksize
+        parameter will be used instead of the value in the INI file.
     stats_flag : bool, optional
         if True, compute raster statistics (the default is False).
     ovewrite_flag : bool, optional
@@ -63,9 +67,11 @@ def pixel_rating(image_ws, ini_path, stats_flag=False, overwrite_flag=None):
 
     # Get input parameters
     logging.debug('  Reading Input File')
+
     # Arrays are processed by block
-    bs = read_param('block_size', 1024, config)
-    logging.info('  {:<18s} {}'.format('Block Size:', bs))
+    if bs is None:
+        bs = read_param('block_size', 1024, config)
+    logging.info(log_fmt.format('Block Size:', bs))
 
     # Raster pyramids/statistics
     pyramids_flag = read_param('pyramids_flag', False, config)
@@ -746,6 +752,9 @@ def arg_parse():
         '-i', '--ini', required=True,
         help='Pixel regions input file', metavar='PATH')
     parser.add_argument(
+        '-bs', '--blocksize', default=None, type=int,
+        help='Processing block size (overwrite INI blocksize parameter)')
+    parser.add_argument(
         '--debug', default=logging.INFO, const=logging.DEBUG,
         help='Debug level logging', action="store_const", dest="loglevel")
     parser.add_argument(
@@ -803,5 +812,5 @@ if __name__ == '__main__':
 
     # Pixel Rating
     pixel_rating(
-        image_ws=args.workspace, ini_path=args.ini,
+        image_ws=args.workspace, ini_path=args.ini, bs=args.blocksize,
         stats_flag=args.stats, overwrite_flag=args.overwrite)

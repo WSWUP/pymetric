@@ -158,11 +158,11 @@ def arg_parse():
         '-bs', '--blocksize', default=None, type=int,
         help='Processing block size (overwrite INI blocksize parameter)')
     parser.add_argument(
-        '--delay', default=0, type=int, metavar='N',
-        help='Max random delay starting job in seconds')
-    parser.add_argument(
         '-d', '--debug', default=logging.INFO, const=logging.DEBUG,
         help='Debug level logging', action="store_const", dest="loglevel")
+    parser.add_argument(
+        '--delay', default=0, type=int, metavar='N',
+        help='Max random delay starting job in seconds')
     parser.add_argument(
         '-mp', '--multiprocessing', default=1, type=int,
         metavar='N', nargs='?', const=mp.cpu_count(),
