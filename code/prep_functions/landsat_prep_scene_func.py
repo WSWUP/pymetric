@@ -237,7 +237,7 @@ def main(image_ws, ini_path, bs=2048, smooth_flag=False,
         # overwrite_flag = False
 
     # QA band must exist
-    if (calc_fmask_common_flag and image.qa_band not in dn_image_dict.keys()):
+    if calc_fmask_common_flag and image.qa_band not in dn_image_dict.keys():
         logging.warning(
              '\nQA band does not exist but calc_fmask_common_flag=True'
              '\n  Setting calc_fmask_common_flag=False\n  {}'.format(
@@ -345,19 +345,20 @@ def main(image_ws, ini_path, bs=2048, smooth_flag=False,
     # if calc_refl_sur_ledaps_flag and not os.path.isdir(image.refl_sur_ws):
     #     os.makedirs(image.refl_sur_ws)
 
-    # Apply overwrite flag
-    if overwrite_flag:
-        overwrite_list = [
-            image.fmask_cloud_raster, image.fmask_snow_raster,
-            image.fmask_water_raster
-            # image.elev_raster, image.landuse_raster
-            # image.common_area_raster
-        ]
-        for overwrite_path in overwrite_list:
-            try:
-                python_common.remove_file(image.fmask_cloud_raster)
-            except:
-                pass
+    # DEADBEEF - This is being further down just for the Fmask images
+    # # Apply overwrite flag
+    # if overwrite_flag:
+    #     overwrite_list = [
+    #         image.fmask_cloud_raster, image.fmask_snow_raster,
+    #         image.fmask_water_raster
+    #         # image.elev_raster, image.landuse_raster
+    #         # image.common_area_raster
+    #     ]
+    #     for overwrite_path in overwrite_list:
+    #         try:
+    #             python_common.remove_file(image.fmask_cloud_raster)
+    #         except:
+    #             pass
 
     # Use QA band to build common area rasters
     logging.info('\nCommon Area Raster')
@@ -371,7 +372,6 @@ def main(image_ws, ini_path, bs=2048, smooth_flag=False,
     common_array = qa_array != 1
     common_rows, common_cols = common_array.shape
     del qa_ds
-
 
     # First try applying user defined cloud masks
     cloud_mask_path = os.path.join(
@@ -397,6 +397,7 @@ def main(image_ws, ini_path, bs=2048, smooth_flag=False,
         logging.info('  Applying Fmask to common area')
         fmask_array = et_numpy.bqa_fmask_func(qa_array)
         fmask_mask = (fmask_array >= 2) & (fmask_array <= 4)
+
         if fmask_erode_flag:
             logging.info(
                 '  Eroding and dilating Fmask clouds, shadows, and snow '
@@ -408,12 +409,14 @@ def main(image_ws, ini_path, bs=2048, smooth_flag=False,
             fmask_mask = ndimage.binary_dilation(
                 fmask_mask, iterations=fmask_erode_cells,
                 structure=ndimage.generate_binary_structure(2, 2))
+
         if fmask_buffer_flag:
             logging.info(
                 '  Buffering Fmask clouds, shadows, and snow '
                 '{} cells'.format(fmask_buffer_cells))
             # Only buffer clouds, shadow, and snow (not water or nodata)
             if fmask_mask is None:
+                logging.debug('  Rebuilding fmask mask from array')
                 fmask_mask = (fmask_array >= 2) & (fmask_array <= 4)
             fmask_mask = ndimage.binary_dilation(
                 fmask_mask, iterations=fmask_buffer_cells,
@@ -449,18 +452,26 @@ def main(image_ws, ini_path, bs=2048, smooth_flag=False,
         logging.info('\nFmask')
         fmask_array = et_numpy.bqa_fmask_func(qa_array)
 
-        # Remove existing rasters
+        # Remove existing Fmask rasters
         if (calc_fmask_flag and overwrite_flag and
                 os.path.isfile(image.fmask_output_raster)):
+            logging.debug('  Overwriting: {}'.format(
+                image.fmask_output_raster))
             python_common.remove_file(image.fmask_output_raster)
         if (calc_fmask_cloud_flag and overwrite_flag and
                 os.path.isfile(image.fmask_cloud_raster)):
+            logging.debug('  Overwriting: {}'.format(
+                image.fmask_cloud_raster))
             python_common.remove_file(image.fmask_cloud_raster)
         if (calc_fmask_snow_flag and overwrite_flag and
                 os.path.isfile(image.fmask_snow_raster)):
+            logging.debug('  Overwriting: {}'.format(
+                image.fmask_snow_raster))
             python_common.remove_file(image.fmask_snow_raster)
         if (calc_fmask_water_flag and overwrite_flag and
                 os.path.isfile(image.fmask_water_raster)):
+            logging.debug('  Overwriting: {}'.format(
+                image.fmask_water_raster))
             python_common.remove_file(image.fmask_water_raster)
 
         # Save Fmask data as separate rasters
