@@ -368,7 +368,7 @@ def bqa_fmask_func(qa):
     shadow_mask = np.bitwise_and(np.right_shift(qa, 7), 3) >= 3
     snow_mask = np.bitwise_and(np.right_shift(qa, 9), 3) >= 3
 
-    fmask = (fill_mask != 1).astype(np.uint8)
+    fmask = (fill_mask != True).astype(np.uint8)
     fmask[shadow_mask] = 2
     fmask[snow_mask] = 3
     fmask[cloud_mask] = 4
