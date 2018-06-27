@@ -394,12 +394,13 @@ def main(image_ws, ini_path, bs=2048, smooth_flag=False,
         del cloud_mask_memory_ds, cloud_array
 
     if calc_fmask_common_flag:
+        logging.info('  Applying Fmask to common area')
         fmask_array = et_numpy.bqa_fmask_func(qa_array)
         fmask_mask = (fmask_array >= 2) & (fmask_array <= 4)
         if fmask_erode_flag:
             logging.info(
-                 '  Eroding and dilating Fmask clouds, shadows, and snow '
-                 '{} cells\n    to remove errantly masked pixels.'.format(
+                '  Eroding and dilating Fmask clouds, shadows, and snow '
+                '{} cells\n    to remove errantly masked pixels.'.format(
                     fmask_erode_cells))
             fmask_mask = ndimage.binary_erosion(
                 fmask_mask, iterations=fmask_erode_cells,
@@ -409,16 +410,18 @@ def main(image_ws, ini_path, bs=2048, smooth_flag=False,
                 structure=ndimage.generate_binary_structure(2, 2))
         if fmask_buffer_flag:
             logging.info(
-                ('  Buffering Fmask clouds, shadows, and snow ' +
-                 '{} cells').format(fmask_buffer_cells))
+                '  Buffering Fmask clouds, shadows, and snow '
+                '{} cells'.format(fmask_buffer_cells))
             # Only buffer clouds, shadow, and snow (not water or nodata)
             if fmask_mask is None:
                 fmask_mask = (fmask_array >= 2) & (fmask_array <= 4)
             fmask_mask = ndimage.binary_dilation(
                 fmask_mask, iterations=fmask_buffer_cells,
                 structure=ndimage.generate_binary_structure(2, 2))
+
         # Reset common_array for buffered cells
         common_array[fmask_mask] = 0
+
         del fmask_array, fmask_mask
 
     if common_array is not None:
@@ -440,21 +443,36 @@ def main(image_ws, ini_path, bs=2048, smooth_flag=False,
         logging.debug('  Common geo:      {}'.format(common_geo))
         logging.debug('  Common extent:   {}'.format(common_extent))
 
-
     # Extract Fmask components as separate rasters
     if (calc_fmask_flag or calc_fmask_cloud_flag or calc_fmask_snow_flag or
             calc_fmask_water_flag):
         logging.info('\nFmask')
         fmask_array = et_numpy.bqa_fmask_func(qa_array)
 
+        # Remove existing rasters
+        if (calc_fmask_flag and overwrite_flag and
+                os.path.isfile(image.fmask_output_raster)):
+            python_common.remove_file(image.fmask_output_raster)
+        if (calc_fmask_cloud_flag and overwrite_flag and
+                os.path.isfile(image.fmask_cloud_raster)):
+            python_common.remove_file(image.fmask_cloud_raster)
+        if (calc_fmask_snow_flag and overwrite_flag and
+                os.path.isfile(image.fmask_snow_raster)):
+            python_common.remove_file(image.fmask_snow_raster)
+        if (calc_fmask_water_flag and overwrite_flag and
+                os.path.isfile(image.fmask_water_raster)):
+            python_common.remove_file(image.fmask_water_raster)
+
         # Save Fmask data as separate rasters
         if (calc_fmask_flag and not os.path.isfile(image.fmask_output_raster)):
+            logging.debug('  Saving Fmask raster')
             drigo.array_to_raster(
                 fmask_array.astype(np.uint8), image.fmask_output_raster,
                 output_geo=common_geo, output_proj=common_proj,
                 mask_array=None, output_nodata=255, stats_flag=stats_flag)
         if (calc_fmask_cloud_flag and
                 not os.path.isfile(image.fmask_cloud_raster)):
+            logging.debug('  Saving Fmask cloud raster')
             fmask_cloud_array = (fmask_array == 2) | (fmask_array == 4)
             drigo.array_to_raster(
                 fmask_cloud_array.astype(np.uint8), image.fmask_cloud_raster,
@@ -463,6 +481,7 @@ def main(image_ws, ini_path, bs=2048, smooth_flag=False,
             del fmask_cloud_array
         if (calc_fmask_snow_flag and
                 not os.path.isfile(image.fmask_snow_raster)):
+            logging.debug('  Saving Fmask snow raster')
             fmask_snow_array = (fmask_array == 3)
             drigo.array_to_raster(
                 fmask_snow_array.astype(np.uint8), image.fmask_snow_raster,
@@ -471,6 +490,7 @@ def main(image_ws, ini_path, bs=2048, smooth_flag=False,
             del fmask_snow_array
         if (calc_fmask_water_flag and
                 not os.path.isfile(image.fmask_water_raster)):
+            logging.debug('  Saving Fmask water raster')
             fmask_water_array = (fmask_array == 1)
             drigo.array_to_raster(
                 fmask_water_array.astype(np.uint8), image.fmask_water_raster,

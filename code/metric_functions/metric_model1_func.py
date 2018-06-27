@@ -180,21 +180,21 @@ def metric_model1(image_ws, ini_path, bs=None, stats_flag=None,
     refl_sur_model_type_list = ['TASUMI', 'LEDAPS']
     if refl_sur_model_type.upper() not in refl_sur_model_type_list:
         logging.error(
-            ('\nERROR: Surface reflectance model type {} is invalid.' +
-             '\nERROR: Set refl_sur_model_type to {}').format(
+            '\nERROR: Surface reflectance model type {} is invalid.'
+            '\nERROR: Set refl_sur_model_type to {}'.format(
                 refl_sur_model_type, ','.join(refl_sur_model_type_list)))
         return False
     elif (refl_sur_model_type == 'LEDAPS' and
         not os.path.isfile(raster_dict['refl_sur_ledaps'])):
         logging.warning(
-            '\nLEDAPS at-surface refl. composite raster does not exist' +
+            '\nLEDAPS at-surface refl. composite raster does not exist'
             '\nLEDAPS at-surface refl. products will not be calculated')
         save_dict['refl_sur_ledaps'] = False
         clear_refl_sur_flag = True
     elif (refl_sur_model_type == 'TASUMI' and
           not os.path.isfile(raster_dict['refl_toa'])):
         logging.warning(
-            '\nTOA reflectance composite raster does not exist' +
+            '\nTOA reflectance composite raster does not exist'
             '\nTasumi at-surface refl. products will not be calculated')
         save_dict['refl_sur_tasumi'] = False
         clear_refl_sur_flag = True
@@ -217,7 +217,7 @@ def metric_model1(image_ws, ini_path, bs=None, stats_flag=None,
     # Clear TOA save flags if input TOA raster is not present
     if not os.path.isfile(raster_dict['refl_toa']):
         logging.warning(
-            '\nTOA reflectance composite raster does not exist' +
+            '\nTOA reflectance composite raster does not exist'
             '\nTOA reflectance products will not be calculated')
         save_dict['ndvi_toa'] = False
         save_dict['ndwi_toa'] = False

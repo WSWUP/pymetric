@@ -361,8 +361,8 @@ def bqa_fmask_func(qa):
     # Extracting cloud masks from BQA using np.right_shift() and np.bitwise_and()
     # Cloud (med & high confidence), then snow, then shadow, then fill
     # Low confidence clouds tend to be the FMask buffer
-    fill_mask = np.bitwise_and(np.right_shift(qa, 0), 1)
-    cloud_mask = np.bitwise_and(np.right_shift(qa, 4), 1)  # cloud bit
+    fill_mask = np.bitwise_and(np.right_shift(qa, 0), 1) >= 1
+    cloud_mask = np.bitwise_and(np.right_shift(qa, 4), 1) >= 1  # cloud bit
     cloud_mask &= np.bitwise_and(np.right_shift(qa, 5), 3) >= 2  # cloud conf.
     cloud_mask |= np.bitwise_and(np.right_shift(qa, 11), 3) >= 3  # cirrus
     shadow_mask = np.bitwise_and(np.right_shift(qa, 7), 3) >= 3
