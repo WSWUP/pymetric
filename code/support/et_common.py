@@ -360,7 +360,7 @@ def read_refet_instantaneous_func(refet_file, year, doy, localtime=None,
         re.findall(r'[^\s]+', line) for line in refet_header_list]
 
     # Get field names
-    refet_field_list = map(list, zip(*refet_header_list))
+    refet_field_list = list(map(list, zip(*refet_header_list)))
 
     # join with spaces, remove '-', remove leading/trailing whitespace
     # Last, to match genfromtxt, replace ' ' with '_'
@@ -622,14 +622,14 @@ def read_nvet_daily_func(nvet_list, year, doy_range):
 
     # Check that there is ETr data for each DOY in doy_range
     if len(doy_valid_etr_list) == 0:
-        logging.error(('\nERROR: The CSV ETr file does not contain data '
-                       'for the year {}\n').format(year))
+        logging.error('\nERROR: The CSV ETr file does not contain data '
+                      'for the year {}\n'.format(year))
         sys.exit()
     elif set(doy_range) - set(doy_valid_etr_list):
         logging.error(
-            ('\nERROR: The CSV ETr appears to have missing data' +
-             '\n  The following days are missing:\n  {}').format(
-                sorted(map(int, list(set(doy_range)-set(doy_valid_etr_list))))))
+            '\nERROR: The CSV ETr appears to have missing data'
+            '\n  The following days are missing:\n  {}'.format(sorted(list(
+                map(int, list(set(doy_range)-set(doy_valid_etr_list)))))))
         sys.exit()
     return doy_etr_dict
 
@@ -701,9 +701,9 @@ def read_csv_etr_daily_func(csv_etr_list, year, doy_range):
         sys.exit()
     elif set(doy_range) - set(doy_valid_etr_list):
         logging.error(
-            ('\nERROR: The CSV ETr appears to have missing data' +
-             '\n  The following days are missing:\n  {}').format(sorted(
-                map(int, list(set(doy_range) - set(doy_valid_etr_list))))))
+            '\nERROR: The CSV ETr appears to have missing data'
+            '\n  The following days are missing:\n  {}'.format(sorted(list(
+                map(int, list(set(doy_range) - set(doy_valid_etr_list)))))))
         sys.exit()
     return doy_etr_dict
 

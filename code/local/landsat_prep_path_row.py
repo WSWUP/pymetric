@@ -49,6 +49,15 @@ def main(ini_path, tile_list=None, overwrite_flag=False, mp_procs=1):
     """
     logging.info('\nPrepare path/row data')
 
+    # Check the GDAL_DATA environment variable
+    # TODO: Move this to drigo
+    if "GDAL_DATA" not in os.environ:
+        raise Exception('The GDAL_DATA environment variable is not set\n')
+    elif not os.path.isdir(os.getenv("GDAL_DATA")):
+        raise Exception(
+            'The GDAL_DATA environment folder does not exist:\n'
+            '  {}'.format(os.getenv("GDAL_DATA")))
+
     # Open config file
     config = python_common.open_ini(ini_path)
 
@@ -970,11 +979,6 @@ def landsat_files_check(image_ws):
     dn_image_dict = et_common.landsat_band_image_dict(
         image.orig_data_ws, image.image_re)
 
-    # DEADBEEF - Script is always overwriting because dn_image_dict has QA band
-    # Quick fix until a better solution is identified for skipping QA band
-    if 'QA' in dn_image_dict.keys():
-        del dn_image_dict['QA']
-
     # Check if sets of rasters are present
     # Output from metric_model1
     if (os.path.isfile(image.albedo_sur_raster) and
@@ -990,7 +994,8 @@ def landsat_files_check(image_ws):
         return True
     # Output from prep_path_row
     elif (dn_image_dict and
-          set(list(image.band_toa_dict.keys()) + [image.thermal_band]) ==
+          set(list(image.band_toa_dict.keys()) +
+                  [image.thermal_band, image.qa_band]) ==
           set(dn_image_dict.keys())):
         return True
     else:

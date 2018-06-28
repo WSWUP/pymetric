@@ -88,7 +88,7 @@ def main(ini_path, tile_list=None, blocksize=2048, smooth_flag=True,
 
     # Setup command line argument
     call_args = [sys.executable, func_path, '-i', ini_path]
-    if blocksize:
+    if blocksize is not None:
         call_args.extend(['--blocksize', str(blocksize)])
     if stats_flag:
         call_args.append('--stats')
@@ -174,7 +174,7 @@ def arg_parse():
         help='Landsat project input file', metavar='FILE')
     parser.add_argument(
         '-bs', '--blocksize', default=2048, type=int,
-        help='Block size')
+        help='Processing block size')
     parser.add_argument(
         '--delay', default=0, type=int, metavar='N',
         help='Max random delay starting job in seconds')

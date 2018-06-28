@@ -119,9 +119,13 @@ def main(extent_path, output_folder, overwrite_flag=False):
         logging.debug('  {}'.format(zip_url))
         logging.debug('  {}'.format(zip_path))
         logging.debug('  {}'.format(tile_path))
-        if os.path.isfile(tile_path) and not overwrite_flag:
-            logging.debug('  Skipping')
-            continue
+        if os.path.isfile(tile_path):
+            if not overwrite_flag:
+                logging.debug('  Skipping')
+                continue
+            else:
+                logging.debug('  Removing')
+                os.remove(tile_path)
 
         utils.ftp_download(site_url, site_folder, zip_name, zip_path)
 

@@ -73,10 +73,6 @@ class Image:
             self.thermal_band = '6'
             self.band_toa_dict = {
                 '1': 1, '2': 2, '3': 3, '4': 4, '5': 5, '7': 6}
-            # DEADBEEF
-            # self.band_toa_dict = {
-            #     '1': 1, '2': 2, '3': 3, '4': 4,
-            #     '5': 5, self.thermal_band: 6, '7': 7}
             self.band_sur_dict = {
                 '1': 1, '2': 2, '3': 3, '4': 4, '5': 5, '7': 6}
         elif self.prefix == 'LT05':
@@ -84,23 +80,13 @@ class Image:
             self.thermal_band = '6'
             self.band_toa_dict = {
                 '1': 1, '2': 2, '3': 3, '4': 4, '5': 5, '7': 6}
-            # DEADBEEF
-            # self.band_toa_dict = {
-            #     '1': 1, '2': 2, '3': 3, '4': 4,
-            #     '5': 5, self.thermal_band: 6, '7': 7}
             self.band_sur_dict = {
                 '1': 1, '2': 2, '3': 3, '4': 4, '5': 5, '7': 6}
         elif self.prefix == 'LE07':
             self.type = 'Landsat7'
             self.thermal_band = '6'
-            # self.thermal_band = '61'
-            # self.thermal_band = '6_VCID_1'
             self.band_toa_dict = {
                 '1': 1, '2': 2, '3': 3, '4': 4, '5': 5, '7': 6}
-            # DEADBEEF
-            # self.band_toa_dict = {
-            #     '1': 1, '2': 2, '3': 3, '4': 4,
-            #     '5': 5, self.thermal_band: 6, '7': 7}
             self.band_sur_dict = {
                 '1': 1, '2': 2, '3': 3, '4': 4, '5': 5, '7': 6}
         elif self.prefix == 'LC08':
@@ -108,10 +94,6 @@ class Image:
             self.thermal_band = '10'
             self.band_toa_dict = {
                 '2': 1, '3': 2, '4': 3, '5': 4, '6': 5, '7': 6}
-            # DEADBEEF
-            # self.band_toa_dict = {
-            #     '2': 1, '3': 2, '4': 3, '5': 4,
-            #     '6': 5, self.thermal_band: 6, '7': 7}
             self.band_sur_dict = {
                 '2': 1, '3': 2, '4': 3, '5': 4, '6': 5, '7': 6}
 

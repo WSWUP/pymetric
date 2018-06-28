@@ -16,7 +16,7 @@ import sys
 from python_common import open_ini, read_param, call_mp
 
 
-def main(ini_path, tile_list=None, stats_flag=True,
+def main(ini_path, tile_list=None, blocksize=None, stats_flag=True,
          overwrite_flag=False, mp_procs=1, delay=0,
          debug_flag=False, new_window_flag=False):
     """Run METRIC Model 1 for all images
@@ -28,6 +28,9 @@ def main(ini_path, tile_list=None, stats_flag=True,
     tile_list : list, optional
         Landsat path/rows to process (i.e. [p045r043, p045r033]).
         This will override the tile list in the INI file.
+    blocksize : int, optional
+        Processing block size (the default is None).  If set, this blocksize
+        parameter will be used instead of the value in the INI file.
     stats_flag : bool, optional
         If True, compute raster statistics (the default is True).
     overwrite_flag : bool, optional
@@ -114,6 +117,8 @@ def main(ini_path, tile_list=None, stats_flag=True,
 
         # Setup command line argument
         call_args = [sys.executable, func_path, '-i', ini_path]
+        if blocksize is not None:
+            call_args.extend(['--blocksize', str(blocksize)])
         if stats_flag:
             call_args.append('--stats')
         if overwrite_flag:
@@ -150,11 +155,14 @@ def arg_parse():
         '-i', '--ini', required=True,
         help='Landsat project input file', metavar='PATH')
     parser.add_argument(
-        '--delay', default=0, type=int, metavar='N',
-        help='Max random delay starting job in seconds')
+        '-bs', '--blocksize', default=None, type=int,
+        help='Processing block size (overwrite INI blocksize parameter)')
     parser.add_argument(
         '-d', '--debug', default=logging.INFO, const=logging.DEBUG,
         help='Debug level logging', action="store_const", dest="loglevel")
+    parser.add_argument(
+        '--delay', default=0, type=int, metavar='N',
+        help='Max random delay starting job in seconds')
     parser.add_argument(
         '-mp', '--multiprocessing', default=1, type=int,
         metavar='N', nargs='?', const=mp.cpu_count(),
@@ -196,7 +204,7 @@ if __name__ == '__main__':
     logging.info(log_f.format('Current Directory:', os.getcwd()))
     logging.info(log_f.format('Script:', os.path.basename(sys.argv[0])))
 
-    main(ini_path=args.ini, tile_list=args.path_row, stats_flag=args.stats,
-         overwrite_flag=args.overwrite, mp_procs=args.multiprocessing,
-         delay=args.delay, debug_flag=args.loglevel==logging.DEBUG,
-         new_window_flag=args.window)
+    main(ini_path=args.ini, tile_list=args.path_row, blocksize=args.blocksize,
+         stats_flag=args.stats, overwrite_flag=args.overwrite,
+         mp_procs=args.multiprocessing, delay=args.delay,
+         debug_flag=args.loglevel==logging.DEBUG, new_window_flag=args.window)

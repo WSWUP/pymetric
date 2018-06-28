@@ -24,7 +24,7 @@ import et_numpy
 import python_common
 
 
-def main(image_ws, ini_path, blocksize=2048, smooth_flag=False,
+def main(image_ws, ini_path, bs=2048, smooth_flag=False,
          stats_flag=False, overwrite_flag=False):
     """Prep a Landsat scene for METRIC
 
@@ -34,8 +34,8 @@ def main(image_ws, ini_path, blocksize=2048, smooth_flag=False,
         Landsat scene folder that will be prepped.
     ini_path : str
         File path of the input parameters file.
-    blocksize : int, optional
-        Size of blocks to process (the default is 2048).
+    bs : int, optional
+        Processing block size (the default is 2048).
     smooth_flag : bool, optional
         If True, dilate/erode image to remove fringe/edge pixels
         (the default is False).
@@ -237,7 +237,7 @@ def main(image_ws, ini_path, blocksize=2048, smooth_flag=False,
         # overwrite_flag = False
 
     # QA band must exist
-    if (calc_fmask_common_flag and image.qa_band not in dn_image_dict.keys()):
+    if calc_fmask_common_flag and image.qa_band not in dn_image_dict.keys():
         logging.warning(
              '\nQA band does not exist but calc_fmask_common_flag=True'
              '\n  Setting calc_fmask_common_flag=False\n  {}'.format(
@@ -251,7 +251,8 @@ def main(image_ws, ini_path, blocksize=2048, smooth_flag=False,
 
     # Check for Landsat TOA images
     if (calc_refl_toa_flag and
-        (set(list(image.band_toa_dict.keys()) + [image.thermal_band, image.qa_band]) !=
+        (set(list(image.band_toa_dict.keys()) +
+                 [image.thermal_band, image.qa_band]) !=
             set(dn_image_dict.keys()))):
         logging.warning(
             '\nMissing Landsat images but calc_refl_toa_flag=True'
@@ -344,19 +345,20 @@ def main(image_ws, ini_path, blocksize=2048, smooth_flag=False,
     # if calc_refl_sur_ledaps_flag and not os.path.isdir(image.refl_sur_ws):
     #     os.makedirs(image.refl_sur_ws)
 
-    # Apply overwrite flag
-    if overwrite_flag:
-        overwrite_list = [
-            image.fmask_cloud_raster, image.fmask_snow_raster,
-            image.fmask_water_raster
-            # image.elev_raster, image.landuse_raster
-            # image.common_area_raster
-        ]
-        for overwrite_path in overwrite_list:
-            try:
-                python_common.remove_file(image.fmask_cloud_raster)
-            except:
-                pass
+    # DEADBEEF - This is being further down just for the Fmask images
+    # # Apply overwrite flag
+    # if overwrite_flag:
+    #     overwrite_list = [
+    #         image.fmask_cloud_raster, image.fmask_snow_raster,
+    #         image.fmask_water_raster
+    #         # image.elev_raster, image.landuse_raster
+    #         # image.common_area_raster
+    #     ]
+    #     for overwrite_path in overwrite_list:
+    #         try:
+    #             python_common.remove_file(image.fmask_cloud_raster)
+    #         except:
+    #             pass
 
     # Use QA band to build common area rasters
     logging.info('\nCommon Area Raster')
@@ -370,7 +372,6 @@ def main(image_ws, ini_path, blocksize=2048, smooth_flag=False,
     common_array = qa_array != 1
     common_rows, common_cols = common_array.shape
     del qa_ds
-
 
     # First try applying user defined cloud masks
     cloud_mask_path = os.path.join(
@@ -393,12 +394,14 @@ def main(image_ws, ini_path, blocksize=2048, smooth_flag=False,
         del cloud_mask_memory_ds, cloud_array
 
     if calc_fmask_common_flag:
+        logging.info('  Applying Fmask to common area')
         fmask_array = et_numpy.bqa_fmask_func(qa_array)
         fmask_mask = (fmask_array >= 2) & (fmask_array <= 4)
+
         if fmask_erode_flag:
             logging.info(
-                 '  Eroding and dilating Fmask clouds, shadows, and snow '
-                 '{} cells\n    to remove errantly masked pixels.'.format(
+                '  Eroding and dilating Fmask clouds, shadows, and snow '
+                '{} cells\n    to remove errantly masked pixels.'.format(
                     fmask_erode_cells))
             fmask_mask = ndimage.binary_erosion(
                 fmask_mask, iterations=fmask_erode_cells,
@@ -406,18 +409,22 @@ def main(image_ws, ini_path, blocksize=2048, smooth_flag=False,
             fmask_mask = ndimage.binary_dilation(
                 fmask_mask, iterations=fmask_erode_cells,
                 structure=ndimage.generate_binary_structure(2, 2))
+
         if fmask_buffer_flag:
             logging.info(
-                ('  Buffering Fmask clouds, shadows, and snow ' +
-                 '{} cells').format(fmask_buffer_cells))
+                '  Buffering Fmask clouds, shadows, and snow '
+                '{} cells'.format(fmask_buffer_cells))
             # Only buffer clouds, shadow, and snow (not water or nodata)
             if fmask_mask is None:
+                logging.debug('  Rebuilding fmask mask from array')
                 fmask_mask = (fmask_array >= 2) & (fmask_array <= 4)
             fmask_mask = ndimage.binary_dilation(
                 fmask_mask, iterations=fmask_buffer_cells,
                 structure=ndimage.generate_binary_structure(2, 2))
+
         # Reset common_array for buffered cells
         common_array[fmask_mask] = 0
+
         del fmask_array, fmask_mask
 
     if common_array is not None:
@@ -439,21 +446,44 @@ def main(image_ws, ini_path, blocksize=2048, smooth_flag=False,
         logging.debug('  Common geo:      {}'.format(common_geo))
         logging.debug('  Common extent:   {}'.format(common_extent))
 
-
     # Extract Fmask components as separate rasters
     if (calc_fmask_flag or calc_fmask_cloud_flag or calc_fmask_snow_flag or
             calc_fmask_water_flag):
         logging.info('\nFmask')
         fmask_array = et_numpy.bqa_fmask_func(qa_array)
 
+        # Remove existing Fmask rasters
+        if (calc_fmask_flag and overwrite_flag and
+                os.path.isfile(image.fmask_output_raster)):
+            logging.debug('  Overwriting: {}'.format(
+                image.fmask_output_raster))
+            python_common.remove_file(image.fmask_output_raster)
+        if (calc_fmask_cloud_flag and overwrite_flag and
+                os.path.isfile(image.fmask_cloud_raster)):
+            logging.debug('  Overwriting: {}'.format(
+                image.fmask_cloud_raster))
+            python_common.remove_file(image.fmask_cloud_raster)
+        if (calc_fmask_snow_flag and overwrite_flag and
+                os.path.isfile(image.fmask_snow_raster)):
+            logging.debug('  Overwriting: {}'.format(
+                image.fmask_snow_raster))
+            python_common.remove_file(image.fmask_snow_raster)
+        if (calc_fmask_water_flag and overwrite_flag and
+                os.path.isfile(image.fmask_water_raster)):
+            logging.debug('  Overwriting: {}'.format(
+                image.fmask_water_raster))
+            python_common.remove_file(image.fmask_water_raster)
+
         # Save Fmask data as separate rasters
         if (calc_fmask_flag and not os.path.isfile(image.fmask_output_raster)):
+            logging.debug('  Saving Fmask raster')
             drigo.array_to_raster(
                 fmask_array.astype(np.uint8), image.fmask_output_raster,
                 output_geo=common_geo, output_proj=common_proj,
                 mask_array=None, output_nodata=255, stats_flag=stats_flag)
         if (calc_fmask_cloud_flag and
                 not os.path.isfile(image.fmask_cloud_raster)):
+            logging.debug('  Saving Fmask cloud raster')
             fmask_cloud_array = (fmask_array == 2) | (fmask_array == 4)
             drigo.array_to_raster(
                 fmask_cloud_array.astype(np.uint8), image.fmask_cloud_raster,
@@ -462,6 +492,7 @@ def main(image_ws, ini_path, blocksize=2048, smooth_flag=False,
             del fmask_cloud_array
         if (calc_fmask_snow_flag and
                 not os.path.isfile(image.fmask_snow_raster)):
+            logging.debug('  Saving Fmask snow raster')
             fmask_snow_array = (fmask_array == 3)
             drigo.array_to_raster(
                 fmask_snow_array.astype(np.uint8), image.fmask_snow_raster,
@@ -470,6 +501,7 @@ def main(image_ws, ini_path, blocksize=2048, smooth_flag=False,
             del fmask_snow_array
         if (calc_fmask_water_flag and
                 not os.path.isfile(image.fmask_water_raster)):
+            logging.debug('  Saving Fmask water raster')
             fmask_water_array = (fmask_array == 1)
             drigo.array_to_raster(
                 fmask_water_array.astype(np.uint8), image.fmask_water_raster,
@@ -520,10 +552,10 @@ def main(image_ws, ini_path, blocksize=2048, smooth_flag=False,
             logging.info('Processing by block')
             logging.debug('  Mask  cols/rows: {}/{}'.format(
                 common_cols, common_rows))
-            for b_i, b_j in drigo.block_gen(common_rows, common_cols, blocksize):
+            for b_i, b_j in drigo.block_gen(common_rows, common_cols, bs):
                 logging.debug('  Block  y: {:5d}  x: {:5d}'.format(b_i, b_j))
                 block_data_mask = drigo.array_to_block(
-                    common_array, b_i, b_j, blocksize).astype(np.bool)
+                    common_array, b_i, b_j, bs).astype(np.bool)
                 block_rows, block_cols = block_data_mask.shape
                 block_geo = drigo.array_offset_geo(common_geo, b_j, b_i)
                 block_extent = drigo.geo_extent(
@@ -1054,7 +1086,7 @@ def arg_parse():
     #    help='METRIC input file', metavar='FILE')
     parser.add_argument(
         '-bs', '--blocksize', default=2048, type=int,
-        help='Block size')
+        help='Processing block size')
     parser.add_argument(
         '--smooth', default=False, action="store_true",
         help='Dilate and erode image to remove fringe/edge pixels')
@@ -1091,6 +1123,6 @@ if __name__ == '__main__':
     # Delay
     sleep(random.uniform(0, max([0, args.delay])))
 
-    main(image_ws=args.workspace, ini_path=args.ini, blocksize=args.blocksize,
+    main(image_ws=args.workspace, ini_path=args.ini, bs=args.blocksize,
          smooth_flag=args.smooth, stats_flag=args.stats,
          overwrite_flag=args.overwrite)
