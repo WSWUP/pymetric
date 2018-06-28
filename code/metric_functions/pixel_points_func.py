@@ -41,7 +41,8 @@ def pixel_points(image_ws, groupsize=1, blocksize=2048,
     shapefile_flag : bool, optional
         If True, save calibration points to shapefile (the default is False).
     multipoing_flag : bool, optional
-        If True, save cal. points to multipoint shapefile (the default is False).
+        If True, save calibration points to multipoint shapefile
+        (the default is False).
     pixel_point_iters : int, optional
         Number of iterations (the default is 0).
     ovewrite_flag : bool, optional
@@ -105,13 +106,13 @@ def pixel_points(image_ws, groupsize=1, blocksize=2048,
         region_ws, 'hot_pixel_suggestion' + r_fmt)
     if not os.path.isfile(cold_region_raster):
         logging.error(
-            ('\nERROR: The cold pixel suggestion raster {} does ' +
-             'not exist\n').format(os.path.basename(cold_region_raster)))
+            '\nERROR: The cold pixel suggestion raster {} does '
+            'not exist\n'.format(os.path.basename(cold_region_raster)))
         sys.exit()
     if not os.path.isfile(hot_region_raster):
         logging.error(
-            ('\nERROR: The hot pixel suggestion raster {} does ' +
-             'not exist\n').format(os.path.basename(hot_region_raster)))
+            '\nERROR: The hot pixel suggestion raster {} does '
+            'not exist\n'.format(os.path.basename(hot_region_raster)))
         sys.exit()
 
     # Check placement_mode value
@@ -129,8 +130,8 @@ def pixel_points(image_ws, groupsize=1, blocksize=2048,
         sys.exit()
     elif groupsize >= 1:
         logging.info(
-            ('  Randomly within suggested region polygons with '
-             'more than {} pixels').format(groupsize))
+            '  Randomly within suggested region polygons with '
+            'more than {} pixels'.format(groupsize))
 
     # Select random pixel
     cold_x, cold_y = get_random_point_in_raster(

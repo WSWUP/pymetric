@@ -17,7 +17,7 @@ import sys
 from python_common import open_ini, read_param, call_mp
 
 
-def main(ini_path, tile_list=None, groupsize=1, blocksize=2046,
+def main(ini_path, tile_list=None, groupsize=1, blocksize=2048,
          shapefile_flag=True, geojson_flag=False, overwrite_flag=False,
          mp_procs=1, delay=0, debug_flag=False, new_window_flag=False):
     """Run pixel points for all images
