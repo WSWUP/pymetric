@@ -22,6 +22,7 @@ The following external Python modules must be present to run pyMETRIC:
 * [Landsat578](https://github.com/dgketchum/Landsat578) (for downloading Landsat images)
 * [refet](https://github.com/DRI-WSWUP/RefET) (for computing reference ET)
 * [drigo](https://github.com/DRI-WSWUP/drigo) (GDAL/OGR helper functions)
+* [yaml]http://yaml.org/) (input file reader that's needed for Landsat578 downloader)
 
 Please see the [requirements](../requirements.txt) file for details on the versioning requirements.  The module version numbers listed in the file were tested and are known to work.  Other combinations of versions may work but have not been tested.
 
@@ -54,7 +55,7 @@ The environment must be "activated" before use:
 
 Most of the external modules can then be installed by calling:
 ```
-> conda install numpy scipy pandas matplotlib gdal netcdf4 future requests
+> conda install numpy scipy pandas matplotlib gdal netcdf4 future requests yaml
 ```
 
 The Landsat578 , refet, and drigo modules must be installed separately with pip:
