@@ -146,7 +146,8 @@ pymetric_root: D:\pymetric\example\
 clear_scenes: D:\pymetric\example\landsat\clear_scenes.txt
 ```
 
-To download the Landsat scenes required for the pyMETRIC example, run the following command:
+To download the Landsat scenes required for the pyMETRIC example, you only need the path to the project and a clear_scenes.txt file. If `pymetric_root` and `clear_scenes` fields are populated, the program won't read any of the other options, so don't worry about modifying them.
+Run the following command:
 ```
 D:\pymetric>landsat -conf example\example_downloader_config.yml
 ```
