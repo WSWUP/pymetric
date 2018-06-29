@@ -97,7 +97,7 @@ LC08_043030_20151211
 
 The Landsat images can be downloaded using the [Landsat578 tool](https://github.com/dgketchum/Landsat578).  
 This tool will need to be installed with pip (see the [pymetric README](README)) and a credentials file will
-need to be generated before using (see the [Landsat 578 README](https://github.com/dgketchum/Landsat578/blob/master/README.md)).
+need to be generated before by using the `-conf` argument and a directory location (e.g., `landsat -conf C:\pymetric\example_folder` (see the [Landsat 578 README](https://github.com/dgketchum/Landsat578/blob/master/README.md)).
 
 ```
 pip install Landsat578
