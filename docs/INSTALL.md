@@ -22,7 +22,7 @@ The following external Python modules must be present to run pyMETRIC:
 * [Landsat578](https://github.com/dgketchum/Landsat578) (for downloading Landsat images)
 * [refet](https://github.com/DRI-WSWUP/RefET) (for computing reference ET)
 * [drigo](https://github.com/DRI-WSWUP/drigo) (GDAL/OGR helper functions)
-* [yaml]http://yaml.org/) (input file reader that's needed for Landsat578 downloader)
+* [PyYAML](https://pyyaml.org/wiki/PyYAMLDocumentation) (input file reader that's needed for Landsat578 downloader)
 
 Please see the [requirements](../requirements.txt) file for details on the versioning requirements.  The module version numbers listed in the file were tested and are known to work.  Other combinations of versions may work but have not been tested.
 
