@@ -78,8 +78,9 @@ def main(ini_path, tile_list=None, blocksize=2048, smooth_flag=True,
     # Regular expressions
     # For now assume path/row are two digit numbers
     tile_re = re.compile('p\d{3}r\d{3}', re.IGNORECASE)
-    image_re = re.compile(
-        '^(LT04|LT05|LE07|LC08)_(\d{3})(\d{3})_(\d{4})(\d{2})(\d{2})')
+    image_id_re = re.compile(
+        '^(LT04|LT05|LE07|LC08)_(?:\w{4})_(\d{3})(\d{3})_'
+        '(\d{4})(\d{2})(\d{2})_(?:\d{8})_(?:\d{2})_(?:\w{2})$')
 
     # Check inputs folders/paths
     if not os.path.isdir(project_ws):
@@ -105,7 +106,7 @@ def main(ini_path, tile_list=None, blocksize=2048, smooth_flag=True,
         with open(keep_list_path) as keep_list_f:
             keep_list = keep_list_f.readlines()
             keep_list = [image_id.strip() for image_id in keep_list
-                         if image_re.match(image_id.strip())]
+                         if image_id_re.match(image_id.strip())]
     else:
         logging.debug('\nScene keep list not set in INI')
         keep_list = []
@@ -117,7 +118,7 @@ def main(ini_path, tile_list=None, blocksize=2048, smooth_flag=True,
     #     with open(skip_list_path) as skip_list_f:
     #         skip_list = skip_list_f.readlines()
     #         skip_list = [image_id.strip() for image_id in skip_list
-    #                      if image_re.match(image_id.strip())]
+    #                      if image_id_re.match(image_id.strip())]
     # else:
     #     logging.debug('\nScene skip list not set in INI')
     #     skip_list = []
@@ -135,7 +136,7 @@ def main(ini_path, tile_list=None, blocksize=2048, smooth_flag=True,
         image_id_list = [
             image_id for image_id in sorted(os.listdir(tile_ws))
             if (os.path.isdir(os.path.join(tile_ws, image_id)) and
-                image_re.match(image_id) and
+                image_id_re.match(image_id) and
                 image_id in keep_list)]
             # DEADBEEF - Remove if keep list works
             #     image_id not in skip_list)]

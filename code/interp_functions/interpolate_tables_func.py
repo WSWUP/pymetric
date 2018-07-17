@@ -430,9 +430,9 @@ def metric_interpolate(year_ws, ini_path, mc_iter=None, bs=None,
 
     # Regular expressions for the unmerged and merged directories
     tile_re = re.compile('[p](\d{3})[r](\d{3})')
-    image_re = re.compile(
-        '^(?P<prefix>LT04|LT05|LE07|LC08)_(?P<path>\d{3})(?P<row>\d{3})_'
-        '(?P<year>\d{4})(?P<month>\d{2})(?P<day>\d{2})')
+    image_id_re = re.compile(
+        '^(LT04|LT05|LE07|LC08)_(?:\w{4})_(\d{3})(\d{3})_'
+        '(\d{4})(\d{2})(\d{2})_(?:\d{8})_(?:\d{2})_(?:\w{2})$')
     # hot_pixel_re = re.compile(
     #     'HOT_(?P<mc_iter>{0:02d})_(?P<cal_iter>\d{{2}})'.format(mc_iter))
     # cold_pixel_re = re.compile(
@@ -473,7 +473,7 @@ def metric_interpolate(year_ws, ini_path, mc_iter=None, bs=None,
         image_id_list = [
             image_id for image_id in sorted(os.listdir(tile_ws))
             if (os.path.isdir(os.path.join(tile_ws, image_id)) or
-                image_re.match(image_id))]
+                image_id_re.match(image_id))]
         image_id_list = [
             image_id for image_id in image_id_list
             if ((use_landsat4_flag and image_id[:4] == 'LT04') or
@@ -1069,10 +1069,12 @@ def metric_interpolate(year_ws, ini_path, mc_iter=None, bs=None,
 
     # Write tables
     if calc_flags['daily_zones_table']:
+        logging.debug('  Daily')
         daily_zones_df.to_csv(
             daily_zones_table_path, index=False, float_format='%.6f')
 
     if calc_flags['monthly_zones_table']:
+        logging.debug('  Monthly')
         monthly_f = {
             'PIXELS': np.max,
             ndvi_field: np.nanmean,
@@ -1101,7 +1103,7 @@ def metric_interpolate(year_ws, ini_path, mc_iter=None, bs=None,
             monthly_zones_table_path, index=False, float_format='%.6f')
 
     if calc_flags['annual_zones_table']:
-        print('ANNUAL')
+        logging.debug('  Annual')
         annual_f = {
             'PIXELS': np.max,
             ndvi_field: np.nanmean,

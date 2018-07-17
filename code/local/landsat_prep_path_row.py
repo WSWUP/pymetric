@@ -223,8 +223,9 @@ def main(ini_path, tile_list=None, overwrite_flag=False, mp_procs=1):
     # For now assume path/row are two digit numbers
     tile_fmt = 'p{:03d}r{:03d}'
     tile_re = re.compile('p(\d{3})r(\d{3})')
-    image_re = re.compile(
-        '^(LT04|LT05|LE07|LC08)_(\d{3})(\d{3})_(\d{4})(\d{2})(\d{2})')
+    image_id_re = re.compile(
+        '^(LT04|LT05|LE07|LC08)_(?:\w{4})_(\d{3})(\d{3})_'
+        '(\d{4})(\d{2})(\d{2})_(?:\d{8})_(?:\d{2})_(?:\w{2})$')
     snap_cs = 30
     snap_xmin, snap_ymin = (15, 15)
 
@@ -320,7 +321,7 @@ def main(ini_path, tile_list=None, overwrite_flag=False, mp_procs=1):
         with open(keep_list_path) as keep_list_f:
             keep_list = keep_list_f.readlines()
             keep_list = [image_id.strip() for image_id in keep_list
-                         if image_re.match(image_id.strip())]
+                         if image_id_re.match(image_id.strip())]
     else:
         logging.debug('\nScene keep list not set in INI')
         keep_list = []
@@ -332,7 +333,7 @@ def main(ini_path, tile_list=None, overwrite_flag=False, mp_procs=1):
     #     with open(skip_list_path) as skip_list_f:
     #         skip_list = skip_list_f.readlines()
     #         skip_list = [scene.strip() for scene in skip_list
-    #                      if image_re.match(scene.strip())]
+    #                      if image_id_re.match(scene.strip())]
     # else:
     #     logging.debug('\nScene skip list not set in INI')
     #     skip_list = []
@@ -356,38 +357,36 @@ def main(ini_path, tile_list=None, overwrite_flag=False, mp_procs=1):
 
             # Process each tar.gz file
             for input_name in sorted(os.listdir(tile_input_ws)):
-                if (not image_re.match(input_name) and
+                if (not image_id_re.match(input_name) and
                         not input_name.endswith('.tar.gz')):
                     continue
 
-                # Get Landsat scene ID from tar.gz file name
-                # DEADBEEF - For now this is the EE scene ID, but it could be
-                #   changed to the full collection 1 ID
-                scene_id = input_name.split('.')[0]
+                # Get Landsat product ID from tar.gz file name
+                image_id = input_name.split('.')[0]
 
                 # Output workspace
-                image_output_ws = os.path.join(tile_output_ws, scene_id)
+                image_output_ws = os.path.join(tile_output_ws, image_id)
                 orig_data_ws = os.path.join(
                     image_output_ws, orig_data_folder_name)
 
-                if keep_list and scene_id not in keep_list:
-                    logging.debug('    {} - Skipping scene'.format(scene_id))
+                if keep_list and image_id not in keep_list:
+                    logging.debug('    {} - Skipping scene'.format(image_id))
                     # DEADBEEF - Should the script always remove the scene
                     #   if it is in the skip list?
                     # Maybe only if overwrite is set?
                     if os.path.isdir(image_output_ws):
-                        # input('Press ENTER to delete {}'.format(scene_id))
+                        # input('Press ENTER to delete {}'.format(image_id))
                         shutil.rmtree(image_output_ws)
                     continue
 
                 # DEADBEEF - Remove if keep list works
-                # if skip_list and scene_id in skip_list:
-                #     logging.debug('    {} - Skipping scene'.format(scene_id))
+                # if skip_list and image_id in skip_list:
+                #     logging.debug('    {} - Skipping scene'.format(image_id))
                 #     # DEADBEEF - Should the script always remove the scene
                 #     #   if it is in the skip list?
                 #     # Maybe only if overwrite is set?
                 #     if os.path.isdir(image_output_ws):
-                #         # input('Press ENTER to delete {}'.format(scene_id))
+                #         # input('Press ENTER to delete {}'.format(image_id))
                 #         shutil.rmtree(image_output_ws)
                 #     continue
 
@@ -400,8 +399,6 @@ def main(ini_path, tile_list=None, overwrite_flag=False, mp_procs=1):
 
                 # Extract Landsat tar.gz file
                 input_path = os.path.join(tile_input_ws, input_name)
-                print(orig_data_ws)
-                # sys.exit()
                 if mp_procs > 1:
                     extract_targz_list.append([input_path, orig_data_ws])
                 else:
@@ -975,9 +972,9 @@ def landsat_files_check(image_ws):
     if image.mtl_path is None:
         return False
 
-    # Get list of digital number (DN) images from ORIGINAL_DATA folder
+    # Get list of raw digital number (DN) images from ORIGINAL_DATA folder
     dn_image_dict = et_common.landsat_band_image_dict(
-        image.orig_data_ws, image.image_re)
+        image.orig_data_ws, image.image_name_re)
 
     # Check if sets of rasters are present
     # Output from metric_model1

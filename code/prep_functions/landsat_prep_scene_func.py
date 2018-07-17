@@ -163,7 +163,7 @@ def main(image_ws, ini_path, bs=2048, smooth_flag=False,
 
     # Input file paths
     dn_image_dict = et_common.landsat_band_image_dict(
-        image.orig_data_ws, image.image_re)
+        image.orig_data_ws, image.image_name_re)
 
     # # Open METRIC config file
     # if config_file:
@@ -985,7 +985,7 @@ def main(image_ws, ini_path, bs=2048, smooth_flag=False,
     # Remove Landsat TOA rasters
     if not keep_dn_flag:
         for landsat_item in python_common.build_file_list(
-                image.orig_data_ws, image.image_re):
+                image.orig_data_ws, image.image_name_re):
             os.remove(os.path.join(image.orig_data_ws, landsat_item))
     return True
 

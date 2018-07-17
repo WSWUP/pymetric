@@ -61,60 +61,6 @@ def landsat_folder_split(landsat_ws):
 #     return landsat, path, row_start, row_end, year, month, day
 
 
-def landsat_c1_id_func(pre_id):
-    """Return a collection 1 style Landsat ID from an old style ID
-    
-    Parameters
-    ----------
-    pre_id : str
-
-    Returns
-    -------
-    str
-
-    Notes
-    -----
-
-
-    """
-    landsat_pre_re = re.compile(
-        '^(LT4|LT5|LE7|LC8)(\d{3})(\d{3})(\d{4})(\d{3})(\w{3})?(\d{2})?')
-    m_groups = landsat_pre_re.match(pre_id).groups()
-    satellite = m_groups[0][:2] + '0' + m_groups[0][2]
-    path, row, year, doy = map(int, m_groups[1:5])
-    id_dt = dt.datetime.strptime('{}_{}'.format(year, doy), '%Y_%j')
-
-    return '{}_{:03d}{:03d}_{}'.format(
-        satellite, path, row, id_dt.strftime('%Y%m%d'))
-
-
-def landsat_pre_id_func(c1_id):
-    """Return an old style Landsat ID from a collection 1 style ID
-    
-    Parameters
-    ----------
-    c1_id : str
-
-    Returns
-    -------
-    str
-
-    Notes
-    -----
-
-
-    """
-    landsat_c1_re = re.compile(
-        '^(LT04|LT05|LE07|LC08)_(\d{3})(\d{3})_(\d{4})(\d{2})(\d{2})')
-    m_groups = landsat_c1_re.match(c1_id).groups()
-    satellite = m_groups[0][:2] + m_groups[0][3]
-    path, row, year, month, day = map(int, m_groups[1:6])
-    id_dt = dt.datetime.strptime('{}{}{}'.format(year, month, day), '%Y%m%d')
-
-    return '{}{:03d}{:03d}{:04d}{:03d}'.format(
-        satellite, path, row, year, id_dt.strftime('%j'))
-
-
 def landsat_id_split(landsat_id):
     """Split Landsat ID into components (Landsat, path, row, year, DOY)
 
@@ -127,20 +73,12 @@ def landsat_id_split(landsat_id):
     tuple of the Landsat ID components
 
     """
-    landsat_c1_re = re.compile(
-        '^(LT04|LT05|LE07|LC08)_(\d{3})(\d{3})_(\d{4})(\d{2})(\d{2})')
-    landsat_pre_re = re.compile(
-        '^(LT4|LT5|LE7|LC8)(\d{3})(\d{3})(\d{4})(\d{3})(\w{3})?(\d{2})?')
-    if landsat_c1_re.match(landsat_id):
-        m_groups = landsat_c1_re.match(landsat_id).groups()
+    landsat_re = re.compile(
+        '^(LT04|LT05|LE07|LC08)_(?:\w{4})_(\d{3})(\d{3})_'
+        '(\d{4})(\d{2})(\d{2})_(?:\d{8})_(?:\d{2})_(?:\w{2})$')
+    if landsat_re.match(landsat_id):
+        m_groups = landsat_re.match(landsat_id).groups()
         satellite, path, row, year, month, day = m_groups[0:6]
-    elif landsat_pre_re.match(landsat_id):
-        m_groups = landsat_pre_re.match(landsat_id).groups()
-        satellite = m_groups[0][:2] + '0' + m_groups[0][2]
-        path, row, row_end, year, doy = m_groups[1:6]
-        id_dt = dt.datetime.strptime('{}_{}'.format(year, doy), '%Y_%j')
-        month = id_dt.month
-        day = id_dt.day
     else:
         logging.error(
             'ERROR: Could not parse landsat folder {}'.format(landsat_id))

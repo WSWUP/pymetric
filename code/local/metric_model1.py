@@ -84,8 +84,9 @@ def main(ini_path, tile_list=None, blocksize=None, stats_flag=True,
     # Regular expressions
     # For now assume tiles are two digit numbers
     tile_re = re.compile('p\d{3}r\d{3}', re.IGNORECASE)
-    image_re = re.compile(
-        '^(LT04|LT05|LE07|LC08)_(\d{3})(\d{3})_(\d{4})(\d{2})(\d{2})')
+    image_id_re = re.compile(
+        '^(LT04|LT05|LE07|LC08)_(?:\w{4})_(\d{3})(\d{3})_'
+        '(\d{4})(\d{2})(\d{2})_(?:\d{8})_(?:\d{2})_(?:\w{2})$')
 
     # Check inputs folders/paths
     if not os.path.isdir(project_ws):
@@ -99,11 +100,11 @@ def main(ini_path, tile_list=None, blocksize=None, stats_flag=True,
             continue
 
         # Check that there are scene folders
-        scene_id_list = [
-            scene_id for scene_id in sorted(os.listdir(tile_ws))
-            if (os.path.isdir(os.path.join(tile_ws, scene_id)) or
-                image_re.match(scene_id))]
-        if not scene_id_list:
+        image_id_list = [
+            image_id for image_id in sorted(os.listdir(tile_ws))
+            if (os.path.isdir(os.path.join(tile_ws, image_id)) or
+                image_id_re.match(image_id))]
+        if not image_id_list:
             continue
         logging.debug('  {} {}'.format(year, tile_name))
 
@@ -127,9 +128,9 @@ def main(ini_path, tile_list=None, blocksize=None, stats_flag=True,
             call_args.append('--debug')
 
         # Run METRIC Model 1
-        for scene_id in scene_id_list:
-            logging.debug('  {}'.format(scene_id))
-            scene_ws = os.path.join(tile_ws, scene_id)
+        for image_id in image_id_list:
+            logging.debug('  {}'.format(image_id))
+            scene_ws = os.path.join(tile_ws, image_id)
             if mp_procs > 1:
                 mp_list.append(
                     [call_args, scene_ws, delay, new_window_flag])

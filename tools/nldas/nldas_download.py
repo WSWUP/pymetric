@@ -53,13 +53,11 @@ def main(username, password, grb_ws, scene_list_path=None,
     file_fmt = 'NLDAS_FORA0125_H.A{:04d}{:02d}{:02d}.{}.002.grb'
     time_list = ['{:02d}00'.format(i) for i in range(0, 24, 1)]
 
-    # # Landsat Collection 1 Product ID
-    # landsat_re = re.compile(
-    #     '^(?:LT04|LT05|LE07|LC08)_\w{4}_\d{3}\d{3}_(?P<DATE>\d{8})_'
-    #     '\w{8}_\w{2}_\w{2}')
+    # Landsat Collection 1 Product ID
+    landsat_re = re.compile(
+        '^(?:LT04|LT05|LE07|LC08)_(?:\w{4})_(\d{3})(\d{3})_'
+        '(?P<DATE>\d{8})_(?:\d{8})_(?:\d{2})_(?:\w{2})$')
 
-    # Landsat Custom Scene ID
-    landsat_re = re.compile('^(?:LT04|LT05|LE07|LC08)_\d{6}_(?P<DATE>\d{8})')
 
     # Process Landsat scene list and start/end input parameters
     if not scene_list_path and (not start_dt or not end_dt):

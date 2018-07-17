@@ -27,8 +27,8 @@ gdal.UseExceptions()
 def landsat_dt_func(image_id):
     """"""
     # Assume image_id has been verified as a Landsat image ID
-    # Read date string from last block as YYYYMMDD
-    return dt.datetime.strptime(image_id.split('_')[-1], '%Y%m%d').date()
+    # i.e. LC08_L1TP_043030_20150415_20170227_01_T1
+    return dt.datetime.strptime(image_id.split('_')[3], '%Y%m%d').date()
 
 
 def daterange_func(start_dt, end_dt, delta=1):

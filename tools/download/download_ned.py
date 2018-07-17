@@ -63,6 +63,7 @@ def main(extent_path, output_folder, overwrite_flag=False):
     # Check that input is a shapefile
 
     # Get the extent of each feature
+    logging.debug('  Reading extents')
     lat_lon_list = []
     shp_driver = ogr.GetDriverByName('ESRI Shapefile')
     input_ds = shp_driver.Open(extent_path, 1)
@@ -95,13 +96,15 @@ def main(extent_path, output_folder, overwrite_flag=False):
     lat_lon_list = sorted(list(set(lat_lon_list)))
 
     # Retrieve a list of files available on the FTP server (keyed by lat/lon)
+    logging.debug('  Retrieving NED tile list from server')
     zip_files = {
         m.group(1): x
         for x in utils.ftp_file_list(site_url, site_folder)
         for m in [re.search('[\w]*(n\d{2}w\d{3})[\w]*.zip', x)] if m}
-    # logging.debug(zip_files)
+    # logging.debug(zip_files[:10])
 
     # Attempt to download the tiles
+    logging.debug('\nDownloading tiles')
     logging.info('')
     for lat_lon in lat_lon_list:
         logging.info('Tile: {}'.format(lat_lon))
@@ -121,10 +124,10 @@ def main(extent_path, output_folder, overwrite_flag=False):
         logging.debug('  {}'.format(tile_path))
         if os.path.isfile(tile_path):
             if not overwrite_flag:
-                logging.debug('  Skipping')
+                logging.debug('  tile already exists, skipping')
                 continue
             else:
-                logging.debug('  Removing')
+                logging.debug('  tile already exists, removing')
                 os.remove(tile_path)
 
         utils.ftp_download(site_url, site_folder, zip_name, zip_path)

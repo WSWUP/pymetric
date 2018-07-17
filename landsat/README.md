@@ -8,11 +8,12 @@ One approach for generating this keep list is to the use the [Cloud Free Scene C
 
 ## Landsat Images
 
-`Note: Landsat tar.gz files will need to be stored in nested separate folders by path, row, and year`
-
-The Landsat images can be downloaded using the [Landsat578 tool](https://github.com/dgketchum/Landsat578).  This tool will need to be installed with pip (see the [pyMETRIC README](README)).
-
-The Landsat 7 and 8 images from 2015 for the study area can be downloaded using the following commands.  The Landsat images are being downloaded to the non-project landsat folder so that they can be used by other projects, but they could be downloaded directly to the project folder instead.
+The following command will download the Landsat scenes required for the pyMETRIC example.  The start and end date parameters are only needed if the clear scene list includes scenes from other years.  The Landsat images are being downloaded to the non-project landsat folder so that they can be used by other projects, but they could be downloaded directly to the project folder instead.
 ```
-D:\pymetric>landsat -conf example\example_downloader_config.yml
+D:\pymetric>python tools\download\download_landsat.py example\landsat\clear_scenes.txt --start 2015-01-01 --end 2015-12-31
+```
+
+This will create the directory structure pyMETRIC is expecting, with tar.gz files will be stored in nested separate folders by path, row, and year:
+```
+D:\pymetric\example\landsat\043\030\2015\LC70430302015101LGN01.tgz
 ```
