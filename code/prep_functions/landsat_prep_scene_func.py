@@ -70,22 +70,28 @@ def main(image_ws, ini_path, bs=2048, smooth_flag=False,
     # Fmask cloud, shadow, & snow pixels will be removed from common area
     calc_fmask_common_flag = python_common.read_param(
         'calc_fmask_common_flag', True, config, 'INPUTS')
+    fmask_smooth_flag = python_common.read_param(
+        'fmask_smooth_flag', False, config, 'INPUTS')
     fmask_buffer_flag = python_common.read_param(
         'fmask_buffer_flag', False, config, 'INPUTS')
     fmask_erode_flag = python_common.read_param(
         'fmask_erode_flag', False, config, 'INPUTS')
+    if fmask_smooth_flag:
+        fmask_smooth_cells = int(python_common.read_param(
+            'fmask_smooth_cells', 1, config, 'INPUTS'))
+        if fmask_smooth_cells == 0 and fmask_smooth_flag:
+            fmask_smooth_flag = False
     if fmask_erode_flag:
         fmask_erode_cells = int(python_common.read_param(
-            'fmask_erode_cells', 10, config, 'INPUTS'))
+            'fmask_erode_cells', 1, config, 'INPUTS'))
         if fmask_erode_cells == 0 and fmask_erode_flag:
             fmask_erode_flag = False
-    # Number of cells to buffer Fmask clouds
-    # For now use the same buffer radius and apply to
     if fmask_buffer_flag:
         fmask_buffer_cells = int(python_common.read_param(
-            'fmask_buffer_cells', 25, config, 'INPUTS'))
+            'fmask_buffer_cells', 1, config, 'INPUTS'))
         if fmask_buffer_cells == 0 and fmask_buffer_flag:
             fmask_buffer_flag = False
+
     # Include hand made cloud masks
     cloud_mask_flag = python_common.read_param(
         'cloud_mask_flag', False, config, 'INPUTS')
@@ -396,28 +402,39 @@ def main(image_ws, ini_path, bs=2048, smooth_flag=False,
     if calc_fmask_common_flag:
         logging.info('  Applying Fmask to common area')
         fmask_array = et_numpy.bqa_fmask_func(qa_array)
+        # Only buffer clouds, shadow, and snow (not water or nodata)
         fmask_mask = (fmask_array >= 2) & (fmask_array <= 4)
+
+        if fmask_smooth_flag:
+            logging.info(
+                '  Smoothing Fmask clouds, shadows, and snow pixels by '
+                '{} cells'.format(fmask_smooth_cells))
+            # ArcGIS smoothing procedure
+            fmask_mask = ndimage.binary_dilation(
+                fmask_mask, iterations=fmask_smooth_cells,
+                structure=ndimage.generate_binary_structure(2, 2))
+            fmask_mask = ndimage.binary_erosion(
+                fmask_mask, iterations=fmask_smooth_cells,
+                structure=ndimage.generate_binary_structure(2, 2))
+            fmask_mask = ndimage.binary_erosion(
+                fmask_mask, iterations=fmask_smooth_cells,
+                structure=ndimage.generate_binary_structure(2, 2))
+            fmask_mask = ndimage.binary_dilation(
+                fmask_mask, iterations=fmask_smooth_cells,
+                structure=ndimage.generate_binary_structure(2, 2))
 
         if fmask_erode_flag:
             logging.info(
-                '  Eroding and dilating Fmask clouds, shadows, and snow '
-                '{} cells\n    to remove errantly masked pixels.'.format(
-                    fmask_erode_cells))
+                '  Eroding Fmask clouds, shadows, and snow pixels by '
+                '{} cells'.format(fmask_erode_cells))
             fmask_mask = ndimage.binary_erosion(
-                fmask_mask, iterations=fmask_erode_cells,
-                structure=ndimage.generate_binary_structure(2, 2))
-            fmask_mask = ndimage.binary_dilation(
                 fmask_mask, iterations=fmask_erode_cells,
                 structure=ndimage.generate_binary_structure(2, 2))
 
         if fmask_buffer_flag:
             logging.info(
-                '  Buffering Fmask clouds, shadows, and snow '
+                '  Buffering Fmask clouds, shadows, and snow pixels by '
                 '{} cells'.format(fmask_buffer_cells))
-            # Only buffer clouds, shadow, and snow (not water or nodata)
-            if fmask_mask is None:
-                logging.debug('  Rebuilding fmask mask from array')
-                fmask_mask = (fmask_array >= 2) & (fmask_array <= 4)
             fmask_mask = ndimage.binary_dilation(
                 fmask_mask, iterations=fmask_buffer_cells,
                 structure=ndimage.generate_binary_structure(2, 2))
