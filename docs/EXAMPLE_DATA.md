@@ -139,7 +139,9 @@ and download the zipped Landsat images.
 
 ### Manual Cloud Masks
 
+Manually defined cloud mask shapefiles can be applied to each Landsat image (in addition or instead of Fmask cloud mask).  The manual cloud masks can be applied in the prep scene stage of the processing by setting the "cloud_mask_flag"  and "cloud_mask_folder" parameters in the project INI.  The cloud mask shapefiles must be named to match the Landsat image folder but with "_mask" at the end (i.d. LE07_043030_20150423_mask.shp) and must all be present in the cloud mask folder.
 
+For this example, a sample cloud mask for image LE07_043030_20150423 is provided in the example "cloud_masks" folder.  This cloud mask was quickly drawn to exclude large portions of the image that appear to be impacted by cirrus clouds that are not being caught/flagged by Fmask.
 
 ## Ancillary Data
 

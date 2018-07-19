@@ -83,6 +83,8 @@ D:\PYMETRIC36
 |   |           +---PIXEL_REGIONS
 |   |           +---REFLECTANCE_TOA
 |   |           \---SUPPORT_RASTERS
+|   +---cloud_masks
+|   +---fields
 |   +---landsat
 |   \---study_area
 +---misc
