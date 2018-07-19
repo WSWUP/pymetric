@@ -50,45 +50,25 @@ Before running pyMETRIC, it is important to identify Landsat images that should 
 
 One approach for generating this keep list is to the use the [Cloud Free Scene Counts tools](https://github.com/DRI-WSWUP/cloud-free-scene-counts).  The Landsat path/row used in the example for those tools is also 43/30.
 
-For the purpose of this example, we will directly use the list of clear scenes in 2015 identified at the end of the [Cloud Free Scene Counts example](https://github.com/DRI-WSWUP/cloud-free-scene-counts/blob/master/EXAMPLE.md).  The following list of 36 Landsat scene IDs should be pasted into a file called "clear_scenes.txt" and saved in "D:\pymetric\example\landsat":
+For the purpose of this example, we will directly use the list of clear scenes in 2015 identified at the end of the [Cloud Free Scene Counts example](https://github.com/DRI-WSWUP/cloud-free-scene-counts/blob/master/EXAMPLE.md).  The following list of 16 Landsat scene IDs should be pasted into a file called "clear_scenes.txt" and saved in "D:\pymetric\example\landsat":
 
 ```
-LE07_043030_20150101
-LC08_043030_20150125
 LO08_043030_20150210
 LE07_043030_20150218
-LC08_043030_20150226
 LE07_043030_20150306
-LE07_043030_20150322
-LC08_043030_20150330
-LE07_043030_20150407
 LC08_043030_20150415
 LE07_043030_20150423
 LC08_043030_20150501
 LE07_043030_20150509
-LC08_043030_20150517
-LE07_043030_20150525
-LC08_043030_20150602
 LE07_043030_20150610
-LC08_043030_20150618
 LE07_043030_20150626
-LC08_043030_20150704
-LE07_043030_20150712
 LC08_043030_20150720
 LE07_043030_20150728
-LC08_043030_20150805
 LE07_043030_20150813
 LC08_043030_20150821
-LE07_043030_20150829
 LC08_043030_20150906
 LC08_043030_20150922
-LC08_043030_20151008
 LE07_043030_20151016
-LC08_043030_20151024
-LE07_043030_20151101
-LC08_043030_20151109
-LE07_043030_20151203
-LC08_043030_20151211
 ```
 
 ## Landsat Images
@@ -153,9 +133,13 @@ D:\pymetric>landsat -conf example\example_downloader_config.yml
 
 This will create the directory structure pyMETRIC is expecting, e.g., 
 ```
-D:\pymetric\example\landsat\43\30\2015\LC70430302015101LGN01.tgz
+D:\pymetric\example\landsat\043\030\2015\LC70430302015101LGN01.tgz
 ```
 and download the zipped Landsat images.
+
+### Manual Cloud Masks
+
+
 
 ## Ancillary Data
 
@@ -284,7 +268,7 @@ D:\pymetric>python tools\nldas\nldas_download.py <USERNAME> <PASSWORD> --start 2
 
 #### Reference ET (ETr)
 
-This code also supports the processing of both houlry ETo (Grass reference evapotranspiration) and ETr (Alfalfa reference evapotranspiration).  For the purposes of pyMETRIC, only ETr is needed.
+This code also supports the processing of both hourly ETo (Grass reference evapotranspiration) and ETr (Alfalfa reference evapotranspiration).  For the purposes of pyMETRIC, only ETr is needed.
 
 The "--landsat" argument is optional at this point, since GRB files were only downloaded for Landsat dates in the previous step.  This flag can be useful for other projects if you have downloaded a more complete set of NLDAS data.
 
@@ -339,7 +323,7 @@ __Please note that that an [Earthdata username and password](https://urs.earthda
 
 ```
 python D:\pymetric\tools\nldas\nldas_ancillary.py
-python D:\pymetric\tools\nldas\nldas_download.py <Earthdata USERNAME> <Earthdata PASSWORD> --start 2015-01-01 --end 2015-12-31
+python D:\pymetric\tools\nldas\nldas_download.py <Earthdata USERNAME> <Earthdata PASSWORD> --start 2015-01-01 --end 2015-12-31  --landsat example\landsat\clear_scenes.txt
 python D:\pymetric\tools\nldas\nldas_hourly_ea.py --start 2015-01-01 --end 2015-12-31 -te -120.1 42.4 -118.3 44.3 --grb D:\pymetric\nldas\grb
 python D:\pymetric\tools\nldas\nldas_hourly_refet.py --start 2015-01-01 --end 2015-12-31 -te -120.1 42.4 -118.3 44.3 --grb D:\pymetric\nldas\grb
 python D:\pymetric\tools\nldas\nldas_hourly_wind.py --start 2015-01-01 --end 2015-12-31 -te -120.1 42.4 -118.3 44.3 --grb D:\pymetric\nldas\grb

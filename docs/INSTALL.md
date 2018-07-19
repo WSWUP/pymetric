@@ -88,7 +88,7 @@ setx PYTHONPATH "D:\pymetric\code\support;%PYTHONPATH%"
 
 In order to execute pyMETRIC code, the GDAL_DATA environmental variable may need to be set (*example*: GDAL_DATA = C:\Miniconda3\envs\pymetric\Library\share\gdal). **Depending on your specific installation of Python, you file path for GDAL_DATA may be different**
 
-On a Windows PC, the user environment variables can be set through the Control Panel (System -> Advanced system settings -> Environment Variables).  Assuming that pyMETRIC was cloned/installed directly to the D: drive and Python 3 is used, the GDAL_DATA environmental variable may be set as:
+On a Windows PC, the user environment variables can be set through the Control Panel (System -> Advanced system settings -> Environment Variables).  Assuming that pyMETRIC was cloned/installed directly to the C: drive and Python 3 is used, the GDAL_DATA environmental variable may be set as:
 ```
 C:\Miniconda3\envs\pymetric\Library\share\gdal
 ```

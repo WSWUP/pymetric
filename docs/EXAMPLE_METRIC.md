@@ -31,7 +31,7 @@ This workflow is setup to run with the example input file (D:\pymetric\example\l
 python D:\pymetric\code\local\landsat_prep_path_row.py -i D:\pymetric\example\landsat_2015.ini
 python D:\pymetric\code\local\landsat_prep_ini.py -i D:\pymetric\example\landsat_2015.ini
 python D:\pymetric\code\local\landsat_prep_scene.py -i D:\pymetric\example\landsat_2015.ini
-python D:\pymetric\code\local\metric_model1.py -i D:\pymetric\example\example.ini
+python D:\pymetric\code\local\metric_model1.py -i D:\pymetric\example\landsat_2015.ini
 python D:\pymetric\code\local\metric_pixel_rating.py -i D:\pymetric\example\landsat_2015.ini
 python D:\pymetric\code\local\metric_pixel_points.py -i D:\pymetric\example\landsat_2015.ini
 ```
