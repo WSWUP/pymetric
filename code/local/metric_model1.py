@@ -66,6 +66,8 @@ def main(ini_path, tile_list=None, blocksize=None, stats_flag=True,
     logging.debug('  Project: {}'.format(project_ws))
 
     func_path = config.get('INPUTS', 'metric_model1_func')
+    keep_list_path = read_param('keep_list_path', '', config, 'INPUTS')
+    # skip_list_path = read_param('skip_list_path', '', config, 'INPUTS')
 
     # For now build INI file name from template INI names
     ini_name = os.path.basename(config.get('INPUTS', 'metric_ini'))
@@ -92,27 +94,54 @@ def main(ini_path, tile_list=None, blocksize=None, stats_flag=True,
         logging.error('\n Folder {} does not exist'.format(project_ws))
         sys.exit()
 
+    # Read keep/skip lists
+    if keep_list_path:
+        logging.debug('\nReading scene keep list')
+        with open(keep_list_path) as keep_list_f:
+            image_keep_list = keep_list_f.readlines()
+            image_keep_list = [image_id.strip() for image_id in image_keep_list
+                               if image_re.match(image_id.strip())]
+    else:
+        logging.debug('\nScene keep list not set in INI')
+        image_keep_list = []
+    # if skip_list_path:
+    #     logging.debug('\nReading scene skip list')
+    #     with open(skip_list_path) as skip_list_f:
+    #         image_skip_list = skip_list_f.readlines()
+    #         image_skip_list = [image_id.strip() for image_id in image_skip_list
+    #                      if image_re.match(image_id.strip())]
+    # else:
+    #     logging.debug('\nScene skip list not set in INI')
+    #     image_skip_list = []
+
     mp_list = []
     for tile_name in sorted(tile_list):
         tile_ws = os.path.join(project_ws, str(year), tile_name)
         if not os.path.isdir(tile_ws) and not tile_re.match(tile_name):
+            logging.debug('  {} {} - invalid tile, skipping'.format(
+                year, tile_name))
             continue
 
-        # Check that there are scene folders
-        scene_id_list = [
-            scene_id for scene_id in sorted(os.listdir(tile_ws))
-            if (os.path.isdir(os.path.join(tile_ws, scene_id)) or
-                image_re.match(scene_id))]
-        if not scene_id_list:
+        # Check that there are image folders
+        image_id_list = [
+            image_id for image_id in sorted(os.listdir(tile_ws))
+            if (image_re.match(image_id) and
+                os.path.isdir(os.path.join(tile_ws, image_id)) and
+                (image_keep_list and image_id in image_keep_list))]
+        #     (image_skip_list and image_id not in image_skip_list))]
+        if not image_id_list:
+            logging.debug('  {} {} - no available images, skipping'.format(
+                year, tile_name))
             continue
-        logging.debug('  {} {}'.format(year, tile_name))
+        else:
+            logging.debug('  {} {}'.format(year, tile_name))
 
         # Check that there is an input file for the path/row
         ini_path = os.path.join(
             tile_ws, ini_fmt.format(ini_name, year, tile_name))
         if not os.path.join(ini_path):
-            logging.warning('    METRIC input file {} does not exist'.format(
-                ini_path))
+            logging.warning('    METRIC input file {} does not exist, '
+                            'skipping'.format(ini_path))
             continue
 
         # Setup command line argument
@@ -127,9 +156,9 @@ def main(ini_path, tile_list=None, blocksize=None, stats_flag=True,
             call_args.append('--debug')
 
         # Run METRIC Model 1
-        for scene_id in scene_id_list:
-            logging.debug('  {}'.format(scene_id))
-            scene_ws = os.path.join(tile_ws, scene_id)
+        for image_id in image_id_list:
+            logging.debug('  {}'.format(image_id))
+            scene_ws = os.path.join(tile_ws, image_id)
             if mp_procs > 1:
                 mp_list.append(
                     [call_args, scene_ws, delay, new_window_flag])

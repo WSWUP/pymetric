@@ -314,28 +314,25 @@ def main(ini_path, tile_list=None, overwrite_flag=False, mp_procs=1):
                 not os.path.isdir(os.path.join(field_output_ws, tile_name))):
             os.makedirs(os.path.join(field_output_ws, tile_name))
 
-    # Read keep list
+    # Read keep/skip lists
     if keep_list_path:
         logging.debug('\nReading scene keep list')
         with open(keep_list_path) as keep_list_f:
-            keep_list = keep_list_f.readlines()
-            keep_list = [image_id.strip() for image_id in keep_list
-                         if image_re.match(image_id.strip())]
+            image_keep_list = keep_list_f.readlines()
+            image_keep_list = [image_id.strip() for image_id in image_keep_list
+                               if image_re.match(image_id.strip())]
     else:
         logging.debug('\nScene keep list not set in INI')
-        keep_list = []
-
-    # DEADBEEF - Remove if keep list works
-    # # Read skip list
-    # if (landsat_flag or ledaps_flag) and skip_list_path:
-    #     logging.debug('\nReading scene skiplist')
+        image_keep_list = []
+    # if skip_list_path:
+    #     logging.debug('\nReading scene skip list')
     #     with open(skip_list_path) as skip_list_f:
-    #         skip_list = skip_list_f.readlines()
-    #         skip_list = [scene.strip() for scene in skip_list
-    #                      if image_re.match(scene.strip())]
+    #         image_skip_list = skip_list_f.readlines()
+    #         image_skip_list = [image_id.strip() for image_id in image_skip_list
+    #                      if image_re.match(image_id.strip())]
     # else:
     #     logging.debug('\nScene skip list not set in INI')
-    #     skip_list = []
+    #     image_skip_list = []
 
     # Copy and unzip raw Landsat scenes
     # Use these for thermal band, MTL file (scene time), and to run FMask
@@ -351,6 +348,8 @@ def main(ini_path, tile_list=None, overwrite_flag=False, mp_procs=1):
             tile_input_ws = os.path.join(
                 landsat_input_ws, path, row, str(year))
             if not os.path.isdir(tile_input_ws):
+                logging.debug('  {} {} - no tile folder, skipping'.format(
+                    year, tile_name))
                 continue
             logging.info('  {} {}'.format(year, tile_name))
 
@@ -363,25 +362,29 @@ def main(ini_path, tile_list=None, overwrite_flag=False, mp_procs=1):
                 # Get Landsat scene ID from tar.gz file name
                 # DEADBEEF - For now this is the EE scene ID, but it could be
                 #   changed to the full collection 1 ID
-                scene_id = input_name.split('.')[0]
+                image_id = input_name.split('.')[0]
 
                 # Output workspace
-                image_output_ws = os.path.join(tile_output_ws, scene_id)
+                image_output_ws = os.path.join(tile_output_ws, image_id)
                 orig_data_ws = os.path.join(
                     image_output_ws, orig_data_folder_name)
 
-                if keep_list and scene_id not in keep_list:
-                    logging.debug('    {} - Skipping scene'.format(scene_id))
+                if not image_re.match(image_id):
+                    logging.debug('    {} - Skipping folder'.format(image_id))
+                    continue
+                elif image_keep_list and image_id not in image_keep_list:
                     # DEADBEEF - Should the script always remove the scene
                     #   if it is in the skip list?
-                    # Maybe only if overwrite is set?
                     if os.path.isdir(image_output_ws):
+                        logging.debug(
+                            '    {} - Removing scene'.format(image_id))
                         # input('Press ENTER to delete {}'.format(scene_id))
                         shutil.rmtree(image_output_ws)
+                    else:
+                        logging.debug(
+                            '    {} - Skipping scene'.format(image_id))
                     continue
-
-                # DEADBEEF - Remove if keep list works
-                # if skip_list and scene_id in skip_list:
+                # elif skip_list and scene_id in skip_list:
                 #     logging.debug('    {} - Skipping scene'.format(scene_id))
                 #     # DEADBEEF - Should the script always remove the scene
                 #     #   if it is in the skip list?

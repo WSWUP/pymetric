@@ -92,7 +92,8 @@ def main(ini_path, mc_iter_str='', tile_list=None,
     logging.debug('  Project: {}'.format(project_ws))
 
     func_path = config.get('INPUTS', 'monte_carlo_func')
-    skip_list_path = read_param('skip_list_path', '', config, 'INPUTS')
+    keep_list_path = read_param('keep_list_path', '', config, 'INPUTS')
+    # skip_list_path = read_param('skip_list_path', '', config, 'INPUTS')
 
     # For now, get mc_iter list from command line, not from project file
     # mc_iter_list = config.get('INPUTS', 'mc_iter_list')
@@ -133,16 +134,25 @@ def main(ini_path, mc_iter_str='', tile_list=None,
         logging.error('\n Folder {} does not exist'.format(project_ws))
         sys.exit()
 
-    # Read skip list
-    if skip_list_path:
-        logging.debug('\nReading scene skiplist')
-        with open(skip_list_path) as skip_list_f:
-            skip_list = skip_list_f.readlines()
-            skip_list = [image_id.strip() for image_id in skip_list
-                         if image_re.match(image_id.strip())]
+    # Read keep/skip lists
+    if keep_list_path:
+        logging.debug('\nReading scene keep list')
+        with open(keep_list_path) as keep_list_f:
+            image_keep_list = keep_list_f.readlines()
+            image_keep_list = [image_id.strip() for image_id in image_keep_list
+                               if image_re.match(image_id.strip())]
     else:
-        logging.debug('\nSkip list not set in INI')
-        skip_list = []
+        logging.debug('\nScene keep list not set in INI')
+        image_keep_list = []
+    # if skip_list_path:
+    #     logging.debug('\nReading scene skip list')
+    #     with open(skip_list_path) as skip_list_f:
+    #         image_skip_list = skip_list_f.readlines()
+    #         image_skip_list = [image_id.strip() for image_id in image_skip_list
+    #                      if image_re.match(image_id.strip())]
+    # else:
+    #     logging.debug('\nScene skip list not set in INI')
+    #     image_skip_list = []
 
 
     mp_list = []
@@ -150,19 +160,27 @@ def main(ini_path, mc_iter_str='', tile_list=None,
         logging.debug('\nTile: {}'.format(tile_name))
         tile_ws = os.path.join(project_ws, str(year), tile_name)
         if not os.path.isdir(tile_ws) and not tile_re.match(tile_name):
+            logging.debug('  {} {} - invalid tile, skipping'.format(
+                year, tile_name))
             continue
 
-        # Check that there are scene folders
-        image_folder_list = [
-            os.path.join(tile_ws, image_id)
-            for image_id in sorted(os.listdir(tile_ws))
-            if (os.path.isdir(os.path.join(tile_ws, image_id)) and
-                image_re.match(image_id) and
-                image_id not in skip_list)]
-        if not image_folder_list:
+        # Check that there are image folders
+        image_id_list = [
+            image_id for image_id in sorted(os.listdir(tile_ws))
+            if (image_re.match(image_id) and
+                os.path.isdir(os.path.join(tile_ws, image_id)) and
+                (image_keep_list and image_id in image_keep_list))]
+            #     (image_skip_list and image_id not in image_skip_list))]
+        if not image_id_list:
+            logging.debug('  {} {} - no available images, skipping'.format(
+                year, tile_name))
             continue
-        for image_id in image_folder_list:
-            pixel_ws = os.path.join(image_id, 'PIXELS')
+        else:
+            logging.debug('  {} {}'.format(year, tile_name))
+
+        for image_id in image_id_list:
+            image_ws = os.path.join(tile_ws, image_id)
+            pixel_ws = os.path.join(image_ws, 'PIXELS')
             if not os.path.isdir(pixel_ws):
                 os.mkdir(pixel_ws)
             # Since the multipoint shapefile will be appended, delete it

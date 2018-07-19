@@ -99,28 +99,25 @@ def main(ini_path, tile_list=None, blocksize=2048, smooth_flag=True,
     if smooth_flag:
         call_args.append('--smooth')
 
-    # Read keep list
+    # Read keep/skip lists
     if keep_list_path:
         logging.debug('\nReading scene keep list')
         with open(keep_list_path) as keep_list_f:
-            keep_list = keep_list_f.readlines()
-            keep_list = [image_id.strip() for image_id in keep_list
-                         if image_re.match(image_id.strip())]
+            image_keep_list = keep_list_f.readlines()
+            image_keep_list = [image_id.strip() for image_id in image_keep_list
+                               if image_re.match(image_id.strip())]
     else:
         logging.debug('\nScene keep list not set in INI')
-        keep_list = []
-
-    # DEADBEEF - Remove if keep list works
-    # # Read skip list
+        image_keep_list = []
     # if skip_list_path:
     #     logging.debug('\nReading scene skip list')
     #     with open(skip_list_path) as skip_list_f:
-    #         skip_list = skip_list_f.readlines()
-    #         skip_list = [image_id.strip() for image_id in skip_list
+    #         image_skip_list = skip_list_f.readlines()
+    #         image_skip_list = [image_id.strip() for image_id in image_skip_list
     #                      if image_re.match(image_id.strip())]
     # else:
     #     logging.debug('\nScene skip list not set in INI')
-    #     skip_list = []
+    #     image_skip_list = []
 
     # Process each image
     mp_list = []
@@ -128,21 +125,23 @@ def main(ini_path, tile_list=None, blocksize=2048, smooth_flag=True,
         logging.debug('\nTile: {}'.format(tile_name))
         tile_ws = os.path.join(project_ws, str(year), tile_name)
         if not os.path.isdir(tile_ws) and not tile_re.match(tile_name):
-            logging.debug('  No image folder, skipping')
+            logging.debug('  {} {} - invalid tile, skipping'.format(
+                year, tile_name))
             continue
 
-        # Check that there are scene folders
+        # Check that there are image folders
         image_id_list = [
             image_id for image_id in sorted(os.listdir(tile_ws))
-            if (os.path.isdir(os.path.join(tile_ws, image_id)) and
-                image_re.match(image_id) and
-                image_id in keep_list)]
-            # DEADBEEF - Remove if keep list works
-            #     image_id not in skip_list)]
+            if (image_re.match(image_id) and
+                os.path.isdir(os.path.join(tile_ws, image_id)) and
+                (image_keep_list and image_id in image_keep_list))]
+            #     (image_skip_list and image_id not in image_skip_list))]
         if not image_id_list:
-            logging.debug('  No available images, skipping')
+            logging.debug('  {} {} - no available images, skipping'.format(
+                year, tile_name))
             continue
-        logging.info('  {} {}'.format(year, tile_name))
+        else:
+            logging.debug('  {} {}'.format(year, tile_name))
 
         # Prep each Landsat scene
         for image_id in image_id_list:

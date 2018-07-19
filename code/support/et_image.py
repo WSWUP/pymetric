@@ -59,11 +59,15 @@ class Image:
         prefix_list = ['LT04', 'LT05', 'LE07', 'LC08']
 
         folder_match = folder_re.match(self.folder_id)
-        if (not folder_match or
-                folder_match.group('prefix') not in prefix_list):
+        if not folder_match:
+            logging.error(
+                '\nWARNING: The folder does not appear to be a valid Landsat '
+                'ID, skipping\n  {}'.format(self.folder_id))
+            raise InvalidImage
+        elif folder_match.group('prefix') not in prefix_list:
             logging.error(
                 '\nERROR: The sensor type could not be determined from '
-                'the folder name: {}\nERROR: Only Landsat 4, 5, 7, and 8 '
+                'the folder name:\n  {}\nERROR: Only Landsat 4, 5, 7, and 8 '
                 'are currently supported.\n'.format(self.folder_id))
             raise InvalidImage
         self.prefix = folder_match.group('prefix')
