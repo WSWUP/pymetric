@@ -18,7 +18,7 @@ The NED tiles are being downloaded from the [USGS FTP server](ftp://rockyftp.cr.
 ### download_nlcd.py
 The CONUS-wide NLCD image can be downloaded using the following command.  This script can only download the 2006 or 2011 NLCD images.  By default, the NLCD image will be saved to the folder ".\nlcd".
 ```
-D:\pyMETRIC>python code\download\download_nlcd.py -y 2011
+C:\pymetric>python code\download\download_nlcd.py -y 2011
 ```
 
 ### download_soils.py

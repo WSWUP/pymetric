@@ -2,7 +2,7 @@
 
 pyMETRIC is most easily installed by cloning the [GitHub repository](https://github.com/DRI-WSWUP/pymetric).
 
-Most of the documentation and examples are written assuming you are running pyMETRIC on a Windows PC and that the pyMETRIC repository was cloned directly to the D: drive.  If you are using a different operating system or cloned the repository to a different location, you will need adjust commands, drive letters, and paths accordingly.
+Most of the documentation and examples are written assuming you are running pyMETRIC on a Windows PC and that the pyMETRIC repository was cloned directly to the C: drive.  If you are using a different operating system or cloned the repository to a different location, you will need adjust commands, drive letters, and paths accordingly.
 
 ## Python
 
@@ -77,11 +77,11 @@ echo %PYTHONPATH%
 ```
 If PYTHONPATH is not set, type the following in the command prompt:
 ```
-> setx PYTHONPATH "D:\pymetric\code\support"
+> setx PYTHONPATH "C:\pymetric\code\support"
 ```
 To append to an existing PYTHONPATH, type:
 ```
-setx PYTHONPATH "D:\pymetric\code\support;%PYTHONPATH%"
+setx PYTHONPATH "C:\pymetric\code\support;%PYTHONPATH%"
 ```
 
 #### GDAL_DATA

@@ -1,7 +1,6 @@
-D:\PYMETRIC36
+C:\pymetric
 +---cdl
 |   +---p043r030
-|   \---p43r30
 +---code
 |   +---cimis
 |   +---daymet

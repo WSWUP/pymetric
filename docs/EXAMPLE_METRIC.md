@@ -25,21 +25,21 @@ Runs METRIC Model 2 for all images.
 Interpolates seasonal ET data from individual METRIC scenes
 
 # Example workflow
-This workflow is setup to run with the example input file (D:\pymetric\example\landsat_2015.ini).  Use this workflow as a starting point when using pyMETRIC for your data.
+This workflow is setup to run with the example input file (C:\pymetric\example\landsat_2015.ini).  Use this workflow as a starting point when using pyMETRIC for your data.
 
 ```
-python D:\pymetric\code\local\landsat_prep_path_row.py -i D:\pymetric\example\landsat_2015.ini
-python D:\pymetric\code\local\landsat_prep_ini.py -i D:\pymetric\example\landsat_2015.ini
-python D:\pymetric\code\local\landsat_prep_scene.py -i D:\pymetric\example\landsat_2015.ini
-python D:\pymetric\code\local\metric_model1.py -i D:\pymetric\example\landsat_2015.ini
-python D:\pymetric\code\local\metric_pixel_rating.py -i D:\pymetric\example\landsat_2015.ini
-python D:\pymetric\code\local\metric_pixel_points.py -i D:\pymetric\example\landsat_2015.ini
+python C:\pymetric\code\local\landsat_prep_path_row.py -i C:\pymetric\example\landsat_2015.ini
+python C:\pymetric\code\local\landsat_prep_ini.py -i C:\pymetric\example\landsat_2015.ini
+python C:\pymetric\code\local\landsat_prep_scene.py -i C:\pymetric\example\landsat_2015.ini
+python C:\pymetric\code\local\metric_model1.py -i C:\pymetric\example\landsat_2015.ini
+python C:\pymetric\code\local\metric_pixel_rating.py -i C:\pymetric\example\landsat_2015.ini
+python C:\pymetric\code\local\metric_pixel_points.py -i C:\pymetric\example\landsat_2015.ini
 ```
 
 __Prior to the running of METRIC model 2, calibration pixels must be adjusted manually with ArcGIS. At this point in the workflow, the software has automatically chose sample pixels, however the location of the calibration pixels must be changed for best results.  The METRIC Manual should be consulted during the calibration process in order to provide the best possible estimates of ET.  If pixels are left un-modified, ETrF rasters will still be produced, however the validity of the ETrF data will be significantly degraded.__
 
 ```
-python D:\pymetric\code\local\metric_model2.py -i D:\pymetric\example\landsat_2015.ini
-python D:\pymetric\code\local\landsat_interpolate.py -i D:\pymetric\example\landsat_2015.ini --tables
-python D:\pymetric\code\local\landsat_interpolate.py -i D:\pymetric\example\landsat_2015.ini --rasters
+python C:\pymetric\code\local\metric_model2.py -i C:\pymetric\example\landsat_2015.ini
+python C:\pymetric\code\local\landsat_interpolate.py -i C:\pymetric\example\landsat_2015.ini --tables
+python C:\pymetric\code\local\landsat_interpolate.py -i C:\pymetric\example\landsat_2015.ini --rasters
 ```

@@ -6,7 +6,7 @@ pyMETRIC Workflow
 
 Input File
 -------------
-Components of pyMETRIC require the use of an input file (.ini), which sets parameters to be used in processing.  The pathc to the input file must be preceeded by "-i" or "--ini".  (Example: -i D:\pyMETRIC\example\landsat_2015.ini)
+Components of pyMETRIC require the use of an input file (.ini), which sets parameters to be used in processing.  The pathc to the input file must be preceeded by "-i" or "--ini".  (Example: -i C:\pymetric\example\landsat_2015.ini)
 
  
 Common Flags
@@ -216,14 +216,13 @@ METRIC
 ## Example sequence of running the python codes within this directory
 __Please note that these scripts will only run effectively if the required data is downloaded and structured as prescribed in the [Example Data readme](../../docs/EXAMPLE_DATA.md).__
 ```
-python D:\pyMETRIC\code\local\landsat_prep_path_row.py -i D:\pyMETRIC\example\landsat_2015.ini
-python D:\pyMETRIC\code\local\landsat_prep_ini.py -i D:\pyMETRIC\example\landsat_2015.ini
-python D:\pyMETRIC\code\local\landsat_prep_scene.py -i D:\pyMETRIC\example\landsat_2015.ini -mp
-python D:\pyMETRIC\code\local\metric_model1.py -i D:\pyMETRIC\example\landsat_2015.ini -mp
-python D:\pyMETRIC\code\local\metric_pixel_rating.py -i D:\pyMETRIC\example\landsat_2015.ini -mp
-python D:\pyMETRIC\code\local\metric_pixel_points.py -i D:\pyMETRIC\example\landsat_2015.ini -mp
-python D:\pyMETRIC\code\local\metric_monte_carlo.py -i D:\pyMETRIC\example\landsat_2015.ini -mp
-python D:\pyMETRIC\code\local\metric_model2.py -i D:\pyMETRIC\example\landsat_2015.ini -mp
-python D:\pyMETRIC\code\local\landsat_interpolate.py -i D:\pyMETRIC\example\landsat_2015.ini -mp --tables
-python D:\pyMETRIC\code\local\landsat_interpolate.py -i D:\pyMETRIC\example\landsat_2015.ini -mp --rasters
+python C:\pymetric\code\local\landsat_prep_path_row.py -i C:\pymetric\example\landsat_2015.ini
+python C:\pymetric\code\local\landsat_prep_ini.py -i C:\pymetric\example\landsat_2015.ini
+python C:\pymetric\code\local\landsat_prep_scene.py -i C:\pymetric\example\landsat_2015.ini -mp
+python C:\pymetric\code\local\metric_model1.py -i C:\pymetric\example\landsat_2015.ini -mp
+python C:\pymetric\code\local\metric_pixel_rating.py -i C:\pymetric\example\landsat_2015.ini -mp
+python C:\pymetric\code\local\metric_pixel_points.py -i C:\pymetric\example\landsat_2015.ini -mp
+python C:\pymetric\code\local\metric_model2.py -i C:\pymetric\example\landsat_2015.ini -mp
+python C:\pymetric\code\local\landsat_interpolate.py -i C:\pymetric\example\landsat_2015.ini -mp --tables
+python C:\pymetric\code\local\landsat_interpolate.py -i C:\pymetric\example\landsat_2015.ini -mp --rasters
 ```
