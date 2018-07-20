@@ -406,7 +406,7 @@ def main(image_ws, ini_path, bs=2048, smooth_flag=False,
         fmask_mask = (fmask_array >= 2) & (fmask_array <= 4)
 
         if fmask_smooth_flag:
-            logging.info(
+            logging.debug(
                 '  Smoothing Fmask clouds, shadows, and snow pixels by '
                 '{} cells'.format(fmask_smooth_cells))
             # ArcGIS smoothing procedure
@@ -424,7 +424,7 @@ def main(image_ws, ini_path, bs=2048, smooth_flag=False,
                 structure=ndimage.generate_binary_structure(2, 2))
 
         if fmask_erode_flag:
-            logging.info(
+            logging.debug(
                 '  Eroding Fmask clouds, shadows, and snow pixels by '
                 '{} cells'.format(fmask_erode_cells))
             fmask_mask = ndimage.binary_erosion(
@@ -432,7 +432,7 @@ def main(image_ws, ini_path, bs=2048, smooth_flag=False,
                 structure=ndimage.generate_binary_structure(2, 2))
 
         if fmask_buffer_flag:
-            logging.info(
+            logging.debug(
                 '  Buffering Fmask clouds, shadows, and snow pixels by '
                 '{} cells'.format(fmask_buffer_cells))
             fmask_mask = ndimage.binary_dilation(
@@ -980,7 +980,7 @@ def main(image_ws, ini_path, bs=2048, smooth_flag=False,
                 logging.debug('    Overwriting output')
                 python_common.remove_file(image.ke_raster)
             else:
-                logging.debug('    Skipping, file already ' +
+                logging.debug('    Skipping, file already '
                               'exists and overwrite is False')
                 return False
         ke_array = et_common.raster_swb_func(

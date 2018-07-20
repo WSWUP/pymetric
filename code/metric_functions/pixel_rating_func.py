@@ -445,7 +445,7 @@ def pixel_rating(image_ws, ini_path, bs=None, stats_flag=False,
             ke_array = drigo.raster_to_array(
                 ke_raster, 1, mask_extent=block_extent,
                 return_nodata=False)
-            # Don't let NDVI be negative
+            # Don't let Ke be negative
             ke_array.clip(0., 1., out=ke_array)
             # Assumption, lower Ke is better for selecting the hot pixel
             # As the power (2) decreases and approaches 1,
@@ -808,7 +808,7 @@ if __name__ == '__main__':
     logging.info('')
 
     # Delay
-    sleep(random.uniform(0, max([0, args.delay])))
+    sleep(random.uniform(0, max([0, abs(args.delay)])))
 
     # Pixel Rating
     pixel_rating(

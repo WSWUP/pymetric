@@ -545,7 +545,7 @@ if __name__ == '__main__':
     logging.info('')
 
     # Delay
-    sleep(random.uniform(0, max([0, args.delay])))
+    sleep(random.uniform(0, max([0, abs(args.delay)])))
 
     # METRIC Monte Carlo
     monte_carlo(image_ws=args.workspace, metric_ini_path=args.metric_ini,
