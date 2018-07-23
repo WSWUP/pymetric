@@ -16,9 +16,9 @@ import sys
 from python_common import open_ini, read_param, call_mp
 
 
-def main(ini_path, tile_list=None, blocksize=2048, smooth_flag=True,
-         stats_flag=True, overwrite_flag=False, mp_procs=1, delay=0,
-         debug_flag=False, new_window_flag=False):
+def main(ini_path, tile_list=None, blocksize=2048, stats_flag=True,
+         overwrite_flag=False, mp_procs=1, delay=0, debug_flag=False,
+         new_window_flag=False):
     """Prep Landsat scenes
 
     Parameters
@@ -30,9 +30,6 @@ def main(ini_path, tile_list=None, blocksize=2048, smooth_flag=True,
         This will override the tile list in the INI file.
     blocksize : int, optional
         Processing block size (the default is 2048).
-    smooth_flag : bool, optional
-        If True, dilate/erode image to remove fringe/edge pixels
-        (the Default is True).
     stats_flag : bool, optional
         If True, compute raster statistics (the default is True).
     overwrite_flag : bool, optional
@@ -96,8 +93,6 @@ def main(ini_path, tile_list=None, blocksize=2048, smooth_flag=True,
         call_args.append('--overwrite')
     if debug_flag:
         call_args.append('--debug')
-    if smooth_flag:
-        call_args.append('--smooth')
 
     # Read keep/skip lists
     if keep_list_path:
@@ -184,13 +179,6 @@ def arg_parse():
         '-mp', '--multiprocessing', default=1, type=int,
         metavar='N', nargs='?', const=mp.cpu_count(),
         help='Number of processers to use')
-    # The "no_smooth" parameter is negated below to become "smooth".
-    # By default, prep_scene will NOT dilate/erode (smooth) edge pixels.
-    # If a user runs this "local" script, they probably want to smooth.
-    # If not, user can "turn off" smoothing.
-    parser.add_argument(
-        '--no_smooth', default=False, action="store_true",
-        help='Don\t dilate and erode image to remove fringe/edge pixels')
     # The "no_stats" parameter is negated below to become "stats".
     # By default, prep_scene will NOT compute raster statistics.
     # If a user runs this "local" script, they probably want statistics.
@@ -211,11 +199,11 @@ def arg_parse():
 
     # Default is to build statistics (opposite of --no_stats default=False)
     args.stats = not args.no_stats
-    args.smooth = not args.no_smooth
 
     # Convert relative paths to absolute paths
     if os.path.isfile(os.path.abspath(args.ini)):
         args.ini = os.path.abspath(args.ini)
+
     return args
 
 
@@ -230,7 +218,6 @@ if __name__ == '__main__':
     logging.info(log_f.format('Script:', os.path.basename(sys.argv[0])))
 
     main(ini_path=args.ini, tile_list=args.path_row, blocksize=args.blocksize,
-         smooth_flag=args.smooth, stats_flag=args.stats,
-         overwrite_flag=args.overwrite, mp_procs=args.multiprocessing,
-         delay=args.delay, debug_flag=args.loglevel==logging.DEBUG,
-         new_window_flag=args.window)
+         stats_flag=args.stats, overwrite_flag=args.overwrite,
+         mp_procs=args.multiprocessing, delay=args.delay,
+         debug_flag=args.loglevel==logging.DEBUG, new_window_flag=args.window)
