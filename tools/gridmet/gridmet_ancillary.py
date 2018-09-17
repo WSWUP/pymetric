@@ -82,18 +82,14 @@ def main(ancillary_ws=os.getcwd(), zero_elev_nodata_flag=False,
         logging.debug('    {}'.format(elev_url))
         logging.debug('    {}'.format(elev_nc))
         _utils.url_download(elev_url, elev_nc)
-        # try:
-        #     urllib.urlretrieve(elev_url, elev_nc)
-        # except:
-        #     logging.error("  ERROR: {}\n  FILE: {}".format(
-        #         sys.exc_info()[0], elev_nc))
-        #     # Try to remove the file since it may not have completely downloaded
-        #     os.remove(elev_nc)
 
         logging.info('  Extracting')
         logging.debug('    {}'.format(elev_raster))
         elev_nc_f = netCDF4.Dataset(elev_nc, 'r')
-        elev_ma = elev_nc_f.variables['elevation'][0, :, :]
+        if len(elev_nc_f.variables['elevation'].shape) == 3:
+            elev_ma = elev_nc_f.variables['elevation'][0, :, :]
+        else:
+            elev_ma = elev_nc_f.variables['elevation'][:, :]
         elev_array = elev_ma.data.astype(np.float32)
         # elev_nodata = float(elev_ma.fill_value)
         elev_array[

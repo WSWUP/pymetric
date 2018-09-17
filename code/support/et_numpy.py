@@ -1418,7 +1418,7 @@ def rn_24_func(albedo_sur, rs_in, lat, doy, cs=110):
     .. [1] de Bruin, H.A.R. (1987). From Penman to Makkink. Proceedings and
        Information: TNO Committee on Hydrological Research No. 39,
        J. C. Hooghart, Ed., Netherlands Organization for Applied Scientific
-       Research, 5–30.
+       Research, 5-30.
     .. [2] de Bruin and Stricker (2000).
     .. [3] Bastiaanssen, W., Noordman, E., Pelgrum, H., Davids, G., Thoreson, B.,
        Allen, R. (2005). SEBAL model with remotely sensed data to improve
@@ -1611,7 +1611,7 @@ def perrier_zom_func(lai):
     .. [1] Perrier, A. (1982). Land surface processes: Vegetation.
        In Land Surface Processes in Atmospheric General Circulation Models;
        Eagelson, P.S., Ed.; Cambridge University Press: Cambridge, UK;
-       pp. 395–448.
+       pp. 395-448.
     .. [2] Allen, R., Irmak, A., Trezza, R., Hendrickx, J., Bastiaanssen, W.,
        & Kjaersgaard, J. (2011). Satellite-based ET estimation in agriculture
        using SEBAL and METRIC. Hydrologic Processes, 25, 4011-4027.

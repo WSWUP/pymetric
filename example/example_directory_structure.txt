@@ -27,7 +27,7 @@ C:\pymetric
 |   +---ppt
 |   +---tmmn
 |   \---tmmx
-+—example
++-example
 |   +---2015
 |   |   +---ET
 |   |   |   +---LINEAR_ANNUAL
