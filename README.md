@@ -24,8 +24,8 @@ A detailed walk-through on the setup and operation of pyMETRIC has been assemble
 
 ## References
 
-* [Satellite-Based Energy Balance for Mapping Evapotranspiration with Internalized Calibration (METRIC)—Model](https://ascelibrary.org/doi/abs/10.1061/(ASCE)0733-9437(2007)133:4(380))
-* [Satellite-Based Energy Balance for Mapping Evapotranspiration with Internalized Calibration (METRIC)—Applications](https://ascelibrary.org/doi/abs/10.1061/(ASCE)0733-9437(2007)133:4(395))
+* [Satellite-Based Energy Balance for Mapping Evapotranspiration with Internalized Calibration (METRIC)-Model](https://ascelibrary.org/doi/abs/10.1061/(ASCE)0733-9437(2007)133:4(380))
+* [Satellite-Based Energy Balance for Mapping Evapotranspiration with Internalized Calibration (METRIC)-Applications](https://ascelibrary.org/doi/abs/10.1061/(ASCE)0733-9437(2007)133:4(395))
 * [Assessing calibration uncertainty and automation for estimating evapotranspiration from agricultural areas using METRIC](https://www.dri.edu/images/stories/divisions/dhs/dhsfaculty/Justin-Huntington/Morton_et_al._2013.pdf)
 
 ## Limitations
