@@ -50,17 +50,17 @@ The user is strongly encouraged to setup a dedicated conda environment for pyMET
 
 The environment must be "activated" before use:
 ```
-> activate pymetric
+> conda activate pymetric
 ```
 
 Most of the external modules can then be installed by calling:
 ```
-> conda install numpy scipy pandas matplotlib gdal netcdf4 future requests yaml
+> conda install future gdal matplotlib netcdf4 nomkl numpy pandas refet requests scipy yaml
 ```
 
-The Landsat578 , refet, and drigo modules must be installed separately with pip:
+The Landsat578 and drigo modules must be installed separately with pip:
 ```
-> pip install Landsat578 refet drigo --no-deps
+> pip install Landsat578 drigo --no-deps
 ```
 
 ## Environment Variables
