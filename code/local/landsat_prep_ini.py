@@ -211,7 +211,8 @@ def main(ini_path, tile_list=None, overwrite_flag=False):
         # mc_iter_list = config.get('INPUTS', 'mc_iter_list')
         # mc_iter_list = list(python_common.parse_int_set(mc_iter_list))
     if monte_carlo_flag or interp_rasters_flag or interp_tables_flag:
-        etrf_input_ws = python_common.read_param('etrf_input_folder', None, config)
+        etrf_input_ws = python_common.read_param(
+            'etrf_input_folder', None, config)
         # if etrf_input_ws is None:
         #     etrf_input_ws = os.path.join(project_ws, year)
         etr_input_ws = config.get('INPUTS', 'etr_input_folder')
@@ -220,7 +221,8 @@ def main(ini_path, tile_list=None, overwrite_flag=False):
         ppt_input_re = config.get('INPUTS', 'ppt_input_re')
     if monte_carlo_flag or interp_rasters_flag or interp_tables_flag:
         awc_input_path = config.get('INPUTS', 'awc_input_path')
-        spinup_days = python_common.read_param('swb_spinup_days', 30, config, 'INPUTS')
+        spinup_days = python_common.read_param(
+            'swb_spinup_days', 30, config, 'INPUTS')
         min_spinup_days = python_common.read_param(
             'swb_min_spinup_days', 5, config, 'INPUTS')
 

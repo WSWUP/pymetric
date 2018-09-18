@@ -533,8 +533,9 @@ def metric_interpolate(year_ws, ini_path, mc_iter=None, bs=None,
         tile_ws = os.path.join(etrf_input_ws, tile_name)
         image_id_list = [
             image_id for image_id in sorted(os.listdir(tile_ws))
-            if (os.path.isdir(os.path.join(tile_ws, image_id)) or
-                image_id_re.match(image_id))]
+            if (image_id_re.match(image_id) and
+                os.path.isdir(os.path.join(tile_ws, image_id)))]
+        #         (image_keep_list and image_id in image_keep_list))]
         image_id_list = [
             image_id for image_id in image_id_list
             if ((use_landsat4_flag and image_id[:4] == 'LT04') or

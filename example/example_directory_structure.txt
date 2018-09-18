@@ -1,4 +1,4 @@
-D:\pymetric
+C:\pymetric
 +---cdl
 |   +---p043r030
 +---code
@@ -17,7 +17,7 @@ D:\pymetric
 |   +---etr
 |   +---netcdf
 |   \---ppt
-+—example
++-example
 |   +---2015
 |   |   +---ET
 |   |   |   +---LINEAR_ANNUAL
@@ -72,6 +72,7 @@ D:\pymetric
 |   |           +---PIXEL_REGIONS
 |   |           +---REFLECTANCE_TOA
 |   |           \---SUPPORT_RASTERS
+|   +---cloud_masks
 |   +---fields
 |   +---landsat
 |   \---study_area

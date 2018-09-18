@@ -24,8 +24,7 @@ import et_numpy
 import python_common
 
 
-def main(image_ws, ini_path, bs=2048, smooth_flag=False,
-         stats_flag=False, overwrite_flag=False):
+def main(image_ws, ini_path, bs=2048, stats_flag=False, overwrite_flag=False):
     """Prep a Landsat scene for METRIC
 
     Parameters
@@ -36,9 +35,6 @@ def main(image_ws, ini_path, bs=2048, smooth_flag=False,
         File path of the input parameters file.
     bs : int, optional
         Processing block size (the default is 2048).
-    smooth_flag : bool, optional
-        If True, dilate/erode image to remove fringe/edge pixels
-        (the default is False).
     stats_flag : bool, optional
         If True, compute raster statistics (the default is True).
     overwrite_flag : bool, optional
@@ -70,22 +66,32 @@ def main(image_ws, ini_path, bs=2048, smooth_flag=False,
     # Fmask cloud, shadow, & snow pixels will be removed from common area
     calc_fmask_common_flag = python_common.read_param(
         'calc_fmask_common_flag', True, config, 'INPUTS')
+    fmask_smooth_flag = python_common.read_param(
+        'fmask_smooth_flag', False, config, 'INPUTS')
     fmask_buffer_flag = python_common.read_param(
         'fmask_buffer_flag', False, config, 'INPUTS')
     fmask_erode_flag = python_common.read_param(
         'fmask_erode_flag', False, config, 'INPUTS')
+    if fmask_smooth_flag:
+        fmask_smooth_cells = int(python_common.read_param(
+            'fmask_smooth_cells', 1, config, 'INPUTS'))
+        if fmask_smooth_cells == 0 and fmask_smooth_flag:
+            fmask_smooth_flag = False
     if fmask_erode_flag:
         fmask_erode_cells = int(python_common.read_param(
-            'fmask_erode_cells', 10, config, 'INPUTS'))
+            'fmask_erode_cells', 1, config, 'INPUTS'))
         if fmask_erode_cells == 0 and fmask_erode_flag:
             fmask_erode_flag = False
-    # Number of cells to buffer Fmask clouds
-    # For now use the same buffer radius and apply to
     if fmask_buffer_flag:
         fmask_buffer_cells = int(python_common.read_param(
-            'fmask_buffer_cells', 25, config, 'INPUTS'))
+            'fmask_buffer_cells', 1, config, 'INPUTS'))
         if fmask_buffer_cells == 0 and fmask_buffer_flag:
             fmask_buffer_flag = False
+
+    # Remove edge (fringe) cells
+    edge_smooth_flag = python_common.read_param(
+        'edge_smooth_flag', True, config, 'INPUTS')
+
     # Include hand made cloud masks
     cloud_mask_flag = python_common.read_param(
         'cloud_mask_flag', False, config, 'INPUTS')
@@ -373,7 +379,22 @@ def main(image_ws, ini_path, bs=2048, smooth_flag=False,
     common_rows, common_cols = common_array.shape
     del qa_ds
 
-    # First try applying user defined cloud masks
+    # Erode and dilate to remove fringe on edge
+    # Default is to not smooth, but user can force smoothing
+    # This needs to be applied before Fmask
+    if edge_smooth_flag and image.prefix in ['LT05', 'LE07']:
+        struct = ndimage.generate_binary_structure(2, 2).astype(np.uint8)
+        if image.prefix == 'LT05':
+            cells = 8
+        elif image.prefix == 'LE07':
+            cells = 2
+        else:
+            cells = 0
+        common_array = ndimage.binary_dilation(
+            ndimage.binary_erosion(common_array, struct, cells),
+            struct, cells)
+
+    # Try applying user defined cloud masks to common_area
     cloud_mask_path = os.path.join(
         cloud_mask_ws, image.folder_id + '_mask.shp')
     if cloud_mask_flag and os.path.isfile(cloud_mask_path):
@@ -393,31 +414,42 @@ def main(image_ws, ini_path, bs=2048, smooth_flag=False,
         common_array[cloud_array == 1] = 0
         del cloud_mask_memory_ds, cloud_array
 
+    # Remove Fmask cloud, shadow, and snow pixels from common_area
     if calc_fmask_common_flag:
         logging.info('  Applying Fmask to common area')
         fmask_array = et_numpy.bqa_fmask_func(qa_array)
         fmask_mask = (fmask_array >= 2) & (fmask_array <= 4)
 
-        if fmask_erode_flag:
-            logging.info(
-                '  Eroding and dilating Fmask clouds, shadows, and snow '
-                '{} cells\n    to remove errantly masked pixels.'.format(
-                    fmask_erode_cells))
+        if fmask_smooth_flag:
+            logging.debug(
+                '  Smoothing (dilate/erode/erode/dilate) Fmask clouds, shadows,'
+                ' and snow pixels by {} cells'.format(fmask_smooth_cells))
+            # ArcGIS smoothing procedure
+            fmask_mask = ndimage.binary_dilation(
+                fmask_mask, iterations=fmask_smooth_cells,
+                structure=ndimage.generate_binary_structure(2, 2))
             fmask_mask = ndimage.binary_erosion(
-                fmask_mask, iterations=fmask_erode_cells,
+                fmask_mask, iterations=fmask_smooth_cells,
+                structure=ndimage.generate_binary_structure(2, 2))
+            fmask_mask = ndimage.binary_erosion(
+                fmask_mask, iterations=fmask_smooth_cells,
                 structure=ndimage.generate_binary_structure(2, 2))
             fmask_mask = ndimage.binary_dilation(
+                fmask_mask, iterations=fmask_smooth_cells,
+                structure=ndimage.generate_binary_structure(2, 2))
+
+        if fmask_erode_flag:
+            logging.debug(
+                '  Eroding Fmask clouds, shadows, and snow pixels by '
+                '{} cells'.format(fmask_erode_cells))
+            fmask_mask = ndimage.binary_erosion(
                 fmask_mask, iterations=fmask_erode_cells,
                 structure=ndimage.generate_binary_structure(2, 2))
 
         if fmask_buffer_flag:
-            logging.info(
-                '  Buffering Fmask clouds, shadows, and snow '
-                '{} cells'.format(fmask_buffer_cells))
-            # Only buffer clouds, shadow, and snow (not water or nodata)
-            if fmask_mask is None:
-                logging.debug('  Rebuilding fmask mask from array')
-                fmask_mask = (fmask_array >= 2) & (fmask_array <= 4)
+            logging.debug(
+                '  Dilating (buffering) Fmask clouds, shadows, and snow pixels '
+                'by {} cells'.format(fmask_buffer_cells))
             fmask_mask = ndimage.binary_dilation(
                 fmask_mask, iterations=fmask_buffer_cells,
                 structure=ndimage.generate_binary_structure(2, 2))
@@ -427,24 +459,22 @@ def main(image_ws, ini_path, bs=2048, smooth_flag=False,
 
         del fmask_array, fmask_mask
 
-    if common_array is not None:
-        # Erode and dilate to remove fringe on edge
-        # Default is to not smooth, but user can force smoothing
-        if smooth_flag:
-            common_array = smooth_func(common_array)
-        # Check that there are some cloud free pixels
-        if not np.any(common_array):
-            logging.error('  ERROR: There are no cloud/snow free pixels')
-            return False
-        # Always overwrite common area raster
-        # if not os.path.isfile(image.common_area_raster):
-        drigo.array_to_raster(
-            common_array, image.common_area_raster,
-            output_geo=common_geo, output_proj=common_proj,
-            stats_flag=stats_flag)
-        # Print common geo/extent
-        logging.debug('  Common geo:      {}'.format(common_geo))
-        logging.debug('  Common extent:   {}'.format(common_extent))
+    # Check that there are some cloud free pixels
+    if not np.any(common_array):
+        logging.error(
+            '  ERROR: There are no cloud/snow free pixels, returning False')
+        return False
+
+    # Always overwrite common area raster
+    # if not os.path.isfile(image.common_area_raster):
+    drigo.array_to_raster(
+        common_array, image.common_area_raster,
+        output_geo=common_geo, output_proj=common_proj,
+        stats_flag=stats_flag)
+
+    # Print common geo/extent
+    logging.debug('  Common geo:      {}'.format(common_geo))
+    logging.debug('  Common extent:   {}'.format(common_extent))
 
     # Extract Fmask components as separate rasters
     if (calc_fmask_flag or calc_fmask_cloud_flag or calc_fmask_snow_flag or
@@ -963,7 +993,7 @@ def main(image_ws, ini_path, bs=2048, smooth_flag=False,
                 logging.debug('    Overwriting output')
                 python_common.remove_file(image.ke_raster)
             else:
-                logging.debug('    Skipping, file already ' +
+                logging.debug('    Skipping, file already '
                               'exists and overwrite is False')
                 return False
         ke_array = et_common.raster_swb_func(
@@ -1001,40 +1031,6 @@ def common_area_func(image_list):
         common_array &= (image_array != common_nodata)
         del image_array, image_nodata
     return common_array
-
-
-def smooth_func(mask_array, erode=8, dilate=8):
-    """Remove edge pixels (mostly for Landsat 5 images)
-
-    Parameters
-    ----------
-    mask_array : ndarray
-    erode : int
-    dilate : int
-
-    Returns
-    -------
-    ndarray
-
-    """
-    # 3x3
-    struct = ndimage.generate_binary_structure(2, 2).astype(np.uint8)
-
-    # cross
-    # struct = ndimage.generate_binary_structure(2, 1).astype(np.uint8)
-
-    return ndimage.binary_dilation(
-        ndimage.binary_erosion(mask_array, struct, erode), struct, dilate)
-
-    # if shrink_flag and landsat_type in ['Landsat4', 'Landsat5']:
-    #    return ndimage.binary_dilation(
-    #        ndimage.binary_erosion(mask_array, struct, 10), struct, 8)
-    # elif shrink_flag and landsat_type in ['Landsat7']:
-    #    return ndimage.binary_dilation(
-    #        ndimage.binary_erosion(mask_array, struct, 6), struct, 6)
-    # else:
-    #    return ndimage.binary_dilation(
-    #        ndimage.binary_erosion(mask_array, struct, 1), struct, 1)
 
 
 def hourly_interpolate_func(prev_array, next_array,
@@ -1108,6 +1104,7 @@ def arg_parse():
     # Convert relative paths to absolute paths
     if os.path.isfile(os.path.abspath(args.ini)):
         args.ini = os.path.abspath(args.ini)
+
     return args
 
 
@@ -1124,5 +1121,4 @@ if __name__ == '__main__':
     sleep(random.uniform(0, max([0, args.delay])))
 
     main(image_ws=args.workspace, ini_path=args.ini, bs=args.blocksize,
-         smooth_flag=args.smooth, stats_flag=args.stats,
-         overwrite_flag=args.overwrite)
+         stats_flag=args.stats, overwrite_flag=args.overwrite)

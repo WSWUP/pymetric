@@ -16,9 +16,9 @@ import sys
 from python_common import open_ini, read_param, call_mp
 
 
-def main(ini_path, tile_list=None, blocksize=2048, smooth_flag=True,
-         stats_flag=True, overwrite_flag=False, mp_procs=1, delay=0,
-         debug_flag=False, new_window_flag=False):
+def main(ini_path, tile_list=None, blocksize=2048, stats_flag=True,
+         overwrite_flag=False, mp_procs=1, delay=0, debug_flag=False,
+         new_window_flag=False):
     """Prep Landsat scenes
 
     Parameters
@@ -30,9 +30,6 @@ def main(ini_path, tile_list=None, blocksize=2048, smooth_flag=True,
         This will override the tile list in the INI file.
     blocksize : int, optional
         Processing block size (the default is 2048).
-    smooth_flag : bool, optional
-        If True, dilate/erode image to remove fringe/edge pixels
-        (the Default is True).
     stats_flag : bool, optional
         If True, compute raster statistics (the default is True).
     overwrite_flag : bool, optional
@@ -97,31 +94,26 @@ def main(ini_path, tile_list=None, blocksize=2048, smooth_flag=True,
         call_args.append('--overwrite')
     if debug_flag:
         call_args.append('--debug')
-    if smooth_flag:
-        call_args.append('--smooth')
 
-    # Read keep list
+    # Read keep/skip lists
     if keep_list_path:
         logging.debug('\nReading scene keep list')
         with open(keep_list_path) as keep_list_f:
-            keep_list = keep_list_f.readlines()
-            keep_list = [image_id.strip() for image_id in keep_list
-                         if image_id_re.match(image_id.strip())]
+            image_keep_list = keep_list_f.readlines()
+            image_keep_list = [image_id.strip() for image_id in image_keep_list
+                               if image_id_re.match(image_id.strip())]
     else:
         logging.debug('\nScene keep list not set in INI')
-        keep_list = []
-
-    # DEADBEEF - Remove if keep list works
-    # # Read skip list
+        image_keep_list = []
     # if skip_list_path:
     #     logging.debug('\nReading scene skip list')
     #     with open(skip_list_path) as skip_list_f:
-    #         skip_list = skip_list_f.readlines()
-    #         skip_list = [image_id.strip() for image_id in skip_list
-    #                      if image_id_re.match(image_id.strip())]
+    #         image_skip_list = skip_list_f.readlines()
+    #         image_skip_list = [image_id.strip() for image_id in image_skip_list
+    #                            if image_id_re.match(image_id.strip())]
     # else:
     #     logging.debug('\nScene skip list not set in INI')
-    #     skip_list = []
+    #     image_skip_list = []
 
     # Process each image
     mp_list = []
@@ -129,21 +121,23 @@ def main(ini_path, tile_list=None, blocksize=2048, smooth_flag=True,
         logging.debug('\nTile: {}'.format(tile_name))
         tile_ws = os.path.join(project_ws, str(year), tile_name)
         if not os.path.isdir(tile_ws) and not tile_re.match(tile_name):
-            logging.debug('  No image folder, skipping')
+            logging.debug('  {} {} - invalid tile, skipping'.format(
+                year, tile_name))
             continue
 
-        # Check that there are scene folders
+        # Check that there are image folders
         image_id_list = [
             image_id for image_id in sorted(os.listdir(tile_ws))
-            if (os.path.isdir(os.path.join(tile_ws, image_id)) and
-                image_id_re.match(image_id) and
-                image_id in keep_list)]
-            # DEADBEEF - Remove if keep list works
-            #     image_id not in skip_list)]
+            if (image_id_re.match(image_id) and
+                os.path.isdir(os.path.join(tile_ws, image_id)) and
+                (image_keep_list and image_id in image_keep_list))]
+            #     (image_skip_list and image_id not in image_skip_list))]
         if not image_id_list:
-            logging.debug('  No available images, skipping')
+            logging.debug('  {} {} - no available images, skipping'.format(
+                year, tile_name))
             continue
-        logging.info('  {} {}'.format(year, tile_name))
+        else:
+            logging.debug('  {} {}'.format(year, tile_name))
 
         # Prep each Landsat scene
         for image_id in image_id_list:
@@ -186,13 +180,6 @@ def arg_parse():
         '-mp', '--multiprocessing', default=1, type=int,
         metavar='N', nargs='?', const=mp.cpu_count(),
         help='Number of processers to use')
-    # The "no_smooth" parameter is negated below to become "smooth".
-    # By default, prep_scene will NOT dilate/erode (smooth) edge pixels.
-    # If a user runs this "local" script, they probably want to smooth.
-    # If not, user can "turn off" smoothing.
-    parser.add_argument(
-        '--no_smooth', default=False, action="store_true",
-        help='Don\t dilate and erode image to remove fringe/edge pixels')
     # The "no_stats" parameter is negated below to become "stats".
     # By default, prep_scene will NOT compute raster statistics.
     # If a user runs this "local" script, they probably want statistics.
@@ -213,11 +200,11 @@ def arg_parse():
 
     # Default is to build statistics (opposite of --no_stats default=False)
     args.stats = not args.no_stats
-    args.smooth = not args.no_smooth
 
     # Convert relative paths to absolute paths
     if os.path.isfile(os.path.abspath(args.ini)):
         args.ini = os.path.abspath(args.ini)
+
     return args
 
 
@@ -232,7 +219,6 @@ if __name__ == '__main__':
     logging.info(log_f.format('Script:', os.path.basename(sys.argv[0])))
 
     main(ini_path=args.ini, tile_list=args.path_row, blocksize=args.blocksize,
-         smooth_flag=args.smooth, stats_flag=args.stats,
-         overwrite_flag=args.overwrite, mp_procs=args.multiprocessing,
-         delay=args.delay, debug_flag=args.loglevel==logging.DEBUG,
-         new_window_flag=args.window)
+         stats_flag=args.stats, overwrite_flag=args.overwrite,
+         mp_procs=args.multiprocessing, delay=args.delay,
+         debug_flag=args.loglevel==logging.DEBUG, new_window_flag=args.window)

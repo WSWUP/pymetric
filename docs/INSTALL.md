@@ -2,7 +2,7 @@
 
 pyMETRIC is most easily installed by cloning the [GitHub repository](https://github.com/DRI-WSWUP/pymetric).
 
-Most of the documentation and examples are written assuming you are running pyMETRIC on a Windows PC and that the pyMETRIC repository was cloned directly to the D: drive.  If you are using a different operating system or cloned the repository to a different location, you will need adjust commands, drive letters, and paths accordingly.
+Most of the documentation and examples are written assuming you are running pyMETRIC on a Windows PC and that the pyMETRIC repository was cloned directly to the C: drive.  If you are using a different operating system or cloned the repository to a different location, you will need adjust commands, drive letters, and paths accordingly.
 
 ## Python
 
@@ -13,12 +13,13 @@ pyMETRIC has only been tested using Python 2.7 and 3.6, but may work with other 
 The following external Python modules must be present to run pyMETRIC:
 * [fiona](http://toblerity.org/fiona/) (used to read and write multi-layered GIS file formats)
 * [future](https://pypi.python.org/pypi/future) (adds features from Python 3 to Python 2 installations)
+* [gdal](http://www.gdal.org/) (version >2.2) (the Geospatial Data Abstraction Library is used to interact with raster and vector geospatial data)
+* [matplotlib](https://matplotlib.org/) (necessary for creating plots of ET related data)
+* [netcdf4](https://www.unidata.ucar.edu/software/netcdf/) (for interacting with multi-dimensional scientific datasets, such as GRIDMET/DAYMET)
+* [numpy](http://www.numpy.org/)
+* [pandas](http://pandas.pydata.org) (used to perform data processing)
 * [requests](http://docs.python-requests.org/en/master/) (adds enhanced http functionality)
 * [scipy](https://www.scipy.org/) (provides numerous packages required for the processing of data)
-* [pandas](http://pandas.pydata.org) (used to perform data processing) 
-* [matplotlib](https://matplotlib.org/) (necessary for creating plots of ET related data)
-* [gdal](http://www.gdal.org/) (version >2.0) (the Geospatial Data Abstraction Library is used to interact with raster and vector geospatial data)
-* [netcdf4](https://www.unidata.ucar.edu/software/netcdf/) (for interacting with multi-dimensional scientific datasets, such as GRIDMET/DAYMET)
 * [refet](https://github.com/DRI-WSWUP/RefET) (for computing reference ET)
 * [drigo](https://github.com/DRI-WSWUP/drigo) (GDAL/OGR helper functions)
 
@@ -48,17 +49,17 @@ The user is strongly encouraged to setup a dedicated conda environment for pyMET
 
 The environment must be "activated" before use:
 ```
-> activate pymetric
+> conda activate pymetric
 ```
 
 Most of the external modules can then be installed by calling:
 ```
-> conda install numpy scipy pandas matplotlib gdal netcdf4 future requests
+> conda install future gdal matplotlib netcdf4 numpy pandas refet requests scipy
 ```
 
-The refet, and drigo modules must be installed separately with pip:
+The drigo modules must be installed separately with pip:
 ```
-> pip install refet drigo --no-deps
+> pip install drigo --no-deps
 ```
 
 ## Environment Variables
@@ -75,18 +76,18 @@ echo %PYTHONPATH%
 ```
 If PYTHONPATH is not set, type the following in the command prompt:
 ```
-> setx PYTHONPATH "D:\pymetric\code\support"
+> setx PYTHONPATH "C:\pymetric\code\support"
 ```
 To append to an existing PYTHONPATH, type:
 ```
-setx PYTHONPATH "D:\pymetric\code\support;%PYTHONPATH%"
+setx PYTHONPATH "C:\pymetric\code\support;%PYTHONPATH%"
 ```
 
 #### GDAL_DATA
 
 In order to execute pyMETRIC code, the GDAL_DATA environmental variable may need to be set (*example*: GDAL_DATA = C:\Miniconda3\envs\pymetric\Library\share\gdal). **Depending on your specific installation of Python, you file path for GDAL_DATA may be different**
 
-On a Windows PC, the user environment variables can be set through the Control Panel (System -> Advanced system settings -> Environment Variables).  Assuming that pyMETRIC was cloned/installed directly to the D: drive and Python 3 is used, the GDAL_DATA environmental variable may be set as:
+On a Windows PC, the user environment variables can be set through the Control Panel (System -> Advanced system settings -> Environment Variables).  Assuming that pyMETRIC was cloned/installed directly to the C: drive and Python 3 is used, the GDAL_DATA environmental variable may be set as:
 ```
 C:\Miniconda3\envs\pymetric\Library\share\gdal
 ```

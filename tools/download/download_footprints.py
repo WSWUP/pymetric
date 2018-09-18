@@ -1,6 +1,6 @@
 #--------------------------------
 # Name:         download_footprints.py
-# Purpose:      Download NLCD raster
+# Purpose:      Download WRS2 descending footprints shapefile
 #--------------------------------
 
 import argparse
@@ -29,7 +29,8 @@ def main(output_folder, overwrite_flag=False):
 
     """
     download_url = (
-        'https://landsat.usgs.gov/sites/default/files/documents/wrs2_descending.zip')
+        'https://landsat.usgs.gov/sites/default/files/documents/'
+        'WRS2_descending.zip')
 
     zip_name = 'wrs2_descending.zip'
     zip_path = os.path.join(output_folder, zip_name)
@@ -56,7 +57,12 @@ def main(output_folder, overwrite_flag=False):
         logging.info('\nExtracting Landsat WRS2 descending shapefile')
         logging.debug('  {}'.format(output_path))
         with zipfile.ZipFile(zip_path) as zf:
-            zf.extractall(output_folder)
+            for filename in zf.namelist():
+                logging.debug('  {}'.format(filename))
+                zf.extract(filename, output_folder)
+                os.rename(os.path.join(output_folder, filename),
+                          os.path.join(output_folder, filename.lower()))
+            # zf.extractall(output_folder)
     else:
         logging.info('\nFootprint shapefile already extracted')
 

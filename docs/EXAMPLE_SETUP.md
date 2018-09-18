@@ -6,10 +6,10 @@ This example will step through setting up and running pyMETRIC for a single Land
 
 ## Project Folder
 
-All of the example script calls listed below assume that the pyMETRIC repository was installed on a Windows computer to "D:\pymetric", that a "Harney" project folder was created in this folder, and that the scripts are being called from within the project folder (see [Setup Example](EXAMPLE_SETUP.md)).  If you haven't already, change directory into the Harney project folder.
+All of the example script calls listed below assume that the pyMETRIC repository was installed on a Windows computer to "C:\pymetric", that a "Harney" project folder was created in this folder, and that the scripts are being called from within the project folder (see [Setup Example](EXAMPLE_SETUP.md)).  If you haven't already, change directory into the Harney project folder.
 
 ```
-D:\pymetric>cd harney
+C:\pymetric>cd harney
 ```
 
 ## INI
@@ -22,7 +22,7 @@ Copy the template landsat_project.ini from the code\ini_templates folder to the 
 
 Rename the template INI to "landsat_2015.ini" using the command line or file explorer.  Typically, a separate INI file will be needed for each year that is processed.
 
-After renaming the INI, open the INI file in your favorite text editor.  The default values for the template INI file have been set for the Harney Basin for 2015.  To use the template INI in a different study area or folder structure, it will be necessary to change all of the folder paths from "D:\pymetric\example" to the new project folder.
+After renaming the INI, open the INI file in your favorite text editor.  The default values for the template INI file have been set for the Harney Basin for 2015.  To use the template INI in a different study area or folder structure, it will be necessary to change all of the folder paths from "C:\pymetric\example" to the new project folder.
 
 ### Snap Point
 
@@ -39,7 +39,7 @@ A field polygon dataset is not currently being provided or available for this ex
 This script will unpack the Landsat scenes and create the ancillary datasets for each Landsat path/row.
 
 ```
-D:\pymetric\example>python ..\code\local\landsat_prep_path_row.py -i landsat_2015.ini
+C:\pymetric\example>python ..\code\local\landsat_prep_path_row.py -i landsat_2015.ini
 ```
 
 ### Prep INI files
@@ -47,11 +47,11 @@ D:\pymetric\example>python ..\code\local\landsat_prep_path_row.py -i landsat_201
 This script will generate the INI files for all of the subsequent processes.  This script can also be used to update the INI files if the users makes a change to the main project INI.
 
 ```
-D:\pymetric\example>python ..\code\local\landsat_prep_ini.py -i landsat_2015.ini
+C:\pymetric\example>python ..\code\local\landsat_prep_ini.py -i landsat_2015.ini
 ```
 
 ### Prep Landsat scenes
 
 ```
-D:\pymetric\example>python ..\code\local\landsat_prep_scene.py -i landsat_2015.ini
+C:\pymetric\example>python ..\code\local\landsat_prep_scene.py -i landsat_2015.ini
 ```

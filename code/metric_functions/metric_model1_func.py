@@ -1139,7 +1139,7 @@ if __name__ == '__main__':
     logging.info('')
 
     # Delay
-    sleep(random.uniform(0, max([0, args.delay])))
+    sleep(random.uniform(0, max([0, abs(args.delay)])))
 
     metric_model1(image_ws=args.workspace, ini_path=args.ini,
                   bs=args.blocksize, stats_flag=args.stats,

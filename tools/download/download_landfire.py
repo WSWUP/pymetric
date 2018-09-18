@@ -1,6 +1,6 @@
 #--------------------------------
 # Name:         download_landfire.py
-# Purpose:      Download LANDFIRE veg type
+# Purpose:      Download LANDFIRE vegetation type raster
 #--------------------------------
 
 import argparse
@@ -15,7 +15,7 @@ import _utils
 
 
 def main(output_folder, version='140', overwrite_flag=False):
-    """Download LANDFIRE veg. type
+    """Download LANDFIRE vegetation type raster
 
     Parameters
     ----------
@@ -55,7 +55,7 @@ def main(output_folder, version='140', overwrite_flag=False):
         logging.info('  {}'.format(zip_path))
         _utils.url_download(download_url, zip_path)
     else:
-        logging.info('\nLANDFIRE raster already downloaded')
+        logging.info('\nLANDFIRE zip file already downloaded')
 
     if os.path.isfile(zip_path):
         logging.info('\nExtracting LANDFIRE files')
@@ -90,7 +90,7 @@ def main(output_folder, version='140', overwrite_flag=False):
                 with source, target:
                     shutil.copyfileobj(source, target)
     else:
-        logging.info('\nLANDFIRE raster already extracted')
+        logging.info('\nLANDFIRE zip file not present')
 
 
 def arg_parse():

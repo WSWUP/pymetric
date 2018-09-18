@@ -1124,7 +1124,7 @@ def raster_swb_func(output_dt, output_osr, output_cs, output_extent,
        Jourlnal of Irrigation and Drainage Engineering, 131(1).
        10.1061/(ASCE)0733-9437(2005)131:1(2)
     .. [2] Allen, R. (2011). Skin layer evaporation to account for small
-       precipitation events — an enhancement to the FAO-56 evaporation model.
+       precipitation events - an enhancement to the FAO-56 evaporation model.
        Agricultural Water Management, 99.
        https://doi.org/10.1016/j.agwat.2011.08.008
 
@@ -1392,7 +1392,7 @@ def point_swb_func(test_dt, test_xy, test_osr, awc_path,
        Jourlnal of Irrigation and Drainage Engineering, 131(1).
        10.1061/(ASCE)0733-9437(2005)131:1(2)
     .. [2] Allen, R. (2011). Skin layer evaporation to account for small
-       precipitation events — an enhancement to the FAO-56 evaporation model.
+       precipitation events - an enhancement to the FAO-56 evaporation model.
        Agricultural Water Management, 99.
        https://doi.org/10.1016/j.agwat.2011.08.008
 
@@ -1633,7 +1633,7 @@ def array_swb_func(etr, ppt, awc):
        Jourlnal of Irrigation and Drainage Engineering, 131(1).
        10.1061/(ASCE)0733-9437(2005)131:1(2)
     .. [2] Allen, R. (2011). Skin layer evaporation to account for small
-       precipitation events — an enhancement to the FAO-56 evaporation model.
+       precipitation events - an enhancement to the FAO-56 evaporation model.
        Agricultural Water Management, 99.
        https://doi.org/10.1016/j.agwat.2011.08.008
 
@@ -1714,7 +1714,7 @@ def daily_swb_func(etr, ppt, de_prev, d_rew_prev, rew, tew,
        Jourlnal of Irrigation and Drainage Engineering, 131(1).
        https://10.1061/(ASCE)0733-9437(2005)131:1(2)
     .. [2] Allen, R. (2011). Skin layer evaporation to account for small
-       precipitation events — an enhancement to the FAO-56 evaporation model.
+       precipitation events - an enhancement to the FAO-56 evaporation model.
        Agricultural Water Management, 99.
        https://doi.org/10.1016/j.agwat.2011.08.008
 

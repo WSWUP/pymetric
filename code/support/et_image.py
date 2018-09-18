@@ -56,13 +56,17 @@ class Image:
         self.image_name_re = re.compile('L\w+_(?P<band>B(?:\w+)).TIF')
         # mtl_re = '%s\D{3}\d{2}_MTL.txt' % self.folder_id
 
-        folder_match = self.image_id_re.match(self.folder_id)
         prefix_list = ['LT04', 'LT05', 'LE07', 'LC08']
-        if (not folder_match or
-                folder_match.group('prefix') not in prefix_list):
+        folder_match = self.image_id_re.match(self.folder_id)
+        if not folder_match:
+            logging.error(
+                '\nWARNING: The folder does not appear to be a valid Landsat '
+                'ID, skipping\n  {}'.format(self.folder_id))
+            raise InvalidImage
+        elif folder_match.group('prefix') not in prefix_list:
             logging.error(
                 '\nERROR: The sensor type could not be determined from '
-                'the folder name: {}\nERROR: Only Landsat 4, 5, 7, and 8 '
+                'the folder name:\n  {}\nERROR: Only Landsat 4, 5, 7, and 8 '
                 'are currently supported.\n'.format(self.folder_id))
             raise InvalidImage
 
