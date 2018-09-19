@@ -116,7 +116,7 @@ def main(ini_path, tile_list=None, groupsize=1, blocksize=2048,
         with open(keep_list_path) as keep_list_f:
             image_keep_list = keep_list_f.readlines()
             image_keep_list = [image_id.strip() for image_id in image_keep_list
-                               if image_re.match(image_id.strip())]
+                               if image_id_re.match(image_id.strip())]
     else:
         logging.debug('\nScene keep list not set in INI')
         image_keep_list = []
@@ -125,7 +125,7 @@ def main(ini_path, tile_list=None, groupsize=1, blocksize=2048,
     #     with open(skip_list_path) as skip_list_f:
     #         image_skip_list = skip_list_f.readlines()
     #         image_skip_list = [image_id.strip() for image_id in image_skip_list
-    #                      if image_re.match(image_id.strip())]
+    #                            if image_id_re.match(image_id.strip())]
     # else:
     #     logging.debug('\nScene skip list not set in INI')
     #     image_skip_list = []

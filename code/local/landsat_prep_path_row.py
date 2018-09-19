@@ -186,7 +186,8 @@ def main(ini_path, tile_list=None, overwrite_flag=False, mp_procs=1):
             os.path.isfile(wrs2_lower_path)):
         warnings.warn('\nThe WRS2 descending shapefile name has changed'
                      '\nPlease redownload this file using the '
-                     'tools\download\download_footprints.py script')
+                     'tools\download\download_footprints.py script',
+                      DeprecationWarning)
         wrs2_footprint_path = str(wrs2_lower_path)
 
     # Check inputs folders/paths
@@ -460,6 +461,8 @@ def main(ini_path, tile_list=None, overwrite_flag=False, mp_procs=1):
         logging.info('\nBuild DEM for each path/row')
         mosaic_mp_list = []
         for tile_name in tile_list:
+            logging.info('  {}'.format(tile_name))
+
             # Output folder and path
             tile_output_path = os.path.join(
                 dem_output_ws, tile_name, dem_output_name)
@@ -467,7 +470,6 @@ def main(ini_path, tile_list=None, overwrite_flag=False, mp_procs=1):
                 logging.debug('    {} already exists, skipping'.format(
                     os.path.basename(tile_output_path)))
                 continue
-            logging.info('  {}'.format(tile_name))
 
             # Get the path/row geometry in GCS for selecting intersecting tiles
             tile_gcs_geom = ogr.CreateGeometryFromWkt(
@@ -511,7 +513,7 @@ def main(ini_path, tile_list=None, overwrite_flag=False, mp_procs=1):
             tile_utm_proj = drigo.epsg_proj(
                 32600 + int(tile_utm_zone_dict[tile_name]))
             tile_utm_extent = tile_utm_extent_dict[tile_name]
-            tile_utm_ullr = tile_utm_extent.ul_lr_swap()
+            # tile_utm_ullr = tile_utm_extent.ul_lr_swap()
 
             # Mosaic, clip, project using custom function
             if mp_procs > 1:
@@ -520,13 +522,15 @@ def main(ini_path, tile_list=None, overwrite_flag=False, mp_procs=1):
                     tile_utm_proj, snap_cs, tile_utm_extent])
             else:
                 drigo.mosaic_tiles(dem_tile_list, tile_output_path,
-                                 tile_utm_osr, snap_cs, tile_utm_extent)
+                                   output_osr=tile_utm_osr, output_cs=snap_cs,
+                                   output_extent=tile_utm_extent)
 
             # Cleanup
             del tile_output_path
             del tile_gcs_geom, tile_gcs_extent, tile_utm_extent
             del tile_utm_osr, tile_utm_proj
             del lon_list, lat_list, dem_tile_list
+
         # Mosaic DEM rasters using multiprocessing
         if mosaic_mp_list:
             pool = mp.Pool(mp_procs)
@@ -540,13 +544,14 @@ def main(ini_path, tile_list=None, overwrite_flag=False, mp_procs=1):
         logging.info('\nBuild NLCD for each path/row')
         project_mp_list = []
         for tile_name in tile_list:
+            logging.info('  {}'.format(tile_name))
+
             nlcd_output_path = os.path.join(
                 nlcd_output_ws, tile_name, nlcd_output_fmt.format(year))
             if not overwrite_flag and os.path.isfile(nlcd_output_path):
                 logging.debug('    {} already exists, skipping'.format(
                     os.path.basename(nlcd_output_path)))
                 continue
-            logging.info('  {}'.format(tile_name))
 
             # Set the nodata value on the NLCD raster if it is not set
             nlcd_ds = gdal.Open(nlcd_input_path, 0)
@@ -591,6 +596,8 @@ def main(ini_path, tile_list=None, overwrite_flag=False, mp_procs=1):
         logging.info('\nBuild CDL for each path/row')
         project_mp_list, remap_mp_list = [], []
         for tile_name in tile_list:
+            logging.info('  {}'.format(tile_name))
+
             cdl_output_path = os.path.join(
                 cdl_output_ws, tile_name, cdl_output_fmt.format(year))
             cdl_ag_output_path = os.path.join(
@@ -603,7 +610,6 @@ def main(ini_path, tile_list=None, overwrite_flag=False, mp_procs=1):
                 logging.debug('    {} already exists, skipping'.format(
                     os.path.basename(cdl_output_path)))
                 continue
-            logging.info('  {}'.format(tile_name))
 
             # Set the nodata value on the CDL raster if it is not set
             cdl_ds = gdal.Open(cdl_input_path, 0)
@@ -657,6 +663,8 @@ def main(ini_path, tile_list=None, overwrite_flag=False, mp_procs=1):
         logging.info('\nBuild LANDFIRE for each path/row')
         project_mp_list, remap_mp_list = [], []
         for tile_name in tile_list:
+            logging.info('  {}'.format(tile_name))
+
             landfire_output_path = os.path.join(
                 landfire_output_ws, tile_name,
                 landfire_output_fmt.format(year))
@@ -667,7 +675,6 @@ def main(ini_path, tile_list=None, overwrite_flag=False, mp_procs=1):
                 logging.debug('    {} already exists, skipping'.format(
                     os.path.basename(landfire_output_path)))
                 continue
-            logging.info('  {}'.format(tile_name))
 
             # Set the nodata value on the LANDFIRE raster if it is not set
             # landfire_ds = gdal.Open(landfire_input_path, 0)
