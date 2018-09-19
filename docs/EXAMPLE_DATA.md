@@ -46,11 +46,11 @@ A shapefile has been provided within this distribution to be used with the examp
 
 ## Landsat clear scene "keep" lists
 
-Before running pyMETRIC, it is important to identify Landsat images that should be processed and are free of excessive clouds, smoke, haze, snow, shadows, or general bad data in the study area.  Many of the pyMETRIC tools are expecting or will honor a text file of Landsat scene IDs that should processed.  This file is typically referred to as a "keep list" in the documentation and INI files.
+Before running pyMETRIC, it is important to identify Landsat images that should be processed and are free of excessive clouds, smoke, haze, snow, shadows, or general bad data in the study area.  Many of the pyMETRIC tools are expecting or will honor a text file of Landsat product IDs that should processed.  This file is typically referred to as a "keep list" in the documentation and INI files.
 
 One approach for generating this keep list is to the use the [Cloud Free Scene Counts tools](https://github.com/DRI-WSWUP/cloud-free-scene-counts).  The Landsat path/row used in the example for those tools is also 43/30.
 
-For the purpose of this example, we will directly use the list of clear scenes in 2015 identified at the end of the [Cloud Free Scene Counts example](https://github.com/DRI-WSWUP/cloud-free-scene-counts/blob/master/example/EXAMPLE.md).  The following list of 16 Landsat scene IDs should be pasted into a file called "clear_scenes.txt" and saved in "C:\pymetric\example\landsat":
+For the purpose of this example, we will directly use the list of clear scenes in 2015 identified at the end of the [Cloud Free Scene Counts example](https://github.com/DRI-WSWUP/cloud-free-scene-counts/blob/master/example/EXAMPLE.md).  The following list of 16 Landsat product IDs should be pasted into a file called "clear_scenes.txt" and saved in "C:\pymetric\example\landsat":
 
 ```
 LO08_L1TP_043030_20150210_20170301_01_T1

@@ -49,10 +49,10 @@ def main(scene_list_path, output_folder, start_dt=None, end_dt=None,
         '(?P<NUMBER>\d{2})_(?P<CATEGORY>\w{2})$')
     pre_c1_re = re.compile('^(LT04|LT05|LE07|LC08)_\d{6}_\d{8}$')
 
-    logging.info('\nReading dates from scene keep list file')
+    logging.info('\nReading Landsat product IDs from scene keep list file')
     logging.info('  {}\n'.format(scene_list_path))
     if not os.path.isfile(scene_list_path):
-        logging.error('\nLandsat scene list does not exist, exiting')
+        logging.error('\nLandsat keep list file does not exist, exiting')
         return False
     with open(scene_list_path) as input_f:
         image_id_list = input_f.readlines()
@@ -68,9 +68,11 @@ def main(scene_list_path, output_folder, start_dt=None, end_dt=None,
         logging.debug('End date:   {}'.format(end_dt.strftime('%Y-%m-%d')))
         image_id_list = [id for id in image_id_list
                          if id[17:25] <= end_dt.strftime('%Y%m%d')]
-    logging.debug('\n{}\n'.format(', '.join(image_id_list)))
+    logging.debug('\nKeep List: {}\n'.format(', '.join(image_id_list)))
 
     bands = {
+        'LT04': ['B1.TIF', 'B2.TIF', 'B3.TIF', 'B4.TIF', 'B5.TIF',
+                 'B6.TIF', 'B7.TIF', 'BQA.TIF', 'MTL.txt'],
         'LT05': ['B1.TIF', 'B2.TIF', 'B3.TIF', 'B4.TIF', 'B5.TIF',
                  'B6.TIF', 'B7.TIF', 'BQA.TIF', 'MTL.txt'],
         'LE07': ['B1.TIF', 'B2.TIF', 'B3.TIF', 'B4.TIF', 'B5.TIF',
@@ -96,8 +98,8 @@ def main(scene_list_path, output_folder, start_dt=None, end_dt=None,
         # print(sensor, type, path, row, date, number, category)
 
         year_folder = os.path.join(
-            output_folder, '{:03d}'.format(int(path)), '{:03d}'.format(int(row)),
-            date[:4])
+            output_folder, '{:03d}'.format(int(path)),
+            '{:03d}'.format(int(row)), date[:4])
         product_folder = os.path.join(year_folder, image_id)
         if not os.path.isdir(product_folder):
             os.makedirs(product_folder)

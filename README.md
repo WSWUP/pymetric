@@ -13,7 +13,7 @@ In addition to creating ET maps from Landsat images, pyMETRIC includes functiona
 
 ## Install
 
-Details on installing pyMETRIC, Python, and necessary modules can be found in the[ installation instructions](docs/INSTALL.md).
+Details on installing pyMETRIC, Python, and necessary modules can be found in the [installation instructions](docs/INSTALL.md).
 
 ## Example
 
