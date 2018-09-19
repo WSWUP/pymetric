@@ -69,14 +69,22 @@ def main(output_folder, version='140', overwrite_flag=False):
                 output_path = list(member.split('/'))
                 output_path[0] = output_name
                 output_path = os.sep.join(output_path)
+
+                # Standardize the naming of the "Grid" folder
+                output_path = output_path.replace('grid1', 'Grid')\
+                    .replace('grid2', 'Grid')\
+                    .replace('grid', 'Grid')\
+                    .replace('Grid2', 'Grid')
+
                 output_ws = os.path.join(
                     output_folder, os.path.dirname(output_path))
 
                 # Skip directories
                 if not os.path.basename(output_path):
                     continue
-                # Only keep "grid" files
-                if 'Grid' not in output_path:
+
+                # Only process the "Grid" (or "grid", "Grid1", "Grid2") folder
+                if 'grid' not in os.path.dirname(output_path).lower():
                     continue
 
                 # Build output directories
