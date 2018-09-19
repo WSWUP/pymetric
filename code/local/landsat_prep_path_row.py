@@ -15,6 +15,7 @@ import re
 import shutil
 import subprocess
 import sys
+import warnings
 
 import drigo
 import numpy as np
@@ -72,11 +73,12 @@ def main(ini_path, tile_list=None, overwrite_flag=False, mp_procs=1):
     logging.debug('  Project: {}'.format(project_ws))
 
     # study_area_path = config.get('INPUTS', 'study_area_path')
-    footprint_path = config.get('INPUTS', 'footprint_path')
+    wrs2_footprint_path = config.get('INPUTS', 'footprint_path')
     # For now, assume the UTM zone file is colocated with the footprints shapefile
     utm_path = python_common.read_param(
         'utm_path',
-        os.path.join(os.path.dirname(footprint_path), 'wrs2_tile_utm_zones.json'),
+        os.path.join(os.path.dirname(wrs2_footprint_path),
+                     'wrs2_tile_utm_zones.json'),
         config, 'INPUTS')
     keep_list_path = python_common.read_param(
         'keep_list_path', '', config, 'INPUTS')
@@ -87,12 +89,9 @@ def main(ini_path, tile_list=None, overwrite_flag=False, mp_procs=1):
     landsat_flag = python_common.read_param(
         'landsat_flag', True, config, 'INPUTS')
     ledaps_flag = False
-    dem_flag = python_common.read_param(
-        'dem_flag', True, config, 'INPUTS')
-    nlcd_flag = python_common.read_param(
-        'nlcd_flag', True, config, 'INPUTS')
-    cdl_flag = python_common.read_param(
-        'cdl_flag', False, config, 'INPUTS')
+    dem_flag = python_common.read_param('dem_flag', True, config, 'INPUTS')
+    nlcd_flag = python_common.read_param('nlcd_flag', True, config, 'INPUTS')
+    cdl_flag = python_common.read_param('cdl_flag', False, config, 'INPUTS')
     landfire_flag = python_common.read_param(
         'landfire_flag', False, config, 'INPUTS')
     field_flag = python_common.read_param(
@@ -179,9 +178,20 @@ def main(ini_path, tile_list=None, overwrite_flag=False, mp_procs=1):
     # File/folder names
     orig_data_folder_name = 'ORIGINAL_DATA'
 
+    # WRS2 shapefile was originally named all lower case
+    # Add code to support reading the lower case version
+    wrs2_lower_path = wrs2_footprint_path.replace(
+        'WRS2_descending.shp', 'wrs2_descending.shp')
+    if (not os.path.isfile(wrs2_footprint_path) and
+            os.path.isfile(wrs2_lower_path)):
+        warnings.warn('\nThe WRS2 descending shapefile name has changed'
+                     '\nPlease redownload this file using the '
+                     'tools\download\download_footprints.py script')
+        wrs2_footprint_path = str(wrs2_lower_path)
+
     # Check inputs folders/paths
     logging.info('\nChecking input folders/files')
-    file_check(footprint_path)
+    file_check(wrs2_footprint_path)
     file_check(utm_path)
     if landsat_flag:
         folder_check(landsat_input_ws)
@@ -242,7 +252,7 @@ def main(ini_path, tile_list=None, overwrite_flag=False, mp_procs=1):
 
     # Landsat Footprints (WRS2 Descending Polygons)
     logging.debug('\nFootprint (WRS2 descending should be GCS84):')
-    tile_gcs_osr = drigo.feature_path_osr(footprint_path)
+    tile_gcs_osr = drigo.feature_path_osr(wrs2_footprint_path)
     logging.debug('  OSR: {}'.format(tile_gcs_osr))
 
     # Doublecheck that WRS2 descending shapefile is GCS84
@@ -252,7 +262,7 @@ def main(ini_path, tile_list=None, overwrite_flag=False, mp_procs=1):
 
     # Get geometry for each path/row
     tile_gcs_wkt_dict = path_row_wkt_func(
-        footprint_path, path_field='PATH', row_field='ROW')
+        wrs2_footprint_path, path_field='PATH', row_field='ROW')
 
     # Get UTM zone for each path/row
     # DEADBEEF - Using "eval" is considered unsafe and should be changed
