@@ -1,11 +1,11 @@
 configparser
-drigo>=0.1.1
+drigo>=0.1.4
 future==0.16.0
-gdal==2.2.3
+gdal>=2.2.3
 matplotlib>=2.1.1
 netCDF4>=1.3.1
 numpy>=1.14.0
 pandas>=0.22.0
 refet>=0.3.7
-requests==2.18.4
+requests
 scipy>=1.0.0
