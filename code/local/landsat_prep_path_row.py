@@ -319,9 +319,10 @@ def main(ini_path, tile_list=None, overwrite_flag=False, mp_procs=1):
     if keep_list_path:
         logging.debug('\nReading scene keep list')
         with open(keep_list_path) as keep_list_f:
-            image_keep_list = keep_list_f.readlines()
-            image_keep_list = [image_id.strip() for image_id in keep_list
-                               if image_id_re.match(image_id.strip())]
+            image_keep_list = [
+                image_id.strip()
+                for image_id in keep_list_f.readlines()
+                if image_id_re.match(image_id.strip())]
     else:
         logging.debug('\nScene keep list not set in INI')
         image_keep_list = []
