@@ -88,7 +88,8 @@ Or if you already have it, update it:
 ```
 pip install -U Landsat578==0.4.96
 ```
-NOTE: Pymetric-specific functionality has been deprecated in Landsat578. Make sure to use a version < 0.0.97.
+
+NOTE: Pymetric-specific functionality has been deprecated in Landsat578.  Make sure to use a version < 0.4.97.
 
 The Landsat 7 and 8 images from 2015 for the study area can be downloaded using a configuration file that provides
 the location of the clear_scenes.txt (the scenes determined as usable by the user, using the [Cloud Free Scene Counts tools](https://github.com/Open-ET/cloud-free-scene-counts)) and the root of the project (i.e, C:\pymetric\example).
