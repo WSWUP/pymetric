@@ -53,9 +53,10 @@ def pixel_rating(image_ws, ini_path, bs=None, stats_flag=False,
     np.seterr(invalid='ignore')
 
     # # Check  that image_ws is valid
-    # image_re = re.compile(
-    #     '^(LT04|LT05|LE07|LC08)_(\d{3})(\d{3})_(\d{4})(\d{2})(\d{2})')
-    # if not os.path.isdir(image_ws) or not image_re.match(scene_id):
+    # image_id_re = re.compile(
+    #     '^(LT04|LT05|LE07|LC08)_(?:\w{4})_(\d{3})(\d{3})_'
+    #     '(\d{4})(\d{2})(\d{2})_(?:\d{8})_(?:\d{2})_(?:\w{2})$')
+    # if not os.path.isdir(image_ws) or not image_id_re.match(image_id):
     #     logging.error('\nERROR: Image folder is invalid or does not exist\n')
     #     return False
 

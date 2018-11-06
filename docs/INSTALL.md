@@ -13,16 +13,15 @@ pyMETRIC has only been tested using Python 2.7 and 3.6, but may work with other 
 The following external Python modules must be present to run pyMETRIC:
 * [fiona](http://toblerity.org/fiona/) (used to read and write multi-layered GIS file formats)
 * [future](https://pypi.python.org/pypi/future) (adds features from Python 3 to Python 2 installations)
+* [gdal](http://www.gdal.org/) (version >2.2) (the Geospatial Data Abstraction Library is used to interact with raster and vector geospatial data)
+* [matplotlib](https://matplotlib.org/) (necessary for creating plots of ET related data)
+* [netcdf4](https://www.unidata.ucar.edu/software/netcdf/) (for interacting with multi-dimensional scientific datasets, such as GRIDMET/DAYMET)
+* [numpy](http://www.numpy.org/)
+* [pandas](http://pandas.pydata.org) (used to perform data processing)
 * [requests](http://docs.python-requests.org/en/master/) (adds enhanced http functionality)
 * [scipy](https://www.scipy.org/) (provides numerous packages required for the processing of data)
-* [pandas](http://pandas.pydata.org) (used to perform data processing) 
-* [matplotlib](https://matplotlib.org/) (necessary for creating plots of ET related data)
-* [gdal](http://www.gdal.org/) (version >2.0) (the Geospatial Data Abstraction Library is used to interact with raster and vector geospatial data)
-* [netcdf4](https://www.unidata.ucar.edu/software/netcdf/) (for interacting with multi-dimensional scientific datasets, such as GRIDMET/DAYMET)
-* [Landsat578](https://github.com/dgketchum/Landsat578) (for downloading Landsat images)
 * [refet](https://github.com/DRI-WSWUP/RefET) (for computing reference ET)
 * [drigo](https://github.com/DRI-WSWUP/drigo) (GDAL/OGR helper functions)
-* [PyYAML](https://pyyaml.org/wiki/PyYAMLDocumentation) (input file reader that's needed for Landsat578 downloader)
 
 Please see the [requirements](../requirements.txt) file for details on the versioning requirements.  The module version numbers listed in the file were tested and are known to work.  Other combinations of versions may work but have not been tested.
 
@@ -55,12 +54,12 @@ The environment must be "activated" before use:
 
 Most of the external modules can then be installed by calling:
 ```
-> conda install future gdal matplotlib netcdf4 nomkl numpy pandas refet requests scipy yaml
+> conda install future gdal matplotlib netcdf4 numpy pandas refet requests scipy
 ```
 
-The Landsat578 and drigo modules must be installed separately with pip:
+The drigo modules must be installed separately with pip:
 ```
-> pip install Landsat578 drigo --no-deps
+> pip install drigo --no-deps
 ```
 
 ## Environment Variables

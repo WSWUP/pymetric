@@ -1,12 +1,12 @@
 pyMETRIC Workflow
-===================
+=================
 
 >**Note:** 
->pyMETRIC makes use of the [ArgParse](https://docs.python.org/2/library/argparse.html) Python library which enables the use of command-line options, arguments and sub-commands.  This functionality is only available when running pyMETRIC through the command line.  Operating pyMETRIC through the graphic user interface (GUI) of your operating system is not recommended.
+>pyMETRIC makes use of the [ArgParse](https://docs.python.org/3/library/argparse.html) module which enables the use of command-line options, arguments and sub-commands.  This functionality is only available when running pyMETRIC through the command line.  Operating pyMETRIC through the graphic user interface (GUI) of your operating system is not recommended.
 
 Input File
 -------------
-Components of pyMETRIC require the use of an input file (.ini), which sets parameters to be used in processing.  The pathc to the input file must be preceeded by "-i" or "--ini".  (Example: -i C:\pymetric\example\landsat_2015.ini)
+Components of pyMETRIC require the use of an input file (.ini), which sets parameters to be used in processing.  The pathc to the input file must be preceded by "-i" or "--ini".  (Example: -i C:\pymetric\example\landsat_2015.ini)
 
  
 Common Flags

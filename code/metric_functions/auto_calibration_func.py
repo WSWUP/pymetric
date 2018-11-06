@@ -347,7 +347,7 @@ def save_etrf_histograms(etrf_array, plots_ws, cal_dict,
 
     """
     logging.debug('Save ETrF Histograms')
-    scene_id = os.path.basename(os.path.dirname(plots_ws))
+    image_id = os.path.basename(os.path.dirname(plots_ws))
 
     # mc_iter is None when run in stand alone mode
     # mc_iter index is 1 based when run in Monte Carlo mode
@@ -374,7 +374,7 @@ def save_etrf_histograms(etrf_array, plots_ws, cal_dict,
     plt.figure()
     n, bins, patches = plt.hist(etrf_array, bins=etrf_bins)
     plt.title('ETrF - {}{}{}'.format(
-              scene_id, mc_title, cal_iter_title))
+        image_id, mc_title, cal_iter_title))
     plt.xlabel('ETrF')
     plt.ylabel('# of agricultural pixels')
     plt.xlim(-0.2, 1.4)
@@ -437,7 +437,7 @@ def save_ndvi_histograms(ndvi_array, plots_ws, mc_iter=None):
 
     """
     logging.debug('Save NDVI Histograms')
-    scene_id = os.path.basename(os.path.dirname(plots_ws))
+    image_id = os.path.basename(os.path.dirname(plots_ws))
 
     # mc_iter is None when run in stand alone mode
     # mc_iter index is 1 based when run in Monte Carlo mode
@@ -452,7 +452,7 @@ def save_ndvi_histograms(ndvi_array, plots_ws, mc_iter=None):
     plt.figure()
     ndvi_bins = calc_histogram_bins(ndvi_array, 0.01)
     n, bins, patches = plt.hist(ndvi_array, bins=ndvi_bins)
-    plt.title('NDVI - {}{}'.format(scene_id, mc_title))
+    plt.title('NDVI - {}{}'.format(image_id, mc_title))
     plt.xlabel('NDVI')
     plt.ylabel('# of agricultural pixels')
     plt.xlim(-0.2, 1.2)

@@ -46,98 +46,42 @@ A shapefile has been provided within this distribution to be used with the examp
 
 ## Landsat clear scene "keep" lists
 
-Before running pyMETRIC, it is important to identify Landsat images that should be processed and are free of excessive clouds, smoke, haze, snow, shadows, or general bad data in the study area.  Many of the pyMETRIC tools are expecting or will honor a text file of Landsat scene IDs that should processed.  This file is typically referred to as a "keep list" in the documentation and INI files.
+Before running pyMETRIC, it is important to identify Landsat images that should be processed and are free of excessive clouds, smoke, haze, snow, shadows, or general bad data in the study area.  Many of the pyMETRIC tools are expecting or will honor a text file of Landsat product IDs that should processed.  This file is typically referred to as a "keep list" in the documentation and INI files.
 
 One approach for generating this keep list is to the use the [Cloud Free Scene Counts tools](https://github.com/DRI-WSWUP/cloud-free-scene-counts).  The Landsat path/row used in the example for those tools is also 43/30.
 
-For the purpose of this example, we will directly use the list of clear scenes in 2015 identified at the end of the [Cloud Free Scene Counts example](https://github.com/DRI-WSWUP/cloud-free-scene-counts/blob/master/EXAMPLE.md).  The following list of 16 Landsat scene IDs should be pasted into a file called "clear_scenes.txt" and saved in "C:\pymetric\example\landsat":
+For the purpose of this example, we will directly use the list of clear scenes in 2015 identified at the end of the [Cloud Free Scene Counts example](https://github.com/DRI-WSWUP/cloud-free-scene-counts/blob/master/example/EXAMPLE.md).  The following list of 16 Landsat product IDs should be pasted into a file called "clear_scenes.txt" and saved in "C:\pymetric\example\landsat":
 
 ```
-LO08_043030_20150210
-LE07_043030_20150218
-LE07_043030_20150306
-LC08_043030_20150415
-LE07_043030_20150423
-LC08_043030_20150501
-LE07_043030_20150509
-LE07_043030_20150610
-LE07_043030_20150626
-LC08_043030_20150720
-LE07_043030_20150728
-LE07_043030_20150813
-LC08_043030_20150821
-LC08_043030_20150906
-LC08_043030_20150922
-LE07_043030_20151016
+LO08_L1TP_043030_20150210_20170301_01_T1
+LE07_L1TP_043030_20150218_20160902_01_T1
+LE07_L1TP_043030_20150306_20160902_01_T1
+LC08_L1TP_043030_20150415_20170227_01_T1
+LE07_L1TP_043030_20150423_20160902_01_T1
+LC08_L1TP_043030_20150501_20170301_01_T1
+LE07_L1TP_043030_20150509_20160902_01_T1
+LE07_L1TP_043030_20150610_20160905_01_T1
+LE07_L1TP_043030_20150626_20160902_01_T1
+LC08_L1TP_043030_20150720_20170226_01_T1
+LE07_L1TP_043030_20150728_20160902_01_T1
+LE07_L1TP_043030_20150813_20160903_01_T1
+LC08_L1TP_043030_20150821_20170225_01_T1
+LC08_L1TP_043030_20150906_20170225_01_T1
+LC08_L1TP_043030_20150922_20170225_01_T1
+LE07_L1TP_043030_20151016_20160903_01_T1
 ```
 
 ## Landsat Images
 
-`Note: Landsat tar.gz files will be stored in nested separate folders by path, row, and year`
-
-The Landsat images can be downloaded using the [Landsat578 tool](https://github.com/dgketchum/Landsat578).  
-This tool will need to be installed with pip (see the [pymetric README](README)) and a credentials file will
-need to be generated before using (see the [Landsat 578 README](https://github.com/dgketchum/Landsat578/blob/master/README.md)).
-
+The following command will download the Landsat scenes required for the pyMETRIC example.  The start and end date parameters are only needed if the clear scene list includes scenes from other years.  The Landsat images are being downloaded to the non-project landsat folder so that they can be used by other projects, but they could be downloaded directly to the project folder instead.
 ```
-pip install Landsat578==0.4.96
+C:\pymetric>python tools\download\download_landsat.py example\landsat\clear_scenes.txt --start 2015-01-01 --end 2015-12-31
 ```
 
-Or if you already have it, update it:
-
-```
-pip install -U Landsat578==0.4.96
-```
-
-NOTE: Pymetric-specific functionality has been deprecated in Landsat578.  Make sure to use a version < 0.4.97.
-
-The Landsat 7 and 8 images from 2015 for the study area can be downloaded using a configuration file that provides
-the location of the clear_scenes.txt (the scenes determined as usable by the user, using the [Cloud Free Scene Counts tools](https://github.com/Open-ET/cloud-free-scene-counts)) and the root of the project (i.e, C:\pymetric\example).
-
-An example configuration is located at: "C:\pymetric\example\example_downloader_config.yml"
-To create a blank configuration file, please refer to the [Landsat 578 README](https://github.com/dgketchum/Landsat578/blob/master/README.md)
-
-Example contents of the Landsat 578 configuration file:
-```
-# date format: 'YYYY-MM-DD'
-start: '2015-01-01'
-end: '2015-12-31'
-path: 43
-row: 30
-latitude:
-longitude:
-output_path: C:\pymetric\landsat
-satellite: 8
-
-return_list: True
-zipped: True
-max_cloud_percent: 100
-
-# pymetric directory structure: e.g. C:\pymetric\example\landsat\<path>\<row>\<year>
-# using pymetric_root and clear_scenes overrides all other arguments
-# leave both blank to disable
-
-# "pymetric_root" refers to the project folder.  If this field is populated, 
-# Landsat scenes will be downloaded and placed in directory structure with 
-# the following format: C:\pymetric\example\landsat\<path>\<row>\<year>
-# If "pymetric_root" is left blank, Landsat scenes will be downloaded into the 
-# current working directory
-
-# An unmodified config file may be generated by entering "landsat -conf example" in the command prompt window
-pymetric_root: C:\pymetric\example\
-clear_scenes: C:\pymetric\example\landsat\clear_scenes.txt
-```
-
-To download the Landsat scenes required for the pyMETRIC example, run the following command:
-```
-C:\pymetric>landsat -conf example\example_downloader_config.yml
-```
-
-This will create the directory structure pyMETRIC is expecting, e.g., 
+This will create the directory structure pyMETRIC is expecting, with tar.gz files will be stored in nested separate folders by path, row, and year:
 ```
 C:\pymetric\example\landsat\043\030\2015\LC70430302015101LGN01.tgz
 ```
-and download the zipped Landsat images.
 
 ### Manual Cloud Masks
 
@@ -267,7 +211,7 @@ In order to download the NLDAS hourly data, you will need to create an [Earthdat
 Begin downloading the NLDAS hourly GRB files.  All of the NLDAS variables for a single hour are stored in a single GRB file.  The "--landsat" parameter is set in order to limit the download to only those dates and times that are needed for the Landsat images in the study area and time period.  If you don't specify the "--landsat" parameter, the script will attempt to download all hourly data within the "--start" and "--end" range.
 
 ```
-C:\pymetric>python tools\nldas\nldas_download.py <USERNAME> <PASSWORD> --start 2015-01-01 --end 2015-12-31  --landsat example\landsat\clear_scenes.txt
+C:\pymetric>python tools\nldas\nldas_download.py <USERNAME> <PASSWORD> --start 2015-01-01 --end 2015-12-31 --landsat example\landsat\clear_scenes.txt
 ```
 
 #### Reference ET (ETr)
@@ -346,7 +290,6 @@ python C:\pymetric\tools\download\download_nlcd.py --year 2011
 
 #### Landsat data download and prep
 
-pyMETRIC uses the [Landsat578](https://github.com/dgketchum/Landsat578) package for downloading Landsat imagery products.
 ```
-C:\pymetric>landsat -conf example\example_downloader_config.yml
+python C:\pymetric\tools\download\download_landsat.py example\landsat\clear_scenes.txt --start 2015-01-01 --end 2015-12-31
 ```

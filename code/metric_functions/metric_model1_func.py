@@ -54,16 +54,8 @@ def metric_model1(image_ws, ini_path, bs=None, stats_flag=None,
 
     env = drigo.env
     image = et_image.Image(image_ws, env)
+    logging.debug(log_fmt.format('Image:', image.folder_id))
     np.seterr(invalid='ignore')
-    # env.cellsize = 463.313
-    # env.snap_xmin, env.snap_ymin = 231.6565, 231.6565
-
-    # # Check that image_ws is valid
-    # image_re = re.compile(
-    #     '^(LT04|LT05|LE07|LC08)_(\d{3})(\d{3})_(\d{4})(\d{2})(\d{2})')
-    # if not os.path.isdir(image_ws) or not image_re.match(scene_id):
-    #     logging.error('\nERROR: Image folder is invalid or does not exist\n')
-    #     return False
 
     # Open config file
     config = open_ini(ini_path)

@@ -49,16 +49,15 @@ class Image:
         """
         # Initial image properties can be set just based on the image folder
         self.folder_id = os.path.split(image_folder)[-1]
-        folder_re = re.compile(
-            '^(?P<prefix>\w{4})_(?P<path>\d{3})(?P<row>\d{3})_'
-            '(?P<year>\d{4})(?P<month>\d{2})(?P<day>\d{2})$')
-        # landsat_re = re.compile(
-        #     '^(LT04|LT05|LE07|LC08)_(\d{3})(\d{3})_(\d{4})(\d{2})(\d{2})')
+        self.image_id_re = re.compile(
+            '^(?P<prefix>\w{4})_(?:\w{4})_(?P<path>\d{3})(?P<row>\d{3})_'
+            '(?P<year>\d{4})(?P<month>\d{2})(?P<day>\d{2})_(?:\d{8})_'
+            '(?:\d{2})_(?:\w{2})$')
+        self.image_name_re = re.compile('L\w+_(?P<band>B(?:\w+)).TIF')
         # mtl_re = '%s\D{3}\d{2}_MTL.txt' % self.folder_id
 
         prefix_list = ['LT04', 'LT05', 'LE07', 'LC08']
-
-        folder_match = folder_re.match(self.folder_id)
+        folder_match = self.image_id_re.match(self.folder_id)
         if not folder_match:
             logging.error(
                 '\nWARNING: The folder does not appear to be a valid Landsat '
@@ -70,6 +69,7 @@ class Image:
                 'the folder name:\n  {}\nERROR: Only Landsat 4, 5, 7, and 8 '
                 'are currently supported.\n'.format(self.folder_id))
             raise InvalidImage
+
         self.prefix = folder_match.group('prefix')
         self.qa_band = 'QA'
         if self.prefix == 'LT04':
@@ -100,11 +100,6 @@ class Image:
                 '2': 1, '3': 2, '4': 3, '5': 4, '6': 5, '7': 6}
             self.band_sur_dict = {
                 '2': 1, '3': 2, '4': 3, '5': 4, '6': 5, '7': 6}
-
-        # Initially match input TIF images using folder ID
-        # Use a really simple regular expression to support different
-        # Landsat ID formats
-        self.image_re = re.compile('L\w+_(?P<band>B(?:\w+)).TIF')
 
         self.band_toa_cnt = len(self.band_toa_dict.keys())
         self.band_sur_cnt = len(self.band_sur_dict.keys())
@@ -227,17 +222,17 @@ class Image:
                 self.process_mtl()
 
         # After finding/reading MTL file, update image regular expression
-        if self.image_id is not None:
+        if self.image_name_re is not None:
             if self.prefix in ['LT04', 'LT05']:
                 # 0? outside band capturing group is for old style ID
                 #   where band numbers was two digits
-                self.image_re = re.compile(
+                self.image_name_re = re.compile(
                     '%s_(?P<band>B(?:[1-7]|QA)).TIF$' % self.image_id)
             elif self.prefix == 'LE07':
-                self.image_re = re.compile(
+                self.image_name_re = re.compile(
                     '%s_(?P<band>B(?:[1-7]|QA)(?:_VCID_1)?).TIF$' % self.image_id)
             elif self.prefix == 'LC08':
-                self.image_re = re.compile(
+                self.image_name_re = re.compile(
                     '%s_(?P<band>B(?:[234567]|10|QA)).TIF$' % self.image_id)
 
         # Set snap parameters to environment

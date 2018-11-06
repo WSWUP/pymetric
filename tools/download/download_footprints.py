@@ -57,12 +57,7 @@ def main(output_folder, overwrite_flag=False):
         logging.info('\nExtracting Landsat WRS2 descending shapefile')
         logging.debug('  {}'.format(output_path))
         with zipfile.ZipFile(zip_path) as zf:
-            for filename in zf.namelist():
-                logging.debug('  {}'.format(filename))
-                zf.extract(filename, output_folder)
-                os.rename(os.path.join(output_folder, filename),
-                          os.path.join(output_folder, filename.lower()))
-            # zf.extractall(output_folder)
+            zf.extractall(output_folder)
     else:
         logging.info('\nFootprint shapefile already extracted')
 

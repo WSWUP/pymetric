@@ -73,13 +73,6 @@ def metric_model2(image_ws, ini_path, bs=None,
     logging.info(log_fmt.format('Image:', image.folder_id))
     np.seterr(invalid='ignore')
 
-    # # Check that image_ws is valid
-    # image_re = re.compile(
-    #     '^(LT04|LT05|LE07|LC08)_(\d{3})(\d{3})_(\d{4})(\d{2})(\d{2})')
-    # if not os.path.isdir(image_ws) or not image_re.match(scene_id):
-    #     logging.error('\nERROR: Image folder is invalid or does not exist\n')
-    #     return False
-
     # Folder Paths
     zom_ws = os.path.join(image_ws, 'ROUGHNESS')
     rn_ws = os.path.join(image_ws, 'RN')
