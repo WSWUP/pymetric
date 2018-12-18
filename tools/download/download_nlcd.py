@@ -20,7 +20,7 @@ def main(output_folder, year='2011', overwrite_flag=False):
     ----------
     output_folder : str
         Folder path where files will be saved.
-    year : {2006, 2011}; optional
+    year : {2001, 2006, 2011}; optional
         NLCD year (the default is 2011).
     overwrite_flag : bool, optional
         If True, overwrite existing files (the default is False).
@@ -30,9 +30,13 @@ def main(output_folder, year='2011', overwrite_flag=False):
     None
 
     """
+
     download_url = (
-        'http://www.landfire.gov/bulk/downloadfile.php?'
-        'TYPE=nlcd{0}&FNAME=nlcd_{0}_landcover_2011_edition_2014_10_10.zip').format(year)
+        'https://prd-tnm.s3.amazonaws.com/StagedProducts/NLCD2011/Land_Cover/'
+        'CONUS/nlcd_{}_landcover_2011_edition_2014_10_10.zip').format(year)
+    # download_url = (
+    #     'http://www.landfire.gov/bulk/downloadfile.php?'
+    #     'TYPE=nlcd{0}&FNAME=nlcd_{0}_landcover_2011_edition_2014_10_10.zip').format(year)
     # download_url = (
     #     'http://gisdata.usgs.gov/TDDS/DownloadFile.php?'
     #     'TYPE=nlcd{0}&FNAME=nlcd_{0}_landcover_2011_edition_2014_10_10.zip').format(year)
@@ -86,7 +90,8 @@ def arg_parse():
         help='Output folder')
     parser.add_argument(
         '-y', '--year', metavar='YEAR', default='2011',
-        choices=['2006', '2011'], help='NLCD Year (2006 or 2011)')
+        choices=['2001', '2006', '2011'],
+        help='NLCD Year (2001, 2006, or 2011)')
     parser.add_argument(
         '-o', '--overwrite', default=None, action="store_true",
         help='Force overwrite of existing files')
