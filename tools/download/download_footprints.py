@@ -7,6 +7,7 @@ import argparse
 import datetime as dt
 import logging
 import os
+import shutil
 import sys
 import zipfile
 
@@ -60,6 +61,18 @@ def main(output_folder, overwrite_flag=False):
             zf.extractall(output_folder)
     else:
         logging.info('\nFootprint shapefile already extracted')
+
+    # If the wrs2_tile_utm_zones.json doesn't exist in the output folder,
+    #   copy it there.  Use the script location to figure out the input folder
+    json_name = 'wrs2_tile_utm_zones.json'
+    input_folder = os.path.join(
+        os.path.dirname(os.path.dirname(sys.path[0])), 'landsat', 'footprints')
+    input_json_path = os.path.join(input_folder, 'wrs2_tile_utm_zones.json')
+    output_json_path = os.path.join(output_folder, 'wrs2_tile_utm_zones.json')
+    if not os.path.isfile(output_json_path) and os.path.isfile(input_json_path):
+        logging.info('\nCopying {} to the output footprints folder'.format(
+            json_name))
+        shutil.copy(input_json_path, output_json_path)
 
 
 def arg_parse():
