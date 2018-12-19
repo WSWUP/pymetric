@@ -37,7 +37,7 @@ import pandas as pd
 
 import et_common
 import interpolate_support as interp
-from python_common import open_ini, read_param, parse_int_set
+import python_common as dripy
 
 np.seterr(invalid='ignore')
 # gdal.UseExceptions()
@@ -96,22 +96,22 @@ def metric_interpolate(year_ws, ini_path, mc_iter=None, bs=None,
         iter_fmt = '_{:02d}.img'.format(int(mc_iter))
 
     # Open config file
-    config = open_ini(ini_path)
+    config = dripy.open_ini(ini_path)
 
     # Get input parameters
     logging.debug('  Reading Input File')
     year = config.getint('INPUTS', 'year')
     output_folder_name = config.get('INPUTS', 'folder_name')
     zones_path = config.get('INPUTS', 'zones_path')
-    zones_mask = read_param('zones_mask', None, config)
-    zones_name_field = read_param('zones_name_field', 'FID', config)
-    # zones_buffer = read_param('zones_buffer', 0.0, config)
+    zones_mask = dripy.read_param('zones_mask', None, config)
+    zones_name_field = dripy.read_param('zones_name_field', 'FID', config)
+    # zones_buffer = dripy.read_param('zones_buffer', 0.0, config)
     zones_buffer = 0
-    output_snap = read_param('zones_snap', (0, 0), config)
-    output_cs = read_param('zones_cellsize', 30.0, config)
-    # output_proj = read_param('zones_proj', None, config)
-    output_ws = read_param('output_folder', None, config)
-    etrf_input_ws = read_param('etrf_input_folder', None, config)
+    output_snap = dripy.read_param('zones_snap', (0, 0), config)
+    output_cs = dripy.read_param('zones_cellsize', 30.0, config)
+    # output_proj = dripy.read_param('zones_proj', None, config)
+    output_ws = dripy.read_param('output_folder', None, config)
+    etrf_input_ws = dripy.read_param('etrf_input_folder', None, config)
     etr_input_ws = config.get('INPUTS', 'etr_input_folder')
     etr_input_re = re.compile(config.get('INPUTS', 'etr_input_re'))
     ppt_input_ws = config.get('INPUTS', 'ppt_input_folder')
@@ -119,28 +119,28 @@ def metric_interpolate(year_ws, ini_path, mc_iter=None, bs=None,
     footprint_path = config.get('INPUTS', 'footprint_path')
     # Raster paths should be defined with a foward slash ("/") in INI file
     # On windows, normpath will convert "/" to "\\"
-    etrf_raster = os.path.normpath(read_param(
+    etrf_raster = os.path.normpath(dripy.read_param(
         'etrf_raster', os.path.join('ETRF', 'et_rf.img'), config))
-    ndvi_raster = os.path.normpath(read_param(
+    ndvi_raster = os.path.normpath(dripy.read_param(
         'ndvi_raster', os.path.join('INDICES', 'ndvi_toa.img'), config))
-    tile_list = read_param('tile_list', [], config)
-    use_landsat4_flag = read_param('use_landsat4_flag', False, config)
-    use_landsat5_flag = read_param('use_landsat5_flag', False, config)
-    use_landsat7_flag = read_param('use_landsat7_flag', False, config)
-    use_landsat8_flag = read_param('use_landsat8_flag', False, config)
-    fill_method = read_param('fill_method', 'linear', config).lower()
-    interp_method = read_param('interp_method', 'linear', config).lower()
-    mosaic_method = read_param('mosaic_method', 'mean', config).lower()
-    tile_gcs_buffer = read_param('tile_buffer', 0.25, config)
-    # doy_remove_list = read_param('doy_remove_list', [], config)
+    tile_list = dripy.read_param('tile_list', [], config)
+    use_landsat4_flag = dripy.read_param('use_landsat4_flag', False, config)
+    use_landsat5_flag = dripy.read_param('use_landsat5_flag', False, config)
+    use_landsat7_flag = dripy.read_param('use_landsat7_flag', False, config)
+    use_landsat8_flag = dripy.read_param('use_landsat8_flag', False, config)
+    fill_method = dripy.read_param('fill_method', 'linear', config).lower()
+    interp_method = dripy.read_param('interp_method', 'linear', config).lower()
+    mosaic_method = dripy.read_param('mosaic_method', 'mean', config).lower()
+    tile_gcs_buffer = dripy.read_param('tile_buffer', 0.25, config)
+    # doy_remove_list = dripy.read_param('doy_remove_list', [], config)
 
     # Plot parameters
-    plots_zone_area_flag = read_param('plots_zone_area_flag', False, config)
-    plots_ndvi_ylim = read_param('plots_ndvi_ylim', [0.0, 1.2], config)
-    plots_etrf_ylim = read_param('plots_etrf_ylim', [0.0, 1.2], config)
-    plots_etr_ylim = read_param('plots_etr_ylim', [], config)
-    plots_et_ylim = read_param('plots_et_ylim', [], config)
-    plots_ppt_ylim = read_param('plots_ppt_ylim', [], config)
+    plots_zone_area_flag = dripy.read_param('plots_zone_area_flag', False, config)
+    plots_ndvi_ylim = dripy.read_param('plots_ndvi_ylim', [0.0, 1.2], config)
+    plots_etrf_ylim = dripy.read_param('plots_etrf_ylim', [0.0, 1.2], config)
+    plots_etr_ylim = dripy.read_param('plots_etr_ylim', [], config)
+    plots_et_ylim = dripy.read_param('plots_et_ylim', [], config)
+    plots_ppt_ylim = dripy.read_param('plots_ppt_ylim', [], config)
     if plots_ndvi_ylim:
         plots_ndvi_ylim = list(map(float, plots_ndvi_ylim))
     if plots_etrf_ylim:
@@ -171,14 +171,14 @@ def metric_interpolate(year_ws, ini_path, mc_iter=None, bs=None,
 
     # If command line arguments aren't set, trying reading from input file
     if bs is None:
-        bs = read_param('blocksize', 256, config)
+        bs = dripy.read_param('blocksize', 256, config)
 
     # Output file/folder names
-    ndvi_name = read_param('ndvi_name', 'NDVI', config)
-    etrf_name = read_param('etrf_name', 'ETrF', config)
-    etr_name = read_param('etr_name', 'ETr', config)
-    et_name = read_param('et_name', 'ET', config)
-    ppt_name = read_param('ppt_name', 'PPT', config)
+    ndvi_name = dripy.read_param('ndvi_name', 'NDVI', config)
+    etrf_name = dripy.read_param('etrf_name', 'ETrF', config)
+    etr_name = dripy.read_param('etr_name', 'ETr', config)
+    et_name = dripy.read_param('et_name', 'ET', config)
+    ppt_name = dripy.read_param('ppt_name', 'PPT', config)
 
     # Clamp/limit extreme ETrF values
     try:
@@ -192,50 +192,54 @@ def metric_interpolate(year_ws, ini_path, mc_iter=None, bs=None,
 
     # Adjust ETrF based on daily soil water balance
     swb_adjust_dict = dict()
-    swb_adjust_dict['flag'] = read_param(
+    swb_adjust_dict['flag'] = dripy.read_param(
         'swb_adjust_flag', False, config)
     if swb_adjust_dict['flag']:
-        swb_adjust_dict['awc'] = read_param('awc_input_path', None, config)
-        swb_adjust_dict['spinup'] = read_param('swb_spinup_days', 30, config)
-        swb_adjust_dict['ndvi_bare'] = read_param(
+        swb_adjust_dict['awc'] = dripy.read_param(
+            'awc_input_path', None, config)
+        swb_adjust_dict['spinup'] = dripy.read_param(
+            'swb_spinup_days', 30, config)
+        swb_adjust_dict['ndvi_bare'] = dripy.read_param(
             'swb_bare_soil_ndvi', 0.15, config)
-        swb_adjust_dict['ndvi_full'] = read_param(
+        swb_adjust_dict['ndvi_full'] = dripy.read_param(
             'swb_full_cover_ndvi', 0.7, config)
-        # hot_cold_pixels = read_param(
+        # hot_cold_pixels = dripy.read_param(
         #     'hot_cold_pixels', os.path.join('PIXELS', 'hot_cold.shp'), config)
-        # ndvi_threshold = read_param('ndvi_threshold', 0.7, config)
+        # ndvi_threshold = dripy.read_param('ndvi_threshold', 0.7, config)
 
     # NDVI as surrogate for ETrF parameters
     etrf_ndvi_dict = dict()
-    etrf_ndvi_dict['flag'] = read_param('etrf_ndvi_flag', False, config)
+    etrf_ndvi_dict['flag'] = dripy.read_param('etrf_ndvi_flag', False, config)
     if etrf_ndvi_dict['flag']:
-        etrf_ndvi_dict['doy'] = sorted(list(parse_int_set(
-            read_param('etrf_ndvi_doy_list', '', config))))
-        etrf_ndvi_dict['month'] = sorted(list(parse_int_set(
-            read_param('etrf_ndvi_month_list', '', config))))
-        etrf_ndvi_dict['slope'] = read_param('etrf_ndvi_slope', 1.25, config)
-        etrf_ndvi_dict['offset'] = read_param('etrf_ndvi_offset', 0., config)
+        etrf_ndvi_dict['doy'] = sorted(list(dripy.parse_int_set(
+            dripy.read_param('etrf_ndvi_doy_list', '', config))))
+        etrf_ndvi_dict['month'] = sorted(list(dripy.parse_int_set(
+            dripy.read_param('etrf_ndvi_month_list', '', config))))
+        etrf_ndvi_dict['slope'] = dripy.read_param(
+            'etrf_ndvi_slope', 1.25, config)
+        etrf_ndvi_dict['offset'] = dripy.read_param(
+            'etrf_ndvi_offset', 0., config)
 
     # Process control flags
     calc_flags = dict()
 
     # Zones
-    calc_flags['daily_zones_table'] = read_param(
+    calc_flags['daily_zones_table'] = dripy.read_param(
         'calc_daily_zones_table_flag', False, config)
-    calc_flags['monthly_zones_table'] = read_param(
+    calc_flags['monthly_zones_table'] = dripy.read_param(
         'calc_monthly_zones_table_flag', False, config)
-    calc_flags['annual_zones_table'] = read_param(
+    calc_flags['annual_zones_table'] = dripy.read_param(
         'calc_annual_zones_table_flag', False, config)
 
-    calc_flags['daily_ndvi_plots'] = read_param(
+    calc_flags['daily_ndvi_plots'] = dripy.read_param(
         'calc_daily_ndvi_plots_flag', False, config)
-    calc_flags['daily_etrf_plots'] = read_param(
+    calc_flags['daily_etrf_plots'] = dripy.read_param(
         'calc_daily_etrf_plots_flag', False, config)
-    calc_flags['daily_etr_plots'] = read_param(
+    calc_flags['daily_etr_plots'] = dripy.read_param(
         'calc_daily_etr_plots_flag', False, config)
-    calc_flags['daily_et_plots'] = read_param(
+    calc_flags['daily_et_plots'] = dripy.read_param(
         'calc_daily_et_plots_flag', False, config)
-    calc_flags['daily_ppt_plots'] = read_param(
+    calc_flags['daily_ppt_plots'] = dripy.read_param(
         'calc_daily_ppt_plots_flag', False, config)
 
     if not any(calc_flags.values()):
@@ -313,8 +317,8 @@ def metric_interpolate(year_ws, ini_path, mc_iter=None, bs=None,
     # fill_method_list = ['nearest', 'linear', 'cubicspline', 'spatial']
     if fill_method not in fill_method_list:
         logging.error(
-            ('\nERROR: The fill_method {} is not a valid option.'
-             '\nERROR: Set fill_method to {}').format(
+            '\nERROR: The fill_method {} is not a valid option.'
+            '\nERROR: Set fill_method to {}'.format(
                 fill_method, fill_method_list))
         sys.exit()
 
@@ -322,8 +326,8 @@ def metric_interpolate(year_ws, ini_path, mc_iter=None, bs=None,
     interp_method_list = ['nearest', 'linear', 'cubicspline']
     if interp_method not in interp_method_list:
         logging.error(
-            ('\nERROR: The interp_method {} is not a valid option.'
-             '\nERROR: Set interp_method to {}').format(
+            '\nERROR: The interp_method {} is not a valid option.'
+            '\nERROR: Set interp_method to {}'.format(
                 interp_method, interp_method_list))
         sys.exit()
 
@@ -331,8 +335,8 @@ def metric_interpolate(year_ws, ini_path, mc_iter=None, bs=None,
     mosaic_method_list = ['mean']
     if mosaic_method not in mosaic_method_list:
         logging.error(
-            ('\nERROR: The mosaic_method {} is not a valid option.'
-             '\nERROR: Set mosaic_method to {}').format(
+            '\nERROR: The mosaic_method {} is not a valid option.'
+            '\nERROR: Set mosaic_method to {}'.format(
                 mosaic_method, mosaic_method_list))
         sys.exit()
 
@@ -520,15 +524,15 @@ def metric_interpolate(year_ws, ini_path, mc_iter=None, bs=None,
     logging.info('\nZones')
     if not os.path.isfile(zones_path):
         logging.error(
-            ('\nERROR: The zones shapefile does not exist:'
-             '\n  {}').format(zones_path))
+            '\nERROR: The zones shapefile does not exist:'
+            '\n  {}'.format(zones_path))
         sys.exit()
     else:
         logging.info('  {}'.format(zones_path))
     if zones_mask and not os.path.isfile(zones_mask):
         logging.error(
-            ('\nERROR: The zones mask does not exist:'
-             '\n  {}').format(zones_mask))
+            '\nERROR: The zones mask does not exist:'
+            '\n  {}'.format(zones_mask))
         sys.exit()
     else:
         logging.info('  {}'.format(zones_mask))
@@ -987,8 +991,8 @@ def metric_interpolate(year_ws, ini_path, mc_iter=None, bs=None,
 
         del output_list
         logging.info(
-            ('  Block Time: {:.1f}s  (mean {:.1f}s, '
-             '{:.2f} hours remaining)').format(
+            '  Block Time: {:.1f}s  (mean {:.1f}s, '
+            '{:.2f} hours remaining)'.format(
                 clock() - block_clock,
                 (clock() - proc_clock) / (queue_i + 1),
                 (queue_cnt - queue_i + 1) *
@@ -1717,11 +1721,11 @@ def arg_parse():
     parser.add_argument(
         'workspace', default=None, help='Year folder', metavar='FOLDER')
     parser.add_argument(
-        '-i', '--ini', required=True,
+        '-i', '--ini', required=True, type=dripy.arg_valid_file,
         help='Interpolate input file', metavar='FILE')
     parser.add_argument(
         '-bs', '--blocksize', default=None, type=int, metavar='N',
-        help='Block size')
+        help='Processing block size (overwrite INI blocksize parameter)')
     parser.add_argument(
         '--debug', default=logging.INFO, const=logging.DEBUG,
         help='Debug level logging', action="store_const", dest="loglevel")
@@ -1738,7 +1742,7 @@ def arg_parse():
         '-mp', '--multiprocessing', default=1, type=int, nargs='?',
         metavar="[1-{}]".format(cpu_count()), const=cpu_count(),
         choices=range(1, cpu_count() + 1),
-        help='Number of processers to use')
+        help='Number of processors to use')
     parser.add_argument(
         '--no_file_logging', default=False, action="store_true",
         help='Turn off file logging')
@@ -1755,6 +1759,7 @@ def arg_parse():
         args.workspace = os.path.abspath(args.workspace)
     if args.ini and os.path.isfile(os.path.abspath(args.ini)):
         args.ini = os.path.abspath(args.ini)
+
     return args
 
 

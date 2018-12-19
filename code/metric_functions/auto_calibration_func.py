@@ -21,7 +21,7 @@ import numpy as np
 from scipy import stats
 
 import et_common
-from python_common import remove_file
+import python_common as dripy
 
 break_line = '\n{}'.format('#' * 80)
 pixel_str_fmt = '    {:<12s}{:>14s}  {:>14s}'
@@ -487,8 +487,8 @@ def build_pixel_points(etrf_array, etrf_geo, cal_dict,
     cold_pixel_path = os.path.join(pixels_ws, 'cold.shp')
     hot_pixel_path = os.path.join(pixels_ws, 'hot.shp')
     if shapefile_flag:
-        remove_file(cold_pixel_path)
-        remove_file(hot_pixel_path)
+        dripy.remove_file(cold_pixel_path)
+        dripy.remove_file(hot_pixel_path)
 
     # #  Limit etrf raster to just correct NDVI ranges?
     # apply_ndvi_mask = True
@@ -630,8 +630,8 @@ def arg_parse():
         'workspace', nargs='?', default=os.getcwd(),
         help='Landsat scene folder', metavar='FOLDER')
     parser.add_argument(
-        '-i', '--ini', required=True, metavar='PATH',
-        help='Monte Carlo input file')
+        '-i', '--ini', required=True, type=dripy.arg_valid_file,
+        help='Monte Carlo input file', metavar='FILE')
     parser.add_argument(
         '-mc', '--iter', default=None, type=int, metavar='N',
         help='Monte Carlo iteration number')
@@ -658,6 +658,7 @@ def arg_parse():
         args.workspace = os.path.abspath(args.workspace)
     if args.ini and os.path.isfile(os.path.abspath(args.ini)):
         args.ini = os.path.abspath(args.ini)
+
     return args
 
 
@@ -707,9 +708,9 @@ if __name__ == '__main__':
     # env.snap_proj = env.snap_osr.ExportToWkt()
     # env.snap_gcs_osr = env.snap_osr.CloneGeogCS()
     # env.snap_gcs_proj = env.snap_gcs_osr.ExportToWkt()
-    # env.cellsize = read_param('cellsize', 30, config)
+    # env.cellsize = dripy.read_param('cellsize', 30, config)
     # env.snap_xmin, env.snap_ymin = map(
-    #     int, read_param('snap_xy', (15,15), config))
+    #     int, dripy.read_param('snap_xy', (15,15), config))
     # env.snap_geo = (
     #     env.snap_xmin, env.cellsize, 0., env.snap_ymin, 0., -env.cellsize)
     #

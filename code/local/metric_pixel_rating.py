@@ -13,7 +13,7 @@ import re
 import subprocess
 import sys
 
-from python_common import open_ini, read_param, call_mp
+import python_common as dripy
 
 
 def main(ini_path, tile_list=None, blocksize=None, stats_flag=True,
@@ -51,24 +51,23 @@ def main(ini_path, tile_list=None, blocksize=None, stats_flag=True,
 
     """
     logging.info('\nRunning METRIC pixel regions/rating for all images')
-    log_fmt = '  {:<18s} {}'
 
     # Open config file
-    config = open_ini(ini_path)
+    config = dripy.open_ini(ini_path)
 
     # Get input parameters
     logging.debug('  Reading Input File')
     year = config.getint('INPUTS', 'year')
     if tile_list is None:
-        tile_list = read_param('tile_list', [], config, 'INPUTS')
+        tile_list = dripy.read_param('tile_list', [], config, 'INPUTS')
     project_ws = config.get('INPUTS', 'project_folder')
     logging.debug('  Year: {}'.format(year))
     logging.debug('  Path/rows: {}'.format(', '.join(tile_list)))
     logging.debug('  Project: {}'.format(project_ws))
 
     func_path = config.get('INPUTS', 'pixel_rating_func')
-    keep_list_path = read_param('keep_list_path', '', config, 'INPUTS')
-    # skip_list_path = read_param('skip_list_path', '', config, 'INPUTS')
+    keep_list_path = dripy.read_param('keep_list_path', '', config, 'INPUTS')
+    # skip_list_path = dripy.read_param('skip_list_path', '', config, 'INPUTS')
 
     # For now build INI file name from template INI names
     ini_name = config.get('INPUTS', 'pixel_rating_ini')
@@ -168,7 +167,7 @@ def main(ini_path, tile_list=None, blocksize=None, stats_flag=True,
 
     if mp_list:
         pool = mp.Pool(mp_procs)
-        results = pool.map(call_mp, mp_list)
+        results = pool.map(dripy.call_mp, mp_list)
         pool.close()
         pool.join()
         del results, pool
@@ -180,8 +179,8 @@ def arg_parse():
         description='Batch METRIC Pixel Rating',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
-        '-i', '--ini', required=True,
-        help='Landsat project input file', metavar='PATH')
+        '-i', '--ini', required=True, type=dripy.arg_valid_file,
+        help='Landsat project input file', metavar='FILE')
     parser.add_argument(
         '-bs', '--blocksize', default=None, type=int,
         help='Processing block size (overwrite INI blocksize parameter)')
@@ -194,7 +193,7 @@ def arg_parse():
     parser.add_argument(
         '-mp', '--multiprocessing', default=1, type=int,
         metavar='N', nargs='?', const=mp.cpu_count(),
-        help='Number of processers to use')
+        help='Number of processors to use')
     # The "no_stats" parameter is negated below to become "stats".
     # By default, the pixel_rating_func will NOT compute raster statistics.
     # If a user runs this "local" script, they probably want statistics.
@@ -219,6 +218,7 @@ def arg_parse():
     # Convert relative paths to absolute paths
     if os.path.isfile(os.path.abspath(args.ini)):
         args.ini = os.path.abspath(args.ini)
+
     return args
 
 

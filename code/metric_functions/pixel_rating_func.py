@@ -19,7 +19,7 @@ from osgeo import gdal, ogr, osr
 from scipy import stats, ndimage
 
 import et_image
-from python_common import open_ini, read_param, remove_file
+import python_common as dripy
 
 
 def pixel_rating(image_ws, ini_path, bs=None, stats_flag=False,
@@ -64,26 +64,26 @@ def pixel_rating(image_ws, ini_path, bs=None, stats_flag=False,
     region_ws = os.path.join(image_ws, 'PIXEL_REGIONS')
 
     # Open config file
-    config = open_ini(ini_path)
+    config = dripy.open_ini(ini_path)
 
     # Get input parameters
     logging.debug('  Reading Input File')
 
     # Arrays are processed by block
     if bs is None:
-        bs = read_param('block_size', 1024, config)
+        bs = dripy.read_param('block_size', 1024, config)
     logging.info(log_fmt.format('Block Size:', bs))
 
     # Raster pyramids/statistics
-    pyramids_flag = read_param('pyramids_flag', False, config)
+    pyramids_flag = dripy.read_param('pyramids_flag', False, config)
     if pyramids_flag:
         gdal.SetConfigOption('HFA_USE_RRD', 'YES')
     if stats_flag is None:
-        stats_flag = read_param('statistics_flag', False, config)
+        stats_flag = dripy.read_param('statistics_flag', False, config)
 
     # Overwrite
     if overwrite_flag is None:
-        overwrite_flag = read_param('overwrite_flag', True, config)
+        overwrite_flag = dripy.read_param('overwrite_flag', True, config)
 
     # Check that common_area raster exists
     if not os.path.isfile(image.common_area_raster):
@@ -111,20 +111,20 @@ def pixel_rating(image_ws, ini_path, bs=None, stats_flag=False,
     # Read Pixel Regions config file
     # Currently there is no code to support applying an NLCD mask
     apply_nlcd_mask = False
-    # apply_nlcd_mask = read_param('apply_nlcd_mask', False, config)
-    apply_cdl_ag_mask = read_param('apply_cdl_ag_mask', False, config)
-    apply_field_mask = read_param('apply_field_mask', False, config)
-    apply_ndwi_mask = read_param('apply_ndwi_mask', True, config)
-    apply_ndvi_mask = read_param('apply_ndvi_mask', True, config)
+    # apply_nlcd_mask = dripy.read_param('apply_nlcd_mask', False, config)
+    apply_cdl_ag_mask = dripy.read_param('apply_cdl_ag_mask', False, config)
+    apply_field_mask = dripy.read_param('apply_field_mask', False, config)
+    apply_ndwi_mask = dripy.read_param('apply_ndwi_mask', True, config)
+    apply_ndvi_mask = dripy.read_param('apply_ndvi_mask', True, config)
     # Currently the code to apply a study area mask is commented out
-    # apply_study_area_mask = read_param(
+    # apply_study_area_mask = dripy.read_param(
     #     'apply_study_area_mask', False, config)
 
-    albedo_rating_flag = read_param('albedo_rating_flag', True, config)
-    nlcd_rating_flag = read_param('nlcd_rating_flag', True, config)
-    ndvi_rating_flag = read_param('ndvi_rating_flag', True, config)
-    ts_rating_flag = read_param('ts_rating_flag', True, config)
-    ke_rating_flag = read_param('ke_rating_flag', False, config)
+    albedo_rating_flag = dripy.read_param('albedo_rating_flag', True, config)
+    nlcd_rating_flag = dripy.read_param('nlcd_rating_flag', True, config)
+    ndvi_rating_flag = dripy.read_param('ndvi_rating_flag', True, config)
+    ts_rating_flag = dripy.read_param('ts_rating_flag', True, config)
+    ke_rating_flag = dripy.read_param('ke_rating_flag', False, config)
 
     # if apply_study_area_mask:
     #     study_area_path = config.get('INPUTS', 'study_area_path')
@@ -132,18 +132,18 @@ def pixel_rating(image_ws, ini_path, bs=None, stats_flag=False,
         nlcd_raster = config.get('INPUTS', 'landuse_raster')
     if apply_cdl_ag_mask:
         cdl_ag_raster = config.get('INPUTS', 'cdl_ag_raster')
-        cdl_buffer_cells = read_param('cdl_buffer_cells', 0, config)
-        cdl_ag_eroded_name = read_param(
+        cdl_buffer_cells = dripy.read_param('cdl_buffer_cells', 0, config)
+        cdl_ag_eroded_name = dripy.read_param(
             'cdl_ag_eroded_name', 'cdl_ag_eroded_{}.img', config)
     if apply_field_mask:
         field_raster = config.get('INPUTS', 'fields_raster')
 
-    cold_rating_pct = read_param('cold_percentile', 99, config)
-    hot_rating_pct = read_param('hot_percentile', 99, config)
-    # min_cold_rating_score = read_param('min_cold_rating_score', 0.3, config)
-    # min_hot_rating_score = read_param('min_hot_rating_score', 0.3, config)
+    cold_rating_pct = dripy.read_param('cold_percentile', 99, config)
+    hot_rating_pct = dripy.read_param('hot_percentile', 99, config)
+    # min_cold_rating_score = dripy.read_param('min_cold_rating_score', 0.3, config)
+    # min_hot_rating_score = dripy.read_param('min_hot_rating_score', 0.3, config)
 
-    ts_bin_count = int(read_param('ts_bin_count', 10, config))
+    ts_bin_count = int(dripy.read_param('ts_bin_count', 10, config))
     if 100 % ts_bin_count != 0:
         logging.warning(
             'WARNING: ts_bins_count of {} is not a divisor ' +
@@ -213,15 +213,15 @@ def pixel_rating(image_ws, ini_path, bs=None, stats_flag=False,
 
     # Read pixel region raster flags
     save_dict = dict()
-    save_dict['region_mask'] = read_param(
+    save_dict['region_mask'] = dripy.read_param(
         'save_region_mask_flag', False, config)
-    save_dict['cold_rating'] = read_param(
+    save_dict['cold_rating'] = dripy.read_param(
         'save_rating_rasters_flag', False, config)
-    save_dict['hot_rating'] = read_param(
+    save_dict['hot_rating'] = dripy.read_param(
         'save_rating_rasters_flag', False, config)
-    save_dict['cold_sugg'] = read_param(
+    save_dict['cold_sugg'] = dripy.read_param(
         'save_suggestion_rasters_flag', True, config)
-    save_dict['hot_sugg'] = read_param(
+    save_dict['hot_sugg'] = dripy.read_param(
         'save_suggestion_rasters_flag', True, config)
 
     # Output folder
@@ -234,7 +234,7 @@ def pixel_rating(image_ws, ini_path, bs=None, stats_flag=False,
     if overwrite_flag and region_ws_file_list:
         for raster_path in raster_dict.values():
             if raster_path in region_ws_file_list:
-                remove_file(raster_path)
+                dripy.remove_file(raster_path)
 
     # Check scene specific input paths
     if apply_ndwi_mask and not os.path.isfile(ndwi_raster):
@@ -750,8 +750,8 @@ def arg_parse():
         'workspace', nargs='?', default=os.getcwd(),
         help='Landsat scene folder', metavar='FOLDER')
     parser.add_argument(
-        '-i', '--ini', required=True,
-        help='Pixel regions input file', metavar='PATH')
+        '-i', '--ini', required=True, type=dripy.arg_valid_file,
+        help='Pixel regions input file', metavar='FILE')
     parser.add_argument(
         '-bs', '--blocksize', default=None, type=int,
         help='Processing block size (overwrite INI blocksize parameter)')
@@ -777,6 +777,7 @@ def arg_parse():
         args.workspace = os.path.abspath(args.workspace)
     if args.ini and os.path.isfile(os.path.abspath(args.ini)):
         args.ini = os.path.abspath(args.ini)
+
     return args
 
 

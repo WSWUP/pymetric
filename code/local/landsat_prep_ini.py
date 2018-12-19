@@ -16,7 +16,7 @@ import sys
 import drigo
 from osgeo import ogr
 
-import python_common
+import python_common as dripy
 
 
 def main(ini_path, tile_list=None, overwrite_flag=False):
@@ -42,59 +42,59 @@ def main(ini_path, tile_list=None, overwrite_flag=False):
     logging.info('\nPrepare path/row INI files')
 
     # Open config file
-    config = python_common.open_ini(ini_path)
+    config = dripy.open_ini(ini_path)
 
     # Get input parameters
     logging.debug('  Reading Input File')
     year = config.getint('INPUTS', 'year')
     if tile_list is None:
-        tile_list = python_common.read_param('tile_list', [], config, 'INPUTS')
+        tile_list = dripy.read_param('tile_list', [], config, 'INPUTS')
     project_ws = config.get('INPUTS', 'project_folder')
     logging.debug('  Year: {}'.format(year))
     logging.debug('  Path/rows: {}'.format(', '.join(tile_list)))
     logging.debug('  Project: {}'.format(project_ws))
 
-    ini_file_flag = python_common.read_param(
+    ini_file_flag = dripy.read_param(
         'ini_file_flag', True, config, 'INPUTS')
-    landsat_flag = python_common.read_param(
+    landsat_flag = dripy.read_param(
         'landsat_flag', True, config, 'INPUTS')
-    ledaps_flag = python_common.read_param(
+    ledaps_flag = dripy.read_param(
         'ledaps_flag', False, config, 'INPUTS')
-    dem_flag = python_common.read_param(
+    dem_flag = dripy.read_param(
         'dem_flag', True, config, 'INPUTS')
-    nlcd_flag = python_common.read_param(
+    nlcd_flag = dripy.read_param(
         'nlcd_flag', True, config, 'INPUTS')
-    cdl_flag = python_common.read_param(
+    cdl_flag = dripy.read_param(
         'cdl_flag', True, config, 'INPUTS')
-    landfire_flag = python_common.read_param(
+    landfire_flag = dripy.read_param(
         'landfire_flag', False, config, 'INPUTS')
-    field_flag = python_common.read_param(
+    field_flag = dripy.read_param(
         'field_flag', False, config, 'INPUTS')
-    metric_flag = python_common.read_param(
+    metric_flag = dripy.read_param(
         'metric_flag', True, config, 'INPUTS')
-    monte_carlo_flag = python_common.read_param(
+    monte_carlo_flag = dripy.read_param(
         'monte_carlo_flag', False, config, 'INPUTS')
-    interp_rasters_flag = python_common.read_param(
+    interp_rasters_flag = dripy.read_param(
         'interpolate_rasters_flag', False, config, 'INPUTS')
-    interp_tables_flag = python_common.read_param(
+    interp_tables_flag = dripy.read_param(
         'interpolate_tables_flag', False, config, 'INPUTS')
 
-    metric_hourly_weather = python_common.read_param(
+    metric_hourly_weather = dripy.read_param(
         'metric_hourly_weather', 'NLDAS', config, 'INPUTS')
 
     project_ws = config.get('INPUTS', 'project_folder')
     footprint_path = config.get('INPUTS', 'footprint_path')
     # For now, assume the UTM zone file is colocated with the footprints shapefile
-    utm_path = python_common.read_param(
+    utm_path = dripy.read_param(
         'utm_path',
         os.path.join(os.path.dirname(footprint_path), 'wrs2_tile_utm_zones.json'),
         config, 'INPUTS')
-    keep_list_path = python_common.read_param(
+    keep_list_path = dripy.read_param(
         'keep_list_path', '', config, 'INPUTS')
-    skip_list_path = python_common.read_param(
+    skip_list_path = dripy.read_param(
         'skip_list_path', '', config, 'INPUTS')
 
-    # tile_gcs_buffer = read_param('tile_buffer', 0.1, config)
+    # tile_gcs_buffer = dripy.read_param('tile_buffer', 0.1, config)
 
     # Template input files for scripts
     if metric_flag:
@@ -104,30 +104,30 @@ def main(ini_path, tile_list=None, overwrite_flag=False):
         monte_carlo_ini = config.get('INPUTS', 'monte_carlo_ini')
 
     if interp_rasters_flag or interp_tables_flag:
-        interpolate_folder = python_common.read_param(
+        interpolate_folder = dripy.read_param(
             'interpolate_folder', 'ET', config)
         interpolate_ini = config.get('INPUTS', 'interpolate_ini')
     if interp_rasters_flag:
         study_area_path = config.get('INPUTS', 'study_area_path')
-        study_area_mask_flag = python_common.read_param(
+        study_area_mask_flag = dripy.read_param(
             'study_area_mask_flag', True, config)
-        study_area_snap = python_common.read_param(
+        study_area_snap = dripy.read_param(
             'study_area_snap', (0, 0), config)
-        study_area_cellsize = python_common.read_param(
+        study_area_cellsize = dripy.read_param(
             'study_area_cellsize', 30, config)
-        study_area_buffer = python_common.read_param(
+        study_area_buffer = dripy.read_param(
             'study_area_buffer', 0, config)
-        study_area_proj = python_common.read_param(
+        study_area_proj = dripy.read_param(
             'study_area_proj', '', config)
     if interp_tables_flag:
         zones_path = config.get('INPUTS', 'zones_path')
-        zones_name_field = python_common.read_param(
+        zones_name_field = dripy.read_param(
             'zones_name_field', 'FID', config)
-        # zones_buffer = read_param('zones_buffer', 0, config)
-        zones_snap = python_common.read_param('zones_snap', (0, 0), config)
-        zones_cellsize = python_common.read_param('zones_cellsize', 30, config)
-        # zones_proj = read_param('zones_proj', '', config)
-        zones_mask = python_common.read_param('zones_mask', None, config)
+        # zones_buffer = dripy.read_param('zones_buffer', 0, config)
+        zones_snap = dripy.read_param('zones_snap', (0, 0), config)
+        zones_cellsize = dripy.read_param('zones_cellsize', 30, config)
+        # zones_proj = dripy.read_param('zones_proj', '', config)
+        zones_mask = dripy.read_param('zones_mask', None, config)
         zones_buffer = None
         zones_proj = None
 
@@ -145,7 +145,7 @@ def main(ini_path, tile_list=None, overwrite_flag=False):
         dem_input_ws = config.get('INPUTS', 'dem_input_folder')
         dem_tile_fmt = config.get('INPUTS', 'dem_tile_fmt')
         dem_output_ws = config.get('INPUTS', 'dem_output_folder')
-        dem_output_name = python_common.read_param(
+        dem_output_name = dripy.read_param(
             'dem_output_name', 'dem.img', config)
         # dem_output_name = config.get('INPUTS', 'dem_output_name')
     else:
@@ -155,7 +155,7 @@ def main(ini_path, tile_list=None, overwrite_flag=False):
     if nlcd_flag:
         nlcd_input_path = config.get('INPUTS', 'nlcd_input_path')
         nlcd_output_ws = config.get('INPUTS', 'nlcd_output_folder')
-        nlcd_output_fmt = python_common.read_param(
+        nlcd_output_fmt = dripy.read_param(
             'nlcd_output_fmt', 'nlcd_{:04d}.img', config)
     else:
         nlcd_input_path, nlcd_output_ws, nlcd_output_fmt = None, None, None
@@ -163,17 +163,17 @@ def main(ini_path, tile_list=None, overwrite_flag=False):
     if cdl_flag:
         cdl_input_path = config.get('INPUTS', 'cdl_input_path')
         cdl_ag_list = config.get('INPUTS', 'cdl_ag_list')
-        cdl_ag_list = list(python_common.parse_int_set(cdl_ag_list))
+        cdl_ag_list = list(dripy.parse_int_set(cdl_ag_list))
         # default_cdl_ag_list = range(1,62) + range(66,78) + range(204,255)
-        # cdl_ag_list = read_param(
+        # cdl_ag_list = dripy.read_param(
         #    'cdl_ag_list', default_cdl_ag_list, config)
         # cdl_ag_list = list(map(int, cdl_ag_list))
-        # cdl_non_ag_list = read_param(
+        # cdl_non_ag_list = dripy.read_param(
         #    'cdl_non_ag_list', [], config)
         cdl_output_ws = config.get('INPUTS', 'cdl_output_folder')
-        cdl_output_fmt = python_common.read_param(
+        cdl_output_fmt = dripy.read_param(
             'cdl_output_fmt', 'cdl_{:04d}.img', config)
-        cdl_ag_output_fmt = python_common.read_param(
+        cdl_ag_output_fmt = dripy.read_param(
             'cdl_ag_output_fmt', 'cdl_ag_{:04d}.img', config)
     else:
         cdl_input_path, cdl_ag_list = None, None
@@ -182,15 +182,15 @@ def main(ini_path, tile_list=None, overwrite_flag=False):
     if landfire_flag:
         landfire_input_path = config.get('INPUTS', 'landfire_input_path')
         landfire_ag_list = config.get('INPUTS', 'landfire_ag_list')
-        landfire_ag_list = list(python_common.parse_int_set(landfire_ag_list))
+        landfire_ag_list = list(dripy.parse_int_set(landfire_ag_list))
         # default_landfire_ag_list = range(3960,4000)
-        # landfire_ag_list = read_param(
+        # landfire_ag_list = dripy.read_param(
         #    'landfire_ag_list', default_landfire_ag_list, config)
         # landfire_ag_list = list(map(int, landfire_ag_list))
         landfire_output_ws = config.get('INPUTS', 'landfire_output_folder')
-        landfire_output_fmt = python_common.read_param(
+        landfire_output_fmt = dripy.read_param(
             'landfire_output_fmt', 'landfire_{:04d}.img', config)
-        landfire_ag_output_fmt = python_common.read_param(
+        landfire_ag_output_fmt = dripy.read_param(
             'landfire_ag_output_fmt', 'landfire_ag_{:04d}.img', config)
     else:
         landfire_input_path, landfire_ag_list = None, None
@@ -200,7 +200,7 @@ def main(ini_path, tile_list=None, overwrite_flag=False):
     if field_flag:
         field_input_path = config.get('INPUTS', 'field_input_path')
         field_output_ws = config.get('INPUTS', 'field_output_folder')
-        field_output_fmt = python_common.read_param(
+        field_output_fmt = dripy.read_param(
             'field_output_fmt', 'fields_{:04d}.img', config)
     else:
         field_input_path = None
@@ -209,9 +209,9 @@ def main(ini_path, tile_list=None, overwrite_flag=False):
     if monte_carlo_flag:
         etrf_training_path = config.get('INPUTS', 'etrf_training_path')
         # mc_iter_list = config.get('INPUTS', 'mc_iter_list')
-        # mc_iter_list = list(python_common.parse_int_set(mc_iter_list))
+        # mc_iter_list = list(dripy.parse_int_set(mc_iter_list))
     if monte_carlo_flag or interp_rasters_flag or interp_tables_flag:
-        etrf_input_ws = python_common.read_param(
+        etrf_input_ws = dripy.read_param(
             'etrf_input_folder', None, config)
         # if etrf_input_ws is None:
         #     etrf_input_ws = os.path.join(project_ws, year)
@@ -221,9 +221,9 @@ def main(ini_path, tile_list=None, overwrite_flag=False):
         ppt_input_re = config.get('INPUTS', 'ppt_input_re')
     if monte_carlo_flag or interp_rasters_flag or interp_tables_flag:
         awc_input_path = config.get('INPUTS', 'awc_input_path')
-        spinup_days = python_common.read_param(
+        spinup_days = dripy.read_param(
             'swb_spinup_days', 30, config, 'INPUTS')
-        min_spinup_days = python_common.read_param(
+        min_spinup_days = dripy.read_param(
             'swb_min_spinup_days', 5, config, 'INPUTS')
 
     if metric_flag:
@@ -721,7 +721,7 @@ def arg_parse():
         description='Batch Landsat path/row prep',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
-        '-i', '--ini', required=True,
+        '-i', '--ini', required=True, type=dripy.arg_valid_file,
         help='Landsat project input file', metavar='FILE')
     parser.add_argument(
         '-o', '--overwrite', default=False, action="store_true",
@@ -734,6 +734,7 @@ def arg_parse():
     # Convert relative paths to absolute paths
     if os.path.isfile(os.path.abspath(args.ini)):
         args.ini = os.path.abspath(args.ini)
+
     return args
 
 

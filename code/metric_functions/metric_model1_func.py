@@ -22,7 +22,7 @@ from osgeo import gdal
 import et_common
 import et_image
 import et_numpy
-from python_common import open_ini, read_param, remove_file
+import python_common as dripy
 
 
 def metric_model1(image_ws, ini_path, bs=None, stats_flag=None,
@@ -58,27 +58,27 @@ def metric_model1(image_ws, ini_path, bs=None, stats_flag=None,
     np.seterr(invalid='ignore')
 
     # Open config file
-    config = open_ini(ini_path)
+    config = dripy.open_ini(ini_path)
 
     # Get input parameters
     logging.debug('  Reading Input File')
 
     # Arrays are processed by block
     if bs is None:
-        bs = read_param('block_size', 1024, config)
+        bs = dripy.read_param('block_size', 1024, config)
     logging.info(log_fmt.format('Block Size:', bs))
 
     # Raster pyramids/statistics
-    pyramids_flag = read_param('pyramids_flag', False, config)
+    pyramids_flag = dripy.read_param('pyramids_flag', False, config)
     if pyramids_flag:
         gdal.SetConfigOption('HFA_USE_RRD', 'YES')
     if stats_flag is None:
-        stats_flag = read_param('statistics_flag', False, config)
+        stats_flag = dripy.read_param('statistics_flag', False, config)
 
     # Remove reflectance rasters after calculating Model 1
-    remove_refl_toa_flag = read_param('remove_refl_toa_flag', False, config)
-    remove_refl_sur_flag = read_param('remove_refl_sur_flag', False, config)
-    remove_ts_bt_flag = read_param('remove_ts_bt_flag', False, config)
+    remove_refl_toa_flag = dripy.read_param('remove_refl_toa_flag', False, config)
+    remove_refl_sur_flag = dripy.read_param('remove_refl_sur_flag', False, config)
+    remove_ts_bt_flag = dripy.read_param('remove_ts_bt_flag', False, config)
 
     # Check that common_area raster exists
     if not os.path.isfile(image.common_area_raster):
@@ -136,38 +136,38 @@ def metric_model1(image_ws, ini_path, bs=None, stats_flag=None,
 
     # Read MODEL 1 raster flags
     save_dict = dict()
-    save_dict['dem'] = read_param('save_dem_raster_flag', False, config)
-    save_dict['landuse'] = read_param('save_landuse_raster_flag', False, config)
-    save_dict['slp'] = read_param('save_mountain_rasters_flag', False, config)
-    save_dict['asp'] = read_param('save_mountain_rasters_flag', False, config)
-    save_dict['lat'] = read_param('save_mountain_rasters_flag', False, config)
-    save_dict['lon'] = read_param('save_mountain_rasters_flag', False, config)
-    save_dict['cos_theta'] = read_param('save_cos_theta_raster_flag', True, config)
+    save_dict['dem'] = dripy.read_param('save_dem_raster_flag', False, config)
+    save_dict['landuse'] = dripy.read_param('save_landuse_raster_flag', False, config)
+    save_dict['slp'] = dripy.read_param('save_mountain_rasters_flag', False, config)
+    save_dict['asp'] = dripy.read_param('save_mountain_rasters_flag', False, config)
+    save_dict['lat'] = dripy.read_param('save_mountain_rasters_flag', False, config)
+    save_dict['lon'] = dripy.read_param('save_mountain_rasters_flag', False, config)
+    save_dict['cos_theta'] = dripy.read_param('save_cos_theta_raster_flag', True, config)
 
     # You can only save Tasumi, not LEDAPS, at-surface reflectance
-    save_dict['refl_sur_tasumi'] = read_param('save_refl_sur_raster_flag', True, config)
-    save_dict['tau'] = read_param('save_tau_raster_flag', True, config)
-    save_dict['albedo_sur'] = read_param('save_albedo_sur_raster_flag', True, config)
+    save_dict['refl_sur_tasumi'] = dripy.read_param('save_refl_sur_raster_flag', True, config)
+    save_dict['tau'] = dripy.read_param('save_tau_raster_flag', True, config)
+    save_dict['albedo_sur'] = dripy.read_param('save_albedo_sur_raster_flag', True, config)
     # Default for all TOA reflectance indices is True except SAVI
-    save_dict['ndvi_toa'] = read_param('save_ndvi_toa_raster_flag', True, config)
-    save_dict['ndwi_toa'] = read_param('save_ndwi_toa_raster_flag', True, config)
-    save_dict['savi_toa'] = read_param('save_savi_toa_raster_flag', False, config)
-    save_dict['lai_toa'] = read_param('save_lai_toa_raster_flag', True, config)
+    save_dict['ndvi_toa'] = dripy.read_param('save_ndvi_toa_raster_flag', True, config)
+    save_dict['ndwi_toa'] = dripy.read_param('save_ndwi_toa_raster_flag', True, config)
+    save_dict['savi_toa'] = dripy.read_param('save_savi_toa_raster_flag', False, config)
+    save_dict['lai_toa'] = dripy.read_param('save_lai_toa_raster_flag', True, config)
     # Default for all at-surface reflectance indices is False
-    save_dict['ndvi_sur'] = read_param('save_ndvi_raster_flag', False, config)
-    save_dict['ndwi_sur'] = read_param('save_ndwi_raster_flag', False, config)
-    save_dict['savi_sur'] = read_param('save_savi_raster_flag', False, config)
-    save_dict['lai_sur'] = read_param('save_lai_raster_flag', False, config)
+    save_dict['ndvi_sur'] = dripy.read_param('save_ndvi_raster_flag', False, config)
+    save_dict['ndwi_sur'] = dripy.read_param('save_ndwi_raster_flag', False, config)
+    save_dict['savi_sur'] = dripy.read_param('save_savi_raster_flag', False, config)
+    save_dict['lai_sur'] = dripy.read_param('save_lai_raster_flag', False, config)
     # Surface temperature and emissivity
-    save_dict['em_nb'] = read_param('save_em_nb_raster_flag', False, config)
-    save_dict['em_0'] = read_param('save_em_0_raster_flag', True, config)
-    save_dict['rc'] = read_param('save_rc_raster_flag', False, config)
-    save_dict['ts'] = read_param('save_ts_raster_flag', True, config)
-    save_dict['ts_dem'] = read_param('save_ts_dem_raster_flag', True, config)
+    save_dict['em_nb'] = dripy.read_param('save_em_nb_raster_flag', False, config)
+    save_dict['em_0'] = dripy.read_param('save_em_0_raster_flag', True, config)
+    save_dict['rc'] = dripy.read_param('save_rc_raster_flag', False, config)
+    save_dict['ts'] = dripy.read_param('save_ts_raster_flag', True, config)
+    save_dict['ts_dem'] = dripy.read_param('save_ts_dem_raster_flag', True, config)
 
     # Clear SUR save flags if input rasters from prep_scene are not present
-    em_refl_type = read_param('em_refl_type', 'TOA', config).upper()
-    refl_sur_model_type = read_param(
+    em_refl_type = dripy.read_param('em_refl_type', 'TOA', config).upper()
+    refl_sur_model_type = dripy.read_param(
         'refl_sur_model_type', 'TASUMI', config).upper()
     refl_sur_model_type_list = ['TASUMI', 'LEDAPS']
     if refl_sur_model_type.upper() not in refl_sur_model_type_list:
@@ -236,7 +236,7 @@ def metric_model1(image_ws, ini_path, bs=None, stats_flag=None,
     for name, save_flag in sorted(save_dict.items()):
         if ((overwrite_flag and save_flag) and
                 os.path.isfile(raster_dict[name])):
-            remove_file(raster_dict[name])
+            dripy.remove_file(raster_dict[name])
 
     # If save flag is true, than calc flag has to be true
     calc_dict = save_dict.copy()
@@ -255,20 +255,20 @@ def metric_model1(image_ws, ini_path, bs=None, stats_flag=None,
     if calc_dict['ts_dem']:
         calc_dict['ts'] = True
         calc_dict['dem'] = True
-        lapse_rate_flt = read_param('lapse_rate', 6.5, config)
+        lapse_rate_flt = dripy.read_param('lapse_rate', 6.5, config)
     if calc_dict['ts']:
         calc_dict['rc'] = True
     if calc_dict['rc']:
         calc_dict['ts_bt'] = True
         calc_dict['em_nb'] = True
-        rsky_flt = read_param('rsky', 1.32, config)
-        rp_flt = read_param('rp', 0.91, config)
-        tnb_flt = read_param('tnb', 0.866, config)
+        rsky_flt = dripy.read_param('rsky', 1.32, config)
+        rp_flt = dripy.read_param('rp', 0.91, config)
+        tnb_flt = dripy.read_param('tnb', 0.866, config)
 
     # Emissivity
     if calc_dict['em_nb'] or calc_dict['em_0']:
         # Emissivity is a function of TOA LAI or at-surface LAI
-        em_refl_type = read_param('em_refl_type', 'TOA', config).upper()
+        em_refl_type = dripy.read_param('em_refl_type', 'TOA', config).upper()
         if em_refl_type == 'TOA':
             calc_dict['lai_toa'] = True
         elif em_refl_type == 'SUR':
@@ -281,7 +281,7 @@ def metric_model1(image_ws, ini_path, bs=None, stats_flag=None,
             return False
         # Emissivity of water can be set using either NDVI or NDWI
         em_water_index_type = 'NDVI'
-        # em_water_index_type = read_param(
+        # em_water_index_type = dripy.read_param(
         #    'em_water_index_type', 'NDVI', config).upper()
         if em_water_index_type == 'NDVI' and em_refl_type == 'TOA':
             calc_dict['ndvi_toa'] = True
@@ -300,7 +300,7 @@ def metric_model1(image_ws, ini_path, bs=None, stats_flag=None,
 
     # Vegetation indices
     if calc_dict['lai_sur']:
-        lai_veg_index_type = read_param(
+        lai_veg_index_type = dripy.read_param(
             'lai_veg_index_type', 'SAVI', config).upper()
         if lai_veg_index_type == 'SAVI':
             calc_dict['savi_sur'] = True
@@ -313,7 +313,7 @@ def metric_model1(image_ws, ini_path, bs=None, stats_flag=None,
                     lai_veg_index_type))
             return False
     if calc_dict['lai_toa']:
-        lai_toa_veg_index_type = read_param(
+        lai_toa_veg_index_type = dripy.read_param(
             'lai_toa_veg_index_type', 'SAVI', config).upper()
         if lai_toa_veg_index_type == 'SAVI':
             calc_dict['savi_toa'] = True
@@ -326,7 +326,7 @@ def metric_model1(image_ws, ini_path, bs=None, stats_flag=None,
                     lai_toa_veg_index_type))
             return False
     if calc_dict['savi_toa'] or calc_dict['savi_sur']:
-        savi_l_flt = read_param('savi_l', 0.1, config)
+        savi_l_flt = dripy.read_param('savi_l', 0.1, config)
 
     # Calculate refl_toa if any TOA indices flags are True
     if any([v for k, v in calc_dict.items()
@@ -349,7 +349,7 @@ def metric_model1(image_ws, ini_path, bs=None, stats_flag=None,
         # Remove refl_sur key/value then set LEDAPS or Tasumi
         del calc_dict['refl_sur']
         refl_sur_model_type_list = ['LEDAPS', 'TASUMI']
-        refl_sur_model_type = read_param(
+        refl_sur_model_type = dripy.read_param(
             'refl_sur_model_type', 'TASUMI', config).upper()
         if refl_sur_model_type.upper() not in refl_sur_model_type_list:
             logging.error(
@@ -364,16 +364,16 @@ def metric_model1(image_ws, ini_path, bs=None, stats_flag=None,
             calc_dict['refl_toa'] = True
             calc_dict['refl_sur_tasumi'] = True
             calc_dict['refl_sur_ledaps'] = False
-    kt_flt = read_param('kt', 1.0, config)
+    kt_flt = dripy.read_param('kt', 1.0, config)
     # Tasumi at-surface reflectance and transmittance
     if ((calc_dict['refl_sur_tasumi'] or calc_dict['tau']) and not
             os.path.isfile(raster_dict['cos_theta'])):
         calc_dict['cos_theta'] = True
-        kt_flt = read_param('kt', 1.0, config)
+        kt_flt = dripy.read_param('kt', 1.0, config)
     # Air pressure model dependent parameters
     if calc_dict['refl_sur_tasumi'] or calc_dict['tau']:
         pair_model_list = ['DATUM', 'DEM']
-        pair_model = read_param('pair_model', 'DEM', config).upper()
+        pair_model = dripy.read_param('pair_model', 'DEM', config).upper()
         if pair_model not in pair_model_list:
             logging.error(
                 ('\nERROR: The Pair model {} is not a valid option.' +
@@ -405,7 +405,7 @@ def metric_model1(image_ws, ini_path, bs=None, stats_flag=None,
     # Spatial/Mountain model input rasters
     if calc_dict['cos_theta']:
         cos_theta_model_list = ['SOLAR', 'CENTROID', 'SPATIAL', 'MOUNTAIN']
-        cos_theta_model = read_param(
+        cos_theta_model = dripy.read_param(
             'cos_theta_model', 'CENTROID', config).upper()
         if cos_theta_model not in cos_theta_model_list:
             logging.error(
@@ -458,7 +458,7 @@ def metric_model1(image_ws, ini_path, bs=None, stats_flag=None,
     # Landuse type
     if calc_dict['landuse']:
         # For now only read NLCD landuse rasters
-        landuse_type = read_param(
+        landuse_type = dripy.read_param(
             'landuse_type', 'NLCD', config).upper()
         landuse_type_list = ['NLCD']
         # landuse_type_list = ['NLCD', 'CDL']
@@ -472,7 +472,7 @@ def metric_model1(image_ws, ini_path, bs=None, stats_flag=None,
     # # Spatial/Mountain model input rasters
     # if calc_dict['cos_theta']:
     #     cos_theta_model_list = ['SOLAR', 'CENTROID', 'SPATIAL', 'MOUNTAIN']
-    #     cos_theta_model = read_param('cos_theta_model', 'CENTROID', config).upper()
+    #     cos_theta_model = dripy.read_param('cos_theta_model', 'CENTROID', config).upper()
     #     if cos_theta_model not in cos_theta_model_list:
     #          logging.error(
     #              ('\nERROR: The Cos(theta) model {} is not a valid option.' +
@@ -512,7 +512,7 @@ def metric_model1(image_ws, ini_path, bs=None, stats_flag=None,
     # # Terrain model dependent parameters
     # # if True:
     # #     terrain_model_list = ['FLAT', 'MOUNTAIN']
-    # #     terrain_model = read_param('terrain_model', 'FLAT', config).upper()
+    # #     terrain_model = dripy.read_param('terrain_model', 'FLAT', config).upper()
     # #     if terrain_model not in terrain_model_list:
     # #         logging.error(
     # #             ('\nERROR: The terrain model {} is not a valid option.' +
@@ -551,7 +551,7 @@ def metric_model1(image_ws, ini_path, bs=None, stats_flag=None,
     #                 '\nERROR: The landuse raster {} does not exist'.format(
     #                     raster_dict['landuse_full']))
     #             return False
-    #         landuse_type = read_param('landuse_type', 'NLCD', config).upper()
+    #         landuse_type = dripy.read_param('landuse_type', 'NLCD', config).upper()
     #         if landuse_type not in ['NLCD', 'CDL']:
     #             logging.error(
     #                 ('\nERROR: The landuse type {} is invalid.' +
@@ -1065,7 +1065,7 @@ def metric_model1(image_ws, ini_path, bs=None, stats_flag=None,
     if remove_refl_sur_flag and os.path.isdir(image.refl_sur_ws):
         shutil.rmtree(image.refl_sur_ws)
     if remove_ts_bt_flag and os.path.isfile(image.ts_bt_raster):
-        remove_file(image.ts_bt_raster)
+        dripy.remove_file(image.ts_bt_raster)
     del save_dict, calc_dict, image
 
     return True
@@ -1080,8 +1080,8 @@ def arg_parse():
         'workspace', nargs='?', default=os.getcwd(),
         help='Landsat scene folder', metavar='FOLDER')
     parser.add_argument(
-        '-i', '--ini', required=True,
-        help='METRIC input file', metavar='PATH')
+        '-i', '--ini', required=True, type=dripy.arg_valid_file,
+        help='METRIC input file', metavar='FILE')
     parser.add_argument(
         '-bs', '--blocksize', default=None, type=int,
         help='Processing block size (overwrite INI blocksize parameter)')
@@ -1107,6 +1107,7 @@ def arg_parse():
         args.workspace = os.path.abspath(args.workspace)
     if args.ini and os.path.isfile(os.path.abspath(args.ini)):
         args.ini = os.path.abspath(args.ini)
+
     return args
 
 

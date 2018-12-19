@@ -14,7 +14,7 @@ import re
 import subprocess
 import sys
 
-from python_common import open_ini, read_param, call_mp, parse_int_set
+import python_common as dripy
 
 
 def main(ini_path, mc_iter_str='', tile_list=None,
@@ -79,25 +79,25 @@ def main(ini_path, mc_iter_str='', tile_list=None,
     logging.info('\nRunning METRIC Monte Carlo')
 
     # Open config file
-    config = open_ini(ini_path)
+    config = dripy.open_ini(ini_path)
 
     # Get input parameters
     logging.debug('  Reading Input File')
     year = config.getint('INPUTS', 'year')
     if tile_list is None:
-        tile_list = read_param('tile_list', [], config, 'INPUTS')
+        tile_list = dripy.read_param('tile_list', [], config, 'INPUTS')
     project_ws = config.get('INPUTS', 'project_folder')
     logging.debug('  Year: {}'.format(year))
     logging.debug('  Path/rows: {}'.format(', '.join(tile_list)))
     logging.debug('  Project: {}'.format(project_ws))
 
     func_path = config.get('INPUTS', 'monte_carlo_func')
-    keep_list_path = read_param('keep_list_path', '', config, 'INPUTS')
-    # skip_list_path = read_param('skip_list_path', '', config, 'INPUTS')
+    keep_list_path = dripy.read_param('keep_list_path', '', config, 'INPUTS')
+    # skip_list_path = dripy.read_param('skip_list_path', '', config, 'INPUTS')
 
     # For now, get mc_iter list from command line, not from project file
     # mc_iter_list = config.get('INPUTS', 'mc_iter_list')
-    mc_iter_list = list(parse_int_set(mc_iter_str))
+    mc_iter_list = list(dripy.parse_int_set(mc_iter_str))
 
     # Need soemthing in mc_iter_list to iterate over
     if not mc_iter_list:
@@ -252,7 +252,7 @@ def main(ini_path, mc_iter_str='', tile_list=None,
 
     if mp_list:
         pool = mp.Pool(mp_procs)
-        results = pool.map(call_mp, mp_list, chunksize=1)
+        results = pool.map(dripy.call_mp, mp_list, chunksize=1)
         pool.close()
         pool.join()
         del results, pool
@@ -266,8 +266,8 @@ def arg_parse():
         description='Batch METRIC Monte Carlo',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
-        '-i', '--ini', required=True,
-        help='Landsat project input file', metavar='PATH')
+        '-i', '--ini', required=True, type=dripy.arg_valid_file,
+        help='Landsat project input file', metavar='FILE')
     parser.add_argument(
         '-bs', '--blocksize', default=2048, type=int,
         help='Block size for selecting calibration points')
@@ -289,7 +289,7 @@ def arg_parse():
     parser.add_argument(
         '-mp', '--multiprocessing', default=1, type=int,
         metavar='N', nargs='?', const=mp.cpu_count(),
-        help='Number of processers to use')
+        help='Number of processors to use')
     parser.add_argument(
         '--no_file_logging', default=False, action="store_true",
         help='Turn off file logging')
@@ -332,6 +332,7 @@ def arg_parse():
     # Convert relative paths to absolute paths
     if os.path.isfile(os.path.abspath(args.ini)):
         args.ini = os.path.abspath(args.ini)
+
     return args
 
 

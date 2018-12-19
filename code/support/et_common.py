@@ -17,7 +17,7 @@ import numpy as np
 # Used by soil water balance point_swb_func
 from osgeo import gdal, ogr, osr
 
-import python_common
+import python_common as dripy
 
 
 def landsat_folder_split(landsat_ws):
@@ -161,17 +161,17 @@ def doy_range_func(landsat_doy_list, year, min_days_in_month=10):
     doy_end_dt = doy_zero_dt + dt.timedelta(doy_end)
     # First day of current start month and last day of current end month
     month_start_dt = dt.datetime(
-        year, python_common.doy2month(year, doy_start), 1)
+        year, dripy.doy2month(year, doy_start), 1)
     month_end_dt = dt.datetime(
-        year, python_common.doy2month(year, doy_end),
-        monthrange(year, python_common.doy2month(year, doy_end))[-1])
+        year, dripy.doy2month(year, doy_end),
+        monthrange(year, dripy.doy2month(year, doy_end))[-1])
     # Won't work for December because datetime doesn't accept month 13
     # month_end_dt = dt.datetime(year, month_end + 1, 1) + dt.timedelta(-1)
     # First day of next start month and last day of prior end month
     month_start_next_dt = dt.datetime(
-        year, python_common.doy2month(year, doy_start)+1, 1)
+        year, dripy.doy2month(year, doy_start)+1, 1)
     month_end_prev_dt = dt.datetime(
-        year, python_common.doy2month(year, doy_end), 1) + dt.timedelta(-1)
+        year, dripy.doy2month(year, doy_end), 1) + dt.timedelta(-1)
     # Count of number of days between doy and inner month endpoints
     month_start_day_count = (month_start_next_dt - doy_start_dt).days
     month_end_day_count = (doy_end_dt - month_end_prev_dt).days
@@ -1139,7 +1139,7 @@ def raster_swb_func(output_dt, output_osr, output_cs, output_extent,
 
     # Compute list of dates needed for spinup
     # date_range function doesn't return end date so add 1 day to end
-    dt_list = sorted(python_common.date_range(
+    dt_list = sorted(dripy.date_range(
         output_dt - dt.timedelta(days=spinup_days),
         output_dt + dt.timedelta(days=1)))
     year_list = sorted(list(set([d.year for d in dt_list])))
@@ -1408,7 +1408,7 @@ def point_swb_func(test_dt, test_xy, test_osr, awc_path,
 
     # Compute list of dates needed for spinup
     # date_range function doesn't return end date so add 1 day to end
-    dt_list = sorted(python_common.date_range(
+    dt_list = sorted(dripy.date_range(
         test_dt - dt.timedelta(days=spinup_days),
         test_dt + dt.timedelta(days=1)))
     year_list = sorted(list(set([d.year for d in dt_list])))

@@ -12,11 +12,11 @@ import os
 import subprocess
 import sys
 
-from python_common import open_ini, read_param, parse_int_set
+import python_common as dripy
 
 
 def main(ini_path, rasters_flag=None, tables_flag=None,
-         mc_iter_str='', tile_list=None, pyramids_flag=True,
+         mc_iter_str='', tile_list=None, blocksize=None, pyramids_flag=True,
          stats_flag=True, overwrite_flag=False,
          mp_procs=1, delay=0, debug_flag=False, no_file_logging=False):
     """Run interpolater for all Landsat scenes
@@ -34,6 +34,8 @@ def main(ini_path, rasters_flag=None, tables_flag=None,
     tile_list : list, optional
         Landsat path/rows to process (i.e. [p045r043, p045r033]).
         This will override the tile list in the INI file.
+    blocksize : int
+        Processing block size (the default is None).
     pyramids_flag : bool, optional
         If True, compute raster pyramids (the default is True).
     stats_flag : bool, optional
@@ -57,13 +59,13 @@ def main(ini_path, rasters_flag=None, tables_flag=None,
     logging.info('\nRunning Interpolator')
 
     # Open config file
-    config = open_ini(ini_path)
+    config = dripy.open_ini(ini_path)
 
     # Get input parameters
     logging.debug('  Reading Input File')
     year = config.getint('INPUTS', 'year')
     if tile_list is None:
-        tile_list = read_param('tile_list', [], config, 'INPUTS')
+        tile_list = dripy.read_param('tile_list', [], config, 'INPUTS')
     project_ws = config.get('INPUTS', 'project_folder')
     logging.debug('  Year: {}'.format(year))
     logging.debug('  Path/rows: {}'.format(', '.join(tile_list)))
@@ -76,10 +78,10 @@ def main(ini_path, rasters_flag=None, tables_flag=None,
     if rasters_flag is None and tables_flag is None:
         logging.info('  Reading interpolator flags from INI file')
         if rasters_flag is None:
-            rasters_flag = read_param(
+            rasters_flag = dripy.read_param(
                 'interpolate_rasters_flag', True, config, 'INPUTS')
         if tables_flag is None:
-            tables_flag = read_param(
+            tables_flag = dripy.read_param(
                 'interpolate_tables_flag', True, config, 'INPUTS')
     # If both flags were set false, for now, exit the script
     # It may make more sense to assumethe user wants to interpolate something
@@ -99,7 +101,7 @@ def main(ini_path, rasters_flag=None, tables_flag=None,
 
     # For now, get mc_iter list from command line, not from project file
     # mc_iter_list = config.get('INPUTS', 'mc_iter_list')
-    mc_iter_list = list(parse_int_set(mc_iter_str))
+    mc_iter_list = list(dripy.parse_int_set(mc_iter_str))
 
     # Need soemthing in mc_iter_list to iterate over
     if not mc_iter_list:
@@ -167,10 +169,15 @@ def main(ini_path, rasters_flag=None, tables_flag=None,
         if mp_procs > 1:
             rasters_args.extend(['-mp', str(mp_procs)])
             tables_args.extend(['-mp', str(mp_procs)])
+        if blocksize is not None:
+            rasters_args.extend(['--blocksize', str(bs)])
+            tables_args.extend(['--blocksize', str(bs)])
+
         if rasters_flag:
             subprocess.call(rasters_args, cwd=year_ws)
         if tables_flag:
             subprocess.call(tables_args, cwd=year_ws)
+
 
     logging.debug('\nScript complete')
 
@@ -181,11 +188,14 @@ def arg_parse():
         description='Batch Landsat interpolate',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
-        '-i', '--ini', required=True,
+        '-i', '--ini', required=True, type=dripy.arg_valid_file,
         help='Landsat project input file', metavar='FILE')
     parser.add_argument(
         '-d', '--debug', default=logging.INFO, const=logging.DEBUG,
         help='Debug level logging', action="store_const", dest="loglevel")
+    parser.add_argument(
+        '-bs', '--blocksize', default=None, type=int, metavar='N',
+        help='Processing block size (overwrite INI blocksize parameter)')
     parser.add_argument(
         '--delay', default=0, type=int, metavar='N',
         help='Max random delay starting job in seconds')
@@ -196,7 +206,7 @@ def arg_parse():
         '-mp', '--multiprocessing', default=1, type=int, nargs='?',
         metavar="[1-{}]".format(cpu_count()), const=cpu_count(),
         choices=range(1, cpu_count() + 1),
-        help='Number of processers to use')
+        help='Number of processors to use')
     # The "no_stats" parameter is negated below to become "stats".
     # The "no_pyramids" parameter is negated below to become "pyramids".
     # By default, the interpolate functions will NOT compute raster statistics
@@ -234,6 +244,7 @@ def arg_parse():
     # Convert relative paths to absolute paths
     if os.path.isfile(os.path.abspath(args.ini)):
         args.ini = os.path.abspath(args.ini)
+
     return args
 
 
@@ -248,7 +259,7 @@ if __name__ == '__main__':
     logging.info(log_f.format('Script:', os.path.basename(sys.argv[0])))
 
     main(ini_path=args.ini, rasters_flag=args.rasters, tables_flag=args.tables,
-         mc_iter_str=args.mc_iter, tile_list=args.path_row,
+         mc_iter_str=args.mc_iter, tile_list=args.path_row, blocksize=args.blocksize,
          pyramids_flag=args.pyramids, stats_flag=args.stats,
          overwrite_flag=args.overwrite, mp_procs=args.multiprocessing,
          delay=args.delay, debug_flag=args.loglevel==logging.DEBUG,

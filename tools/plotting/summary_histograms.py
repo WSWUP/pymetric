@@ -8,9 +8,10 @@ import numpy as np
 import os
 import matplotlib.pyplot as plt
 
-
 from mpl_toolkits.axes_grid.anchored_artists import AnchoredText
 from scipy import stats
+
+import python_common as dripy
 
 
 def main(csv_path, output_folder, fid_list='', bin_min=0, bin_max=5,
@@ -52,7 +53,7 @@ def main(csv_path, output_folder, fid_list='', bin_min=0, bin_max=5,
     # Filter FIDs based on fid_list (default [])
     fid_skiplist = []
     if fid_list:
-        fid_skiplist = sorted(list(parse_int_set(fid_list)))
+        fid_skiplist = sorted(list(dripy.parse_int_set(fid_list)))
         logging.info('Skipping FIDs: {}'.format(fid_skiplist))
         input_df = input_df[~input_df['FID'].isin(fid_skiplist)]
 

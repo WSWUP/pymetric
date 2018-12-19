@@ -21,7 +21,7 @@ from osgeo import gdal
 import et_common
 import et_image
 import et_numpy
-import python_common
+import python_common as dripy
 
 
 def main(image_ws, ini_path, bs=2048, stats_flag=False, overwrite_flag=False):
@@ -47,119 +47,119 @@ def main(image_ws, ini_path, bs=2048, stats_flag=False, overwrite_flag=False):
     """
 
     # Open config file
-    config = python_common.open_ini(ini_path)
+    config = dripy.open_ini(ini_path)
 
     # Get input parameters
     logging.debug('  Reading Input File')
-    calc_refl_toa_flag = python_common.read_param(
+    calc_refl_toa_flag = dripy.read_param(
         'calc_refl_toa_flag', True, config, 'INPUTS')
-    calc_refl_toa_qa_flag = python_common.read_param(
+    calc_refl_toa_qa_flag = dripy.read_param(
         'calc_refl_toa_qa_flag', True, config, 'INPUTS')
-    # calc_refl_sur_ledaps_flag = python_common.read_param(
+    # calc_refl_sur_ledaps_flag = dripy.read_param(
     #     'calc_refl_sur_ledaps_flag', False, config, 'INPUTS')
-    # calc_refl_sur_qa_flag = python_common.read_param(
+    # calc_refl_sur_qa_flag = dripy.read_param(
     #     'calc_refl_sur_qa_flag', False, config, 'INPUTS')
-    calc_ts_bt_flag = python_common.read_param(
+    calc_ts_bt_flag = dripy.read_param(
         'calc_ts_bt_flag', True, config, 'INPUTS')
 
     # Use QA band to set common area
     # Fmask cloud, shadow, & snow pixels will be removed from common area
-    calc_fmask_common_flag = python_common.read_param(
+    calc_fmask_common_flag = dripy.read_param(
         'calc_fmask_common_flag', True, config, 'INPUTS')
-    fmask_smooth_flag = python_common.read_param(
+    fmask_smooth_flag = dripy.read_param(
         'fmask_smooth_flag', False, config, 'INPUTS')
-    fmask_buffer_flag = python_common.read_param(
+    fmask_buffer_flag = dripy.read_param(
         'fmask_buffer_flag', False, config, 'INPUTS')
-    fmask_erode_flag = python_common.read_param(
+    fmask_erode_flag = dripy.read_param(
         'fmask_erode_flag', False, config, 'INPUTS')
     if fmask_smooth_flag:
-        fmask_smooth_cells = int(python_common.read_param(
+        fmask_smooth_cells = int(dripy.read_param(
             'fmask_smooth_cells', 1, config, 'INPUTS'))
         if fmask_smooth_cells == 0 and fmask_smooth_flag:
             fmask_smooth_flag = False
     if fmask_erode_flag:
-        fmask_erode_cells = int(python_common.read_param(
+        fmask_erode_cells = int(dripy.read_param(
             'fmask_erode_cells', 1, config, 'INPUTS'))
         if fmask_erode_cells == 0 and fmask_erode_flag:
             fmask_erode_flag = False
     if fmask_buffer_flag:
-        fmask_buffer_cells = int(python_common.read_param(
+        fmask_buffer_cells = int(dripy.read_param(
             'fmask_buffer_cells', 1, config, 'INPUTS'))
         if fmask_buffer_cells == 0 and fmask_buffer_flag:
             fmask_buffer_flag = False
 
     # Remove edge (fringe) cells
-    edge_smooth_flag = python_common.read_param(
+    edge_smooth_flag = dripy.read_param(
         'edge_smooth_flag', True, config, 'INPUTS')
 
     # Include hand made cloud masks
-    cloud_mask_flag = python_common.read_param(
+    cloud_mask_flag = dripy.read_param(
         'cloud_mask_flag', False, config, 'INPUTS')
     cloud_mask_ws = ""
     if cloud_mask_flag:
         cloud_mask_ws = config.get('INPUTS', 'cloud_mask_ws')
 
     # Extract separate Fmask rasters
-    calc_fmask_flag = python_common.read_param(
+    calc_fmask_flag = dripy.read_param(
         'calc_fmask_flag', True, config, 'INPUTS')
-    calc_fmask_cloud_flag = python_common.read_param(
+    calc_fmask_cloud_flag = dripy.read_param(
         'calc_fmask_cloud_flag', True, config, 'INPUTS')
-    calc_fmask_snow_flag = python_common.read_param(
+    calc_fmask_snow_flag = dripy.read_param(
         'calc_fmask_snow_flag', True, config, 'INPUTS')
-    calc_fmask_water_flag = python_common.read_param(
+    calc_fmask_water_flag = dripy.read_param(
         'calc_fmask_water_flag', True, config, 'INPUTS')
 
     # Keep Landsat DN, LEDAPS, and Fmask rasters
-    keep_dn_flag = python_common.read_param(
+    keep_dn_flag = dripy.read_param(
         'keep_dn_flag', True, config, 'INPUTS')
-    # keep_sr_flag = python_common.read_param(
+    # keep_sr_flag = dripy.read_param(
     #     'keep_sr_flag', True, config, 'INPUTS')
 
     # For this to work I would need to pass in the metric input file
-    # calc_elev_flag = python_common.read_param(
+    # calc_elev_flag = dripy.read_param(
     #     'calc_elev_flag', False, config, 'INPUTS')
-    # calc_landuse_flag = python_common.read_param(
+    # calc_landuse_flag = dripy.read_param(
     #     'calc_landuse_flag', False, config, 'INPUTS')
 
-    # calc_acca_cloud_flag = python_common.read_param(
+    # calc_acca_cloud_flag = dripy.read_param(
     #     'calc_acca_cloud_flag', True, config, 'INPUTS')
-    # calc_acca_snow_flag = python_common.read_param(
+    # calc_acca_snow_flag = dripy.read_param(
     #     'calc_acca_snow_flag', True, config, 'INPUTS')
-    # calc_ledaps_dem_land_flag = python_common.read_param(
+    # calc_ledaps_dem_land_flag = dripy.read_param(
     #     'calc_ledaps_dem_land_flag', False, config, 'INPUTS')
-    # calc_ledaps_veg_flag = python_common.read_param(
+    # calc_ledaps_veg_flag = dripy.read_param(
     #     'calc_ledaps_veg_flag', False, config, 'INPUTS')
-    # calc_ledaps_snow_flag = python_common.read_param(
+    # calc_ledaps_snow_flag = dripy.read_param(
     #     'calc_ledaps_snow_flag', False, config, 'INPUTS')
-    # calc_ledaps_land_flag = python_common.read_param(
+    # calc_ledaps_land_flag = dripy.read_param(
     #     'calc_ledaps_land_flag', False, config, 'INPUTS')
-    # calc_ledaps_cloud_flag = python_common.read_param(
+    # calc_ledaps_cloud_flag = dripy.read_param(
     #     'calc_ledaps_cloud_flag', False, config, 'INPUTS')
 
     # Interpolate/clip/project hourly rasters for each Landsat scene
-    # calc_metric_flag = python_common.read_param(
+    # calc_metric_flag = dripy.read_param(
     #     'calc_metric_flag', False, config, 'INPUTS')
-    calc_metric_ea_flag = python_common.read_param(
+    calc_metric_ea_flag = dripy.read_param(
         'calc_metric_ea_flag', False, config, 'INPUTS')
-    calc_metric_wind_flag = python_common.read_param(
+    calc_metric_wind_flag = dripy.read_param(
         'calc_metric_wind_flag', False, config, 'INPUTS')
-    calc_metric_etr_flag = python_common.read_param(
+    calc_metric_etr_flag = dripy.read_param(
         'calc_metric_etr_flag', False, config, 'INPUTS')
-    calc_metric_tair_flag = python_common.read_param(
+    calc_metric_tair_flag = dripy.read_param(
         'calc_metric_tair_flag', False, config, 'INPUTS')
 
     # Interpolate/clip/project AWC and daily ETr/PPT rasters
     # to compute SWB Ke for each Landsat scene
-    calc_swb_ke_flag = python_common.read_param(
+    calc_swb_ke_flag = dripy.read_param(
         'calc_swb_ke_flag', False, config, 'INPUTS')
     if cloud_mask_flag:
-        spinup_days = python_common.read_param(
+        spinup_days = dripy.read_param(
             'swb_spinup_days', 30, config, 'INPUTS')
-        min_spinup_days = python_common.read_param(
+        min_spinup_days = dripy.read_param(
             'swb_min_spinup_days', 5, config, 'INPUTS')
 
     # Round ea raster to N digits to save space
-    rounding_digits = python_common.read_param(
+    rounding_digits = dripy.read_param(
         'rounding_digits', 3, config, 'INPUTS')
 
     env = drigo.env
@@ -184,11 +184,11 @@ def main(image_ws, ini_path, bs=2048, stats_flag=False, overwrite_flag=False):
     #                      'ERROR: config_file = {}\n').format(config_file)
     #        sys.exit()
     #    #  Overwrite
-    #    overwrite_flag = read_param('overwrite_flag', True, config)
+    #    overwrite_flag = dripy.read_param('overwrite_flag', True, config)
     #
     #    #  Elevation and landuse parameters/flags from METRIC input file
-    #    calc_elev_flag = read_param('save_dem_raster_flag', True, config)
-    #    calc_landuse_flag = read_param(
+    #    calc_elev_flag = dripy.read_param('save_dem_raster_flag', True, config)
+    #    calc_landuse_flag = dripy.read_param(
     #        'save_landuse_raster_flag', True, config)
     #    if calc_elev_flag:
     #        elev_pr_path = config.get('INPUTS','dem_raster')
@@ -362,7 +362,7 @@ def main(image_ws, ini_path, bs=2048, stats_flag=False, overwrite_flag=False):
     #     ]
     #     for overwrite_path in overwrite_list:
     #         try:
-    #             python_common.remove_file(image.fmask_cloud_raster)
+    #             dripy.remove_file(image.fmask_cloud_raster)
     #         except:
     #             pass
 
@@ -487,22 +487,22 @@ def main(image_ws, ini_path, bs=2048, stats_flag=False, overwrite_flag=False):
                 os.path.isfile(image.fmask_output_raster)):
             logging.debug('  Overwriting: {}'.format(
                 image.fmask_output_raster))
-            python_common.remove_file(image.fmask_output_raster)
+            dripy.remove_file(image.fmask_output_raster)
         if (calc_fmask_cloud_flag and overwrite_flag and
                 os.path.isfile(image.fmask_cloud_raster)):
             logging.debug('  Overwriting: {}'.format(
                 image.fmask_cloud_raster))
-            python_common.remove_file(image.fmask_cloud_raster)
+            dripy.remove_file(image.fmask_cloud_raster)
         if (calc_fmask_snow_flag and overwrite_flag and
                 os.path.isfile(image.fmask_snow_raster)):
             logging.debug('  Overwriting: {}'.format(
                 image.fmask_snow_raster))
-            python_common.remove_file(image.fmask_snow_raster)
+            dripy.remove_file(image.fmask_snow_raster)
         if (calc_fmask_water_flag and overwrite_flag and
                 os.path.isfile(image.fmask_water_raster)):
             logging.debug('  Overwriting: {}'.format(
                 image.fmask_water_raster))
-            python_common.remove_file(image.fmask_water_raster)
+            dripy.remove_file(image.fmask_water_raster)
 
         # Save Fmask data as separate rasters
         if (calc_fmask_flag and not os.path.isfile(image.fmask_output_raster)):
@@ -569,7 +569,7 @@ def main(image_ws, ini_path, bs=2048, stats_flag=False, overwrite_flag=False):
         if os.path.isfile(image.refl_toa_raster) and overwrite_flag:
             logging.debug('  Overwriting: {}'.format(
                 image.refl_toa_raster))
-            python_common.remove_file(image.refl_toa_raster)
+            dripy.remove_file(image.refl_toa_raster)
         if not os.path.isfile(image.refl_toa_raster):
             # First build empty composite raster
             drigo.build_empty_raster(
@@ -729,7 +729,7 @@ def main(image_ws, ini_path, bs=2048, stats_flag=False, overwrite_flag=False):
         logging.info('Brightness Temperature')
         if os.path.isfile(image.ts_bt_raster) and overwrite_flag:
             logging.debug('  Overwriting: {}'.format(image.ts_bt_raster))
-            python_common.remove_file(image.ts_bt_raster)
+            dripy.remove_file(image.ts_bt_raster)
         if not os.path.isfile(image.ts_bt_raster):
             band = image.thermal_band
             thermal_dn_path = dn_image_dict[band]
@@ -827,7 +827,7 @@ def main(image_ws, ini_path, bs=2048, stats_flag=False, overwrite_flag=False):
             if os.path.isfile(output_raster):
                 if overwrite_flag:
                     logging.debug('    Overwriting output')
-                    python_common.remove_file(output_raster)
+                    dripy.remove_file(output_raster)
                 else:
                     logging.debug('    Skipping, file already exists ' +
                                   'and overwrite is False')
@@ -991,7 +991,7 @@ def main(image_ws, ini_path, bs=2048, stats_flag=False, overwrite_flag=False):
         if os.path.isfile(image.ke_raster):
             if overwrite_flag:
                 logging.debug('    Overwriting output')
-                python_common.remove_file(image.ke_raster)
+                dripy.remove_file(image.ke_raster)
             else:
                 logging.debug('    Skipping, file already '
                               'exists and overwrite is False')
@@ -1014,7 +1014,7 @@ def main(image_ws, ini_path, bs=2048, stats_flag=False, overwrite_flag=False):
 
     # Remove Landsat TOA rasters
     if not keep_dn_flag:
-        for landsat_item in python_common.build_file_list(
+        for landsat_item in dripy.build_file_list(
                 image.orig_data_ws, image.image_name_re):
             os.remove(os.path.join(image.orig_data_ws, landsat_item))
     return True

@@ -13,7 +13,7 @@ import re
 import subprocess
 import sys
 
-from python_common import open_ini, read_param, call_mp
+import python_common as dripy
 
 
 def main(ini_path, tile_list=None, blocksize=2048, stats_flag=True,
@@ -52,21 +52,21 @@ def main(ini_path, tile_list=None, blocksize=2048, stats_flag=True,
     logging.info('\nPreparing Landsat scenes')
 
     # Open config file
-    config = open_ini(ini_path)
+    config = dripy.open_ini(ini_path)
 
     logging.debug('  Reading Input File')
     year = config.getint('INPUTS', 'year')
     if tile_list is None:
-        tile_list = read_param('tile_list', [], config, 'INPUTS')
+        tile_list = dripy.read_param('tile_list', [], config, 'INPUTS')
     project_ws = config.get('INPUTS', 'project_folder')
     logging.debug('  Year: {}'.format(year))
     logging.debug('  Path/rows: {}'.format(', '.join(tile_list)))
     logging.debug('  Project: {}'.format(project_ws))
 
     func_path = config.get('INPUTS', 'prep_scene_func')
-    keep_list_path = read_param('keep_list_path', '', config, 'INPUTS')
+    keep_list_path = dripy.read_param('keep_list_path', '', config, 'INPUTS')
     # DEADBEEF - Remove if keep list works
-    # skip_list_path = read_param('skip_list_path', '', config, 'INPUTS')
+    # skip_list_path = dripy.read_param('skip_list_path', '', config, 'INPUTS')
 
     # Only allow new terminal windows on Windows
     if os.name is not 'nt':
@@ -151,7 +151,7 @@ def main(ini_path, tile_list=None, blocksize=2048, stats_flag=True,
 
     if mp_list:
         pool = mp.Pool(mp_procs)
-        results = pool.map(call_mp, mp_list, chunksize=1)
+        results = pool.map(dripy.call_mp, mp_list, chunksize=1)
         pool.close()
         pool.join()
         del results, pool
@@ -165,7 +165,7 @@ def arg_parse():
         description='Batch Landsat scenes prep',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
-        '-i', '--ini', required=True,
+        '-i', '--ini', required=True, type=dripy.arg_valid_file,
         help='Landsat project input file', metavar='FILE')
     parser.add_argument(
         '-bs', '--blocksize', default=2048, type=int,
@@ -179,7 +179,7 @@ def arg_parse():
     parser.add_argument(
         '-mp', '--multiprocessing', default=1, type=int,
         metavar='N', nargs='?', const=mp.cpu_count(),
-        help='Number of processers to use')
+        help='Number of processors to use')
     # The "no_stats" parameter is negated below to become "stats".
     # By default, prep_scene will NOT compute raster statistics.
     # If a user runs this "local" script, they probably want statistics.

@@ -133,6 +133,7 @@ def arg_parse():
     # Convert output folder to an absolute path
     if args.output and os.path.isdir(os.path.abspath(args.output)):
         args.output = os.path.abspath(args.output)
+
     return args
 
 

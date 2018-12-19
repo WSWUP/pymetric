@@ -23,7 +23,7 @@ from osgeo import gdal, ogr, osr
 
 import et_common
 import et_image
-import python_common
+import python_common as dripy
 
 gdal.UseExceptions()
 
@@ -60,13 +60,13 @@ def main(ini_path, tile_list=None, overwrite_flag=False, mp_procs=1):
             '  {}'.format(os.getenv("GDAL_DATA")))
 
     # Open config file
-    config = python_common.open_ini(ini_path)
+    config = dripy.open_ini(ini_path)
 
     # Get input parameters
     logging.debug('  Reading Input File')
     year = config.getint('INPUTS', 'year')
     if tile_list is None:
-        tile_list = python_common.read_param('tile_list', [], config, 'INPUTS')
+        tile_list = dripy.read_param('tile_list', [], config, 'INPUTS')
     project_ws = config.get('INPUTS', 'project_folder')
     logging.debug('  Year: {}'.format(year))
     logging.debug('  Path/rows: {}'.format(', '.join(tile_list)))
@@ -75,29 +75,29 @@ def main(ini_path, tile_list=None, overwrite_flag=False, mp_procs=1):
     # study_area_path = config.get('INPUTS', 'study_area_path')
     wrs2_footprint_path = config.get('INPUTS', 'footprint_path')
     # For now, assume the UTM zone file is colocated with the footprints shapefile
-    utm_path = python_common.read_param(
+    utm_path = dripy.read_param(
         'utm_path',
         os.path.join(os.path.dirname(wrs2_footprint_path),
                      'wrs2_tile_utm_zones.json'),
         config, 'INPUTS')
-    keep_list_path = python_common.read_param(
+    keep_list_path = dripy.read_param(
         'keep_list_path', '', config, 'INPUTS')
     # DEADBEEF - Remove if keep list works
-    # skip_list_path = python_common.read_param(
+    # skip_list_path = dripy.read_param(
     #     'skip_list_path', '', config, 'INPUTS')
 
-    landsat_flag = python_common.read_param(
+    landsat_flag = dripy.read_param(
         'landsat_flag', True, config, 'INPUTS')
     ledaps_flag = False
-    dem_flag = python_common.read_param('dem_flag', True, config, 'INPUTS')
-    nlcd_flag = python_common.read_param('nlcd_flag', True, config, 'INPUTS')
-    cdl_flag = python_common.read_param('cdl_flag', False, config, 'INPUTS')
-    landfire_flag = python_common.read_param(
+    dem_flag = dripy.read_param('dem_flag', True, config, 'INPUTS')
+    nlcd_flag = dripy.read_param('nlcd_flag', True, config, 'INPUTS')
+    cdl_flag = dripy.read_param('cdl_flag', False, config, 'INPUTS')
+    landfire_flag = dripy.read_param(
         'landfire_flag', False, config, 'INPUTS')
-    field_flag = python_common.read_param(
+    field_flag = dripy.read_param(
         'field_flag', False, config, 'INPUTS')
 
-    tile_gcs_buffer = python_common.read_param('tile_buffer', 0.25, config)
+    tile_gcs_buffer = dripy.read_param('tile_buffer', 0.25, config)
 
     # Input/output folder and file paths
     if landsat_flag:
@@ -113,7 +113,7 @@ def main(ini_path, tile_list=None, overwrite_flag=False, mp_procs=1):
         dem_input_ws = config.get('INPUTS', 'dem_input_folder')
         dem_tile_fmt = config.get('INPUTS', 'dem_tile_fmt')
         dem_output_ws = config.get('INPUTS', 'dem_output_folder')
-        dem_output_name = python_common.read_param(
+        dem_output_name = dripy.read_param(
             'dem_output_name', 'dem.img', config)
         # dem_output_name = config.get('INPUTS', 'dem_output_name')
     else:
@@ -123,7 +123,7 @@ def main(ini_path, tile_list=None, overwrite_flag=False, mp_procs=1):
     if nlcd_flag:
         nlcd_input_path = config.get('INPUTS', 'nlcd_input_path')
         nlcd_output_ws = config.get('INPUTS', 'nlcd_output_folder')
-        nlcd_output_fmt = python_common.read_param(
+        nlcd_output_fmt = dripy.read_param(
             'nlcd_output_fmt', 'nlcd_{:04d}.img', config)
     else:
         nlcd_input_path, nlcd_output_ws, nlcd_output_fmt = None, None, None
@@ -131,17 +131,17 @@ def main(ini_path, tile_list=None, overwrite_flag=False, mp_procs=1):
     if cdl_flag:
         cdl_input_path = config.get('INPUTS', 'cdl_input_path')
         cdl_ag_list = config.get('INPUTS', 'cdl_ag_list')
-        cdl_ag_list = list(python_common.parse_int_set(cdl_ag_list))
+        cdl_ag_list = list(dripy.parse_int_set(cdl_ag_list))
         # default_cdl_ag_list = range(1,62) + range(66,78) + range(204,255)
-        # cdl_ag_list = python_common.read_param(
+        # cdl_ag_list = dripy.read_param(
         #    'cdl_ag_list', default_cdl_ag_list, config)
         # cdl_ag_list = list(map(int, cdl_ag_list))
-        # cdl_non_ag_list = python_common.read_param(
+        # cdl_non_ag_list = dripy.read_param(
         #    'cdl_non_ag_list', [], config)
         cdl_output_ws = config.get('INPUTS', 'cdl_output_folder')
-        cdl_output_fmt = python_common.read_param(
+        cdl_output_fmt = dripy.read_param(
             'cdl_output_fmt', 'cdl_{:04d}.img', config)
-        cdl_ag_output_fmt = python_common.read_param(
+        cdl_ag_output_fmt = dripy.read_param(
             'cdl_ag_output_fmt', 'cdl_ag_{:04d}.img', config)
     else:
         cdl_input_path, cdl_ag_list = None, None
@@ -150,16 +150,15 @@ def main(ini_path, tile_list=None, overwrite_flag=False, mp_procs=1):
     if landfire_flag:
         landfire_input_path = config.get('INPUTS', 'landfire_input_path')
         landfire_ag_list = config.get('INPUTS', 'landfire_ag_list')
-        landfire_ag_list = list(
-            python_common.parse_int_set(landfire_ag_list))
+        landfire_ag_list = list(dripy.parse_int_set(landfire_ag_list))
         # default_landfire_ag_list = range(3960,4000)
-        # landfire_ag_list = python_common.read_param(
+        # landfire_ag_list = dripy.read_param(
         #    'landfire_ag_list', default_landfire_ag_list, config)
         # landfire_ag_list = list(map(int, landfire_ag_list))
         landfire_output_ws = config.get('INPUTS', 'landfire_output_folder')
-        landfire_output_fmt = python_common.read_param(
+        landfire_output_fmt = dripy.read_param(
             'landfire_output_fmt', 'landfire_{:04d}.img', config)
-        landfire_ag_output_fmt = python_common.read_param(
+        landfire_ag_output_fmt = dripy.read_param(
             'landfire_ag_output_fmt', 'landfire_ag_{:04d}.img', config)
     else:
         landfire_input_path, landfire_ag_list = None, None
@@ -169,7 +168,7 @@ def main(ini_path, tile_list=None, overwrite_flag=False, mp_procs=1):
     if field_flag:
         field_input_path = config.get('INPUTS', 'field_input_path')
         field_output_ws = config.get('INPUTS', 'field_output_folder')
-        field_output_fmt = python_common.read_param(
+        field_output_fmt = dripy.read_param(
             'field_output_fmt', 'fields_{:04d}.img', config)
     else:
         field_input_path = None
@@ -419,7 +418,7 @@ def main(ini_path, tile_list=None, overwrite_flag=False, mp_procs=1):
                 if mp_procs > 1:
                     extract_targz_list.append([input_path, orig_data_ws])
                 else:
-                    python_common.extract_targz_func(
+                    dripy.extract_targz_func(
                         input_path, orig_data_ws)
 
                 # # Use a command line call
@@ -439,7 +438,7 @@ def main(ini_path, tile_list=None, overwrite_flag=False, mp_procs=1):
         if extract_targz_list:
             pool = mp.Pool(mp_procs)
             results = pool.map(
-                python_common.extract_targz_mp, extract_targz_list,
+                dripy.extract_targz_mp, extract_targz_list,
                 chunksize=1)
             pool.close()
             pool.join()
@@ -1046,7 +1045,7 @@ def arg_parse():
         description='Batch Landsat path/row prep',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
-        '-i', '--ini', required=True,
+        '-i', '--ini', required=True, type=dripy.arg_valid_file,
         help='Landsat project input file', metavar='FILE')
     parser.add_argument(
         '-o', '--overwrite', default=False, action="store_true",
@@ -1054,7 +1053,7 @@ def arg_parse():
     parser.add_argument(
         '-mp', '--multiprocessing', default=1, type=int,
         metavar='N', nargs='?', const=mp.cpu_count(),
-        help='Number of processers to use')
+        help='Number of processors to use')
     parser.add_argument(
         '-d', '--debug', default=logging.INFO, const=logging.DEBUG,
         help='Debug level logging', action="store_const", dest="loglevel")
@@ -1063,6 +1062,7 @@ def arg_parse():
     # Convert relative paths to absolute paths
     if os.path.isfile(os.path.abspath(args.ini)):
         args.ini = os.path.abspath(args.ini)
+
     return args
 
 

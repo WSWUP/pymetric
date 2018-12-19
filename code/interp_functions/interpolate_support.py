@@ -18,7 +18,7 @@ from osgeo import gdal, ogr
 from scipy import interpolate
 
 # import et_common
-from python_common import shuffle
+import python_common as dripy
 
 # np.seterr(invalid='ignore')
 gdal.UseExceptions()
@@ -196,7 +196,7 @@ def load_etrf_func(array_shape, date_list, year_ws, year,
         if tile_name not in tile_image_dict[year].keys():
             continue
 
-        for image_id in shuffle(tile_image_dict[year][tile_name]):
+        for image_id in dripy.shuffle(tile_image_dict[year][tile_name]):
             tile_ws = os.path.join(year_ws, tile_name)
             image_ws = os.path.join(tile_ws, image_id)
             image_etrf_raster = os.path.join(image_ws, etrf_raster)
@@ -273,7 +273,7 @@ def load_etrf_func(array_shape, date_list, year_ws, year,
 #         if tile_name not in tile_image_dict[year].keys():
 #             continue
 
-#         for image_id in shuffle(tile_image_dict[year][tile_name]):
+#         for image_id in dripy.shuffle(tile_image_dict[year][tile_name]):
 #             tile_ws = os.path.join(year_ws, tile_name)
 #             image_ws = os.path.join(tile_ws, image_id)
 #             image_ndvi_raster = os.path.join(image_ws, ndvi_raster)

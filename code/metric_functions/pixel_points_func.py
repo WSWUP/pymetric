@@ -17,7 +17,7 @@ from osgeo import gdal, ogr, osr
 from scipy import ndimage
 
 import et_image
-import python_common
+import python_common as dripy
 
 
 def pixel_points(image_ws, groupsize=1, blocksize=2048,
@@ -63,7 +63,7 @@ def pixel_points(image_ws, groupsize=1, blocksize=2048,
     common_ds = None
 
     # Open config file
-    # config = open_ini(ini_path)
+    # config = dripy.open_ini(ini_path)
 
     # Get input parameters
     # logging.debug('  Reading Input File')
@@ -79,9 +79,9 @@ def pixel_points(image_ws, groupsize=1, blocksize=2048,
     s_fmt = '.shp'
     # json_format = '.geojson'
 
-    # pixels_folder = read_param(pixels_folder, 'PIXELS', config)
-    # cold_pixel_name = read_param(cold_pixel_name, 'cold', config)
-    # hot_pixel_name = read_param(hot_pixel_name, 'hot', config)
+    # pixels_folder = dripy.read_param(pixels_folder, 'PIXELS', config)
+    # cold_pixel_name = dripy.read_param(cold_pixel_name, 'cold', config)
+    # hot_pixel_name = dripy.read_param(hot_pixel_name, 'hot', config)
 
     # Create Pixels Folder and Scratch Folder
     pixels_ws = os.path.join(image_ws, pixels_folder)
@@ -95,9 +95,9 @@ def pixel_points(image_ws, groupsize=1, blocksize=2048,
     hot_cold_pixel_path = os.path.join(
         pixels_ws, hot_cold_pixels_name + s_fmt)
     if shapefile_flag and overwrite_flag:
-        python_common.remove_file(cold_pixel_path)
-        python_common.remove_file(hot_pixel_path)
-        # python_common.remove_file(hot_cold_pixel_path)
+        dripy.remove_file(cold_pixel_path)
+        dripy.remove_file(hot_pixel_path)
+        # dripy.remove_file(hot_cold_pixel_path)
 
     # Place points in the suggested pixel location raster
     cold_region_raster = os.path.join(
@@ -310,7 +310,7 @@ def arg_parse():
         'workspace', nargs='?', default=os.getcwd(),
         help='Landsat scene folder', metavar='FOLDER')
     # parser.add_argument(
-    #     '-i', '--ini', required=True,
+    #     '-i', '--ini', required=True, type=dripy.arg_valid_file,
     #     help='METRIC input file', metavar='FILE')
     parser.add_argument(
         '--debug', default=logging.INFO, const=logging.DEBUG,
@@ -343,6 +343,7 @@ def arg_parse():
         args.workspace = os.path.abspath(args.workspace)
     # if args.ini and os.path.isfile(os.path.abspath(args.ini)):
     #     args.ini = os.path.abspath(args.ini)
+
     return args
 
 

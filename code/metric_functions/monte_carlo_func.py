@@ -21,7 +21,7 @@ import metric_model2_func as metric_model2
 import auto_calibration_func as auto_calibration
 
 import et_image
-from python_common import open_ini, read_param
+import python_common as dripy
 
 break_line = '\n{}'.format('#' * 80)
 pixel_str_fmt = '    {:<14s}  {:>14s}  {:>14s}'
@@ -84,19 +84,19 @@ def monte_carlo(image_ws, metric_ini_path, mc_ini_path, mc_iter=None,
     logging.info('METRIC Automated Calibration')
 
     # Open config file
-    config = open_ini(mc_ini_path)
+    config = dripy.open_ini(mc_ini_path)
 
     # Get input parameters
     logging.debug('  Reading Input File')
     etrf_training_path = config.get('INPUTS', 'etrf_training_path')
 
     # Adjust Kc cold target value based on day of year
-    # etrf_doy_adj_path = read_param(
+    # etrf_doy_adj_path = dripy.read_param(
     #     'etrf_doy_adj_path', None, config, 'INPUTS')
 
     # Intentionally set default to None, to trigger error in eval call
-    kc_cold_doy_dict = read_param('kc_cold_doy_dict', None, config, 'INPUTS')
-    kc_hot_doy_dict = read_param('kc_hot_doy_dict', None, config, 'INPUTS')
+    kc_cold_doy_dict = dripy.read_param('kc_cold_doy_dict', None, config, 'INPUTS')
+    kc_hot_doy_dict = dripy.read_param('kc_hot_doy_dict', None, config, 'INPUTS')
 
     # If the "no_" flags were set True, honor them and set the flag False
     # If the "no_" flags were not set by the user, use the INI flag values
@@ -104,25 +104,25 @@ def monte_carlo(image_ws, metric_ini_path, mc_ini_path, mc_iter=None,
     if no_etrf_temp_plots:
         save_etrf_temp_plots = False
     else:
-        save_etrf_temp_plots = read_param(
+        save_etrf_temp_plots = dripy.read_param(
             'save_etrf_temp_plots', False, config, 'INPUTS')
     if no_etrf_final_plots:
         save_etrf_final_plots = False
     else:
-        save_etrf_final_plots = read_param(
+        save_etrf_final_plots = dripy.read_param(
             'save_etrf_final_plots', False, config, 'INPUTS')
-    save_ndvi_plots = read_param('save_ndvi_plots', False, config, 'INPUTS')
+    save_ndvi_plots = dripy.read_param('save_ndvi_plots', False, config, 'INPUTS')
 
-    max_cal_iter = read_param('max_cal_iterations', 5, config, 'INPUTS')
-    max_point_iter = read_param('max_point_iterations', 10, config, 'INPUTS')
-    ts_diff_threshold = read_param('ts_diff_threshold', 4, config, 'INPUTS')
+    max_cal_iter = dripy.read_param('max_cal_iterations', 5, config, 'INPUTS')
+    max_point_iter = dripy.read_param('max_point_iterations', 10, config, 'INPUTS')
+    ts_diff_threshold = dripy.read_param('ts_diff_threshold', 4, config, 'INPUTS')
     etr_ws = config.get('INPUTS', 'etr_ws')
     ppt_ws = config.get('INPUTS', 'ppt_ws')
     etr_re = re.compile(config.get('INPUTS', 'etr_re'))
     ppt_re = re.compile(config.get('INPUTS', 'ppt_re'))
     awc_path = config.get('INPUTS', 'awc_path')
-    spinup_days = read_param('swb_spinup_days', 5, config, 'INPUTS')
-    min_spinup_days = read_param('swb_min_spinup_days', 30, config, 'INPUTS')
+    spinup_days = dripy.read_param('swb_spinup_days', 5, config, 'INPUTS')
+    min_spinup_days = dripy.read_param('swb_min_spinup_days', 30, config, 'INPUTS')
 
     log_fmt = '  {:<18s} {}'
     break_line = '\n{}'.format('#' * 80)
@@ -472,10 +472,10 @@ def arg_parse():
         default=None, type=int, metavar='N',
         help='Monte Carlo iteration number')
     parser.add_argument(
-        '--metric_ini', required=True,
-        help='METRIC input file', metavar='PATH')
+        '--metric_ini', required=True, type=dripy.arg_valid_file,
+        help='METRIC input file', metavar='FILE')
     parser.add_argument(
-        '--mc_ini', required=True,
+        '--mc_ini', required=True, type=dripy.arg_valid_file,
         help='Monte Carlo input file', metavar='FILE')
     parser.add_argument(
         '-m', '--multipoint', default=False, action="store_true",
@@ -511,6 +511,7 @@ def arg_parse():
         args.metric_ini = os.path.abspath(args.metric_ini)
     if args.mc_ini and os.path.isfile(os.path.abspath(args.mc_ini)):
         args.mc_ini = os.path.abspath(args.mc_ini)
+
     return args
 
 

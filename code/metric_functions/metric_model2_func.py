@@ -21,7 +21,7 @@ from osgeo import gdal
 import et_common
 import et_image
 import et_numpy
-from python_common import open_ini, read_param, remove_file
+import python_common as dripy
 
 
 def metric_model2(image_ws, ini_path, bs=None,
@@ -83,32 +83,32 @@ def metric_model2(image_ws, ini_path, bs=None,
     et24_ws = os.path.join(image_ws, 'ET24')
 
     # Open config file
-    config = open_ini(ini_path)
+    config = dripy.open_ini(ini_path)
 
     # Get input parameters
     logging.debug('  Reading Input File')
     # Recently added to read in variables for Ts correction
-    ts_correction_flag  = read_param(
+    ts_correction_flag  = dripy.read_param(
         'Ts_correction_flag', True, config, 'INPUTS')
-    k_value = read_param('K_value', 2, config, 'INPUTS')
-    dense_veg_min_albedo = read_param(
+    k_value = dripy.read_param('K_value', 2, config, 'INPUTS')
+    dense_veg_min_albedo = dripy.read_param(
         'dense_veg_min_albedo', 0.18, config, 'INPUTS')
 
     # Arrays are processed by block
     if bs is None:
-        bs = read_param('block_size', 1024, config, 'INPUTS')
+        bs = dripy.read_param('block_size', 1024, config, 'INPUTS')
     logging.info(log_fmt.format('Block Size:', bs))
 
     # Raster pyramids/statistics
-    pyramids_flag = read_param('pyramids_flag', False, config, 'INPUTS')
+    pyramids_flag = dripy.read_param('pyramids_flag', False, config, 'INPUTS')
     if pyramids_flag:
         gdal.SetConfigOption('HFA_USE_RRD', 'YES')
     if stats_flag is None:
-        stats_flag = read_param('statistics_flag', False, config, 'INPUTS')
+        stats_flag = dripy.read_param('statistics_flag', False, config, 'INPUTS')
 
     # Overwrite
     if overwrite_flag is None:
-        overwrite_flag = read_param('overwrite_flag', True, config, 'INPUTS')
+        overwrite_flag = dripy.read_param('overwrite_flag', True, config, 'INPUTS')
 
     # Use iteration number to file iteration string
     if mc_iter is None:
@@ -193,47 +193,47 @@ def metric_model2(image_ws, ini_path, bs=None,
 
     # Read MODEL 2 raster flags
     save_dict = dict()
-    save_dict['rn'] = read_param(
+    save_dict['rn'] = dripy.read_param(
         'save_rn_raster_flag', False, config, 'INPUTS')
-    save_dict['rn_24'] = read_param(
+    save_dict['rn_24'] = dripy.read_param(
         'save_rn_24_raster_flag', False, config, 'INPUTS')
-    save_dict['g'] = read_param(
+    save_dict['g'] = dripy.read_param(
         'save_g_raster_flag', False, config, 'INPUTS')
-    save_dict['g_water'] = read_param(
+    save_dict['g_water'] = dripy.read_param(
         'save_g_landuse_rasters_flag', False, config, 'INPUTS')
-    save_dict['g_snow'] = read_param(
+    save_dict['g_snow'] = dripy.read_param(
         'save_g_landuse_rasters_flag', False, config, 'INPUTS')
-    save_dict['g_wetland'] = read_param(
+    save_dict['g_wetland'] = dripy.read_param(
         'save_g_landuse_rasters_flag', False, config, 'INPUTS')
-    save_dict['zom'] = read_param(
+    save_dict['zom'] = dripy.read_param(
         'save_zom_raster_flag', False, config, 'INPUTS')
 
-    save_dict['dt'] = read_param(
+    save_dict['dt'] = dripy.read_param(
         'save_dt_raster_flag', False, config, 'INPUTS')
-    save_dict['h'] = read_param(
+    save_dict['h'] = dripy.read_param(
         'save_h_raster_flag', False, config, 'INPUTS')
-    save_dict['psi_z1'] = read_param(
+    save_dict['psi_z1'] = dripy.read_param(
         'save_psi_raster_flag', False, config, 'INPUTS')
-    save_dict['psi_z2'] = read_param(
+    save_dict['psi_z2'] = dripy.read_param(
         'save_psi_raster_flag', False, config, 'INPUTS')
-    save_dict['psi_z3'] = read_param(
+    save_dict['psi_z3'] = dripy.read_param(
         'save_psi_raster_flag', False, config, 'INPUTS')
-    save_dict['l_stabil'] = read_param(
+    save_dict['l_stabil'] = dripy.read_param(
         'save_l_stabil_raster_flag', False, config, 'INPUTS')
-    save_dict['rah'] = read_param(
+    save_dict['rah'] = dripy.read_param(
         'save_rah_raster_flag', False, config, 'INPUTS')
-    save_dict['u_star'] = read_param(
+    save_dict['u_star'] = dripy.read_param(
         'save_u_star_raster_flag', False, config, 'INPUTS')
 
-    save_dict['le'] = read_param(
+    save_dict['le'] = dripy.read_param(
         'save_le_raster_flag', False, config, 'INPUTS')
-    save_dict['et_inst'] = read_param(
+    save_dict['et_inst'] = dripy.read_param(
         'save_et_inst_raster_flag', False, config, 'INPUTS')
-    save_dict['etrf'] = read_param(
+    save_dict['etrf'] = dripy.read_param(
         'save_etrf_raster_flag', True, config, 'INPUTS')
-    save_dict['et_24'] = read_param(
+    save_dict['et_24'] = dripy.read_param(
         'save_et_24_raster_flag', False, config, 'INPUTS')
-    # save_dict['ef'] = read_param(
+    # save_dict['ef'] = dripy.read_param(
     #     'save_ef_raster_flag', False, config, 'INPUTS')
 
     # If overwrite, remove all existing rasters that can be saved
@@ -241,7 +241,7 @@ def metric_model2(image_ws, ini_path, bs=None,
     for name, save_flag in sorted(save_dict.items()):
         if ((overwrite_flag or save_flag) and
                 os.path.isfile(raster_dict[name])):
-            remove_file(raster_dict[name])
+            dripy.remove_file(raster_dict[name])
 
     # If raster flag is true, than calc flag has to be true
     calc_dict = save_dict.copy()
@@ -276,14 +276,14 @@ def metric_model2(image_ws, ini_path, bs=None,
 
     # # Compute evaporative fraction based ET 24hr estimate
     # #   for target landuses
-    # calc_dict['ef'] = read_param(
+    # calc_dict['ef'] = dripy.read_param(
     #     'use_ef_flag', False, config, 'INPUTS')
     # if calc_dict['ef']:
     #     calc_dict['et_24'] = True
     #     calc_dict['et_inst'] = True
     #     calc_dict['landuse'] = True
     #     calc_dict['rn_24'] = True
-    #     ef_landuse_list = read_param(
+    #     ef_landuse_list = dripy.read_param(
     #         'ef_landuses', [21, 52, 71], config, 'INPUTS')
     #     ef_landuse_list = list(map(int, ef_landuse_list))
 
@@ -303,9 +303,9 @@ def metric_model2(image_ws, ini_path, bs=None,
     if calc_dict['h']:
         # Read the Kc values from the input file if they were not set
         if kc_cold is None:
-            kc_cold = read_param('kc_cold_pixel', 1.05, config, 'INPUTS')
+            kc_cold = dripy.read_param('kc_cold_pixel', 1.05, config, 'INPUTS')
         if kc_hot is None:
-            kc_hot = read_param('kc_hot_pixel', 0.1, config, 'INPUTS')
+            kc_hot = dripy.read_param('kc_hot_pixel', 0.1, config, 'INPUTS')
         if kc_cold <= kc_hot:
             logging.error(
                 '\nERROR: Kc cold ({}) is less than Kc hot ({})'.format(
@@ -321,22 +321,22 @@ def metric_model2(image_ws, ini_path, bs=None,
         calc_dict['psi'] = True
 
         # Controls for pixel stability calculation iterations
-        stabil_pixel_mode_str = read_param(
+        stabil_pixel_mode_str = dripy.read_param(
             'stability_pixel_mode', 'MANUAL', config, 'INPUTS').upper()
         stabil_pixel_a_max = 100
         stabil_pixel_b_max = 10000
         if 'MANUAL' in stabil_pixel_mode_str:
-            stabil_pixel_iter_max = read_param(
+            stabil_pixel_iter_max = dripy.read_param(
                 'stability_pixel_iters', 20, config, 'INPUTS')
         # AUTO and AUTO2 mode
         elif 'AUTO' in stabil_pixel_mode_str:
             stabil_pixel_tolerance = 0.001
             stabil_pixel_iter_max = 100
         # Controls for raster stability calculation iterations
-        stabil_raster_mode_str = read_param(
+        stabil_raster_mode_str = dripy.read_param(
             'stability_raster_mode', 'MANUAL', config, 'INPUTS').upper()
         if 'MANUAL' in stabil_raster_mode_str:
-            stabil_raster_iter_max = read_param(
+            stabil_raster_iter_max = dripy.read_param(
                 'stability_raster_iters', 6, config, 'INPUTS')
         # AUTO and AUTO2 mode
         elif 'AUTO' in stabil_raster_mode_str:
@@ -356,7 +356,7 @@ def metric_model2(image_ws, ini_path, bs=None,
     if calc_dict['zom']:
         calc_dict['landuse'] = True
 
-        zom_lai_refl_type = read_param(
+        zom_lai_refl_type = dripy.read_param(
             'zom_lai_refl_type', 'TOA', config, 'INPUTS').upper()
         if zom_lai_refl_type == 'TOA':
             calc_dict['lai_toa'] = True
@@ -369,7 +369,7 @@ def metric_model2(image_ws, ini_path, bs=None,
                     zom_lai_refl_type))
             return False
 
-        zom_remap_path = read_param('zom_remap_path', None, config, 'INPUTS')
+        zom_remap_path = dripy.read_param('zom_remap_path', None, config, 'INPUTS')
         if zom_remap_path is None:
             logging.error(
                  '\nERROR: The zom_remap_path parameter was not set in '
@@ -395,7 +395,7 @@ def metric_model2(image_ws, ini_path, bs=None,
 
     # Soil heat flux
     if calc_dict['g']:
-        g_model_type = read_param(
+        g_model_type = dripy.read_param(
             'g_model_type', 'METRIC', config, 'INPUTS').upper()
         if g_model_type not in ['METRIC', 'WIM']:
             logging.error(
@@ -403,7 +403,7 @@ def metric_model2(image_ws, ini_path, bs=None,
                  '\nERROR: Set g_model_type to METRIC or WIM'.format(
                     g_model_type))
             return False
-        g_refl_type = read_param(
+        g_refl_type = dripy.read_param(
             'g_refl_type', 'TOA', config, 'INPUTS').upper()
         if g_refl_type not in ['TOA', 'SUR']:
             logging.error(
@@ -430,11 +430,11 @@ def metric_model2(image_ws, ini_path, bs=None,
         # Check landuse specific G flags
         # Save flags were set generally from "save_g_landuse_rasters_flag"
         # Clear save flags if "use" flag is false
-        calc_dict['g_water'] = read_param(
+        calc_dict['g_water'] = dripy.read_param(
             'use_g_water_flag', False, config, 'INPUTS')
-        calc_dict['g_snow'] = read_param(
+        calc_dict['g_snow'] = dripy.read_param(
             'use_g_snow_flag', False, config, 'INPUTS')
-        calc_dict['g_wetland'] = read_param(
+        calc_dict['g_wetland'] = dripy.read_param(
             'use_g_wetland_flag', False, config, 'INPUTS')
         if calc_dict['g_water']:
             # calc_dict['slope'] = True
@@ -485,8 +485,8 @@ def metric_model2(image_ws, ini_path, bs=None,
     if calc_dict['rl_in']:
         calc_dict['tau'] = True
         calc_dict['ts_cold_lap'] = True
-        rl_in_coef1_flt = read_param('rl_in_coef1', 0.85, config, 'INPUTS')
-        rl_in_coef2_flt = read_param('rl_in_coef2', 0.09, config, 'INPUTS')
+        rl_in_coef1_flt = dripy.read_param('rl_in_coef1', 0.85, config, 'INPUTS')
+        rl_in_coef2_flt = dripy.read_param('rl_in_coef2', 0.09, config, 'INPUTS')
     if calc_dict['rl_out']:
         calc_dict['ts'] = True
         calc_dict['em_0'] = True
@@ -503,7 +503,7 @@ def metric_model2(image_ws, ini_path, bs=None,
     # Re-calculate emissivity if it doesn't exist from model 1
     if calc_dict['em_0'] and not os.path.isfile(raster_dict['em_0']):
         # Emissivity is a function of TOA LAI or at-surface LAI
-        em_refl_type = read_param(
+        em_refl_type = dripy.read_param(
             'em_refl_type', 'TOA', config, 'INPUTS').upper()
         if em_refl_type == 'TOA':
             calc_dict['lai_toa'] = True
@@ -517,7 +517,7 @@ def metric_model2(image_ws, ini_path, bs=None,
             return False
         # Emissivity of water can be set using either NDVI or NDWI
         em_water_index_type = 'NDVI'
-        # em_water_index_type = read_param(
+        # em_water_index_type = dripy.read_param(
         #    'em_water_index_type', 'NDVI', config, 'INPUTS').upper()
         if em_water_index_type == 'NDVI' and em_refl_type == 'TOA':
             calc_dict['ndvi_toa'] = True
@@ -541,7 +541,7 @@ def metric_model2(image_ws, ini_path, bs=None,
         # Air pressure model dependent parameters
         if calc_dict['tau']:
             pair_model_list = ['DATUM', 'DEM']
-            pair_model = read_param(
+            pair_model = dripy.read_param(
                 'pair_model', 'DEM', config, 'INPUTS').upper()
             if pair_model not in pair_model_list:
                 logging.error(
@@ -559,7 +559,7 @@ def metric_model2(image_ws, ini_path, bs=None,
     if calc_dict['ts_dem'] and not os.path.isfile(raster_dict['ts_dem']):
         calc_dict['ts'] = True
         calc_dict['dem'] = True
-        lapse_rate_flt = read_param('lapse_rate', 6.5, config, 'INPUTS')
+        lapse_rate_flt = dripy.read_param('lapse_rate', 6.5, config, 'INPUTS')
         datum_flt = float(config.get('INPUTS', 'datum'))
 
     # Check that rasters from model 1 exist
@@ -579,43 +579,43 @@ def metric_model2(image_ws, ini_path, bs=None,
     # Read in lapse rates and elevations
     # if (calc_dict['ts_cold_lap'] or calc_dict['ts_avg_delap']):
     if calc_dict['ts_cold_lap']:
-        lapse_rate_flt = read_param('lapse_rate', 6.5, config, 'INPUTS')
+        lapse_rate_flt = dripy.read_param('lapse_rate', 6.5, config, 'INPUTS')
         datum_flt = float(config.get('INPUTS', 'datum'))
     # Read in calibration parameters/paths
     # if (calc_dict['ts_cold_lap'] or calc_dict['ts_avg_delap']):
     if calc_dict['ts_cold_lap'] or calc_dict['h']:
-        # use_pixel_database_flag = read_param(
+        # use_pixel_database_flag = dripy.read_param(
         #    'use_pixels_database_flag', False, config, 'INPUTS')
         # if use_pixel_database_flag:
         #     pixel_database_file = config.get(
         #         'INPUTS','pixels_database_file')
-        #     pd_user_pref_str = read_param(
+        #     pd_user_pref_str = dripy.read_param(
         #         'pd_user_preference', None, config, 'INPUTS')
-        #     pd_set_pref_int = read_param(
+        #     pd_set_pref_int = dripy.read_param(
         #         'pd_set_preference', None, config, 'INPUTS')
-        #     update_config_file_flag = read_param(
+        #     update_config_file_flag = dripy.read_param(
         #         'update_config_file_flag', False, config, 'INPUTS')
-        pixel_folder_str = read_param(
+        pixel_folder_str = dripy.read_param(
             'pixels_folder', 'PIXELS', config, 'INPUTS')
         pixel_ws = os.path.join(image_ws, pixel_folder_str)
-        cold_str = read_param('cold_pixel', 'cold.shp', config, 'INPUTS')
+        cold_str = dripy.read_param('cold_pixel', 'cold.shp', config, 'INPUTS')
         cold_path = os.path.join(pixel_ws, cold_str)
-        hot_str = read_param('hot_pixel', 'hot.shp', config, 'INPUTS')
+        hot_str = dripy.read_param('hot_pixel', 'hot.shp', config, 'INPUTS')
         hot_path = os.path.join(pixel_ws, hot_str)
     # Calibration parameter overrides
     # if (calc_dict['ts_cold_lap'] or calc_dict['ts_avg_delap']):
     if calc_dict['ts_cold_lap']:
-        ts_cold_override_flag = read_param(
+        ts_cold_override_flag = dripy.read_param(
             'ts_cold_override_flag', False, config, 'INPUTS')
-        ts_hot_override_flag = read_param(
+        ts_hot_override_flag = dripy.read_param(
             'ts_hot_override_flag', False, config, 'INPUTS')
         if ts_cold_override_flag:
-            ts_cold_override_flt = read_param(
+            ts_cold_override_flt = dripy.read_param(
                 'ts_cold_override', 0., config, 'INPUTS')
             if not ts_cold_override_flt:
                 ts_cold_override_flag = False
         if ts_hot_override_flag:
-            ts_hot_override_flt = read_param(
+            ts_hot_override_flt = dripy.read_param(
                 'ts_hot_override', 0., config, 'INPUTS')
             if not ts_hot_override_flt:
                 ts_hot_override_flag = False
@@ -649,7 +649,7 @@ def metric_model2(image_ws, ini_path, bs=None,
                     '\nERROR: The landuse raster {} does not exist'.format(
                         raster_dict['landuse_full']))
                 return False
-            landuse_type = read_param(
+            landuse_type = dripy.read_param(
                 'landuse_type', 'NLCD', config, 'INPUTS').upper()
             landuse_type_list = ['NLCD']
             # landuse_type_list = ['NLCD', 'CDL', 'MOD12']
@@ -697,11 +697,11 @@ def metric_model2(image_ws, ini_path, bs=None,
 
     # Weather data parameters
     if calc_dict['h']:
-        wind_speed_height_flt = read_param(
+        wind_speed_height_flt = dripy.read_param(
             'wind_speed_height', 2.0, config, 'INPUTS')
-        station_roughness_flt = read_param(
+        station_roughness_flt = dripy.read_param(
             'station_roughness', 0.015, config, 'INPUTS')
-        add_wind_speed_flt = read_param(
+        add_wind_speed_flt = dripy.read_param(
             'additional_wind_speed', 0.0, config, 'INPUTS')
 
     # Weather Data
@@ -1747,8 +1747,8 @@ def arg_parse():
         'workspace', nargs='?', default=os.getcwd(),
         help='Landsat scene folder', metavar='FOLDER')
     parser.add_argument(
-        '-i', '--ini', required=True,
-        help='METRIC input file', metavar='PATH')
+        '-i', '--ini', required=True, type=dripy.arg_valid_file,
+        help='METRIC input file', metavar='FILE')
     parser.add_argument(
         '-bs', '--blocksize', default=None, type=int,
         help='Processing block size (overwrite INI blocksize parameter)')
@@ -1787,6 +1787,7 @@ def arg_parse():
         args.workspace = os.path.abspath(args.workspace)
     if args.ini and os.path.isfile(os.path.abspath(args.ini)):
         args.ini = os.path.abspath(args.ini)
+
     return args
 
 
