@@ -331,13 +331,16 @@ def pixel_rating(image_ws, ini_path, bs=None, stats_flag=False,
             return_nodata=False)
         ts_array[~region_mask] = np.nan
 
-        percentiles = range(0, (100 + ts_bin_count), int(100 / ts_bin_count))
+        percentiles = list(range(0, (100 + ts_bin_count), int(100 / ts_bin_count)))
         ts_score_value = 1. / (ts_bin_count - 1)
         hot_rating_values = np.arange(
             0, (1. + ts_score_value), step=ts_score_value)[:ts_bin_count]
         cold_rating_values = hot_rating_values[::-1]
-        ts_percentile_array = stats.scoreatpercentile(
+        ts_percentile_array = np.percentile(
             ts_array[np.isfinite(ts_array)], percentiles)
+        # Deprecated - per SciPy help this function will become obsolete
+        # ts_percentile_array = stats.scoreatpercentile(
+        #     ts_array[np.isfinite(ts_array)], percentiles)
 
         for bins_i in range(len(ts_percentile_array))[:-1]:
             bool_array = (
@@ -494,9 +497,12 @@ def pixel_rating(image_ws, ini_path, bs=None, stats_flag=False,
     # Only build suggestion arrays if saving
     logging.debug('Building suggested pixel rasters')
     if save_dict['cold_sugg']:
-        cold_rating_score = float(stats.scoreatpercentile(
-            cold_rating_array[np.isfinite(cold_rating_array)],
-            cold_rating_pct))
+        cold_rating_score = float(np.percentile(
+            cold_rating_array[np.isfinite(cold_rating_array)], cold_rating_pct))
+        # Deprecated - per SciPy help this function will become obsolete
+        # cold_rating_score = float(stats.scoreatpercentile(
+        #     cold_rating_array[np.isfinite(cold_rating_array)],
+        #     cold_rating_pct))
         # cold_rating_array, cold_rating_nodata = drigo.raster_to_array(
         #     raster_dict['cold_rating'], 1, mask_extent=env.mask_extent)
         # if cold_rating_score < float(min_cold_rating_score):
@@ -512,9 +518,12 @@ def pixel_rating(image_ws, ini_path, bs=None, stats_flag=False,
         logging.debug('  Cold Pixels: {}'.format(np.sum(cold_sugg_mask)))
         del cold_sugg_mask, cold_rating_array
     if save_dict['hot_sugg']:
-        hot_rating_score = float(stats.scoreatpercentile(
-            hot_rating_array[np.isfinite(hot_rating_array)],
-            hot_rating_pct))
+        hot_rating_score = float(np.percentile(
+            hot_rating_array[np.isfinite(hot_rating_array)], hot_rating_pct))
+        # Deprecated - per SciPy help this function will become obsolete
+        # hot_rating_score = float(stats.scoreatpercentile(
+        #     hot_rating_array[np.isfinite(hot_rating_array)],
+        #     hot_rating_pct))
         # hot_rating_array, hot_rating_nodata = drigo.raster_to_array(
         #     raster_dict['hot_rating'], 1, mask_extent=env.mask_extent)
         # if hot_rating_score < float(min_hot_rating_score):

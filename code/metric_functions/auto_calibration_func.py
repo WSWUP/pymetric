@@ -91,8 +91,11 @@ def sap_float(array, percentile):
 
     """
     # DEADBEEF - consider adding a test for an empty array
-    return float(stats.scoreatpercentile(
-        array[np.isfinite(array)], percentile))
+    return float(np.percentile(array[np.isfinite(array)], percentile))
+
+    # Deprecated - per SciPy help this function will become obsolete
+    # return float(stats.scoreatpercentile(
+    #     array[np.isfinite(array)], percentile))
 
 
 def pos_float(array, score):
