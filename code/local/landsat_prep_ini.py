@@ -158,6 +158,14 @@ def main(ini_path, tile_list=None, overwrite_flag=False):
         nlcd_output_fmt = dripy.read_param(
             'nlcd_output_fmt', 'nlcd_{:04d}.img', config)
     else:
+        # Note, this warning will be needed until the code is modified to
+        # fully support using other landuse rasters
+        logging.warning(
+            '\nWARNING\n'
+            '  In order to be able to run fully run METRIC, \n'
+            '    please set nlcd_flag = True in the project INI\n'
+            '  The metric_model2.py script will currently not run if '
+            '"nlcd_flag = False"\nWARNING')
         nlcd_input_path, nlcd_output_ws, nlcd_output_fmt = None, None, None
 
     if cdl_flag:
@@ -491,13 +499,15 @@ def main(ini_path, tile_list=None, overwrite_flag=False):
                 # config.set('INPUTS', 'dem_raster', 'None')
 
             if nlcd_flag:
+                config.set('INPUTS', 'landuse_type', 'NLCD')
                 config.set('INPUTS', 'landuse_raster', nlcd_output_path)
             else:
-                try:
-                    config.remove_option('INPUTS', 'landuse_raster')
-                except:
-                    pass
-                # config.set('INPUTS', 'landuse_raster', 'None')
+                config.set('INPUTS', 'landuse_type', 'NONE')
+                config.set('INPUTS', 'landuse_raster', 'NONE')
+                # try:
+                #     config.remove_option('INPUTS', 'landuse_raster')
+                # except:
+                #     pass
 
             logging.debug('  {}'.format(tile_metric_ini))
             with open(tile_metric_ini, 'w') as config_f:
@@ -507,13 +517,15 @@ def main(ini_path, tile_list=None, overwrite_flag=False):
             config = configparser.RawConfigParser()
             config.read(pixel_rating_ini)
             if nlcd_flag:
+                config.set('INPUTS', 'nlcd_rating_flag', True)
                 config.set('INPUTS', 'landuse_raster', nlcd_output_path)
             else:
-                try:
-                    config.remove_option('INPUTS', 'landuse_raster')
-                except:
-                    pass
-                # config.set('INPUTS', 'landuse_raster', 'None')
+                config.set('INPUTS', 'nlcd_rating_flag', False)
+                config.set('INPUTS', 'landuse_raster', 'NONE')
+                # try:
+                #     config.remove_option('INPUTS', 'landuse_raster')
+                # except:
+                #     pass
             if cdl_flag:
                 config.set('INPUTS', 'apply_cdl_ag_mask', True)
                 config.set('INPUTS', 'cdl_ag_raster', cdl_ag_output_path)

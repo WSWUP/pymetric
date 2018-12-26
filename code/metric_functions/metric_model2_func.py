@@ -629,8 +629,8 @@ def metric_model2(image_ws, ini_path, bs=None,
                 'INPUTS', 'dem_raster')
             if not os.path.isfile(raster_dict['dem_full']):
                 logging.error(
-                    '\nERROR: The dem_raster path {} is not valid'.format(
-                        raster_dict['dem_full']))
+                    '\nERROR: The dem_raster path {} is not valid\n'
+                    '  Exiting'.format(raster_dict['dem_full']))
                 return False
         # Otherwise script reads DEM from "full" path,
         #   so set full path to local path
@@ -646,8 +646,8 @@ def metric_model2(image_ws, ini_path, bs=None,
                 'INPUTS', 'landuse_raster')
             if not os.path.isfile(raster_dict['landuse_full']):
                 logging.error(
-                    '\nERROR: The landuse raster {} does not exist'.format(
-                        raster_dict['landuse_full']))
+                    '\nERROR: The landuse raster {} does not exist\n'
+                    '  Exiting'.format(raster_dict['landuse_full']))
                 return False
             landuse_type = dripy.read_param(
                 'landuse_type', 'NLCD', config, 'INPUTS').upper()
@@ -656,7 +656,7 @@ def metric_model2(image_ws, ini_path, bs=None,
             if landuse_type not in landuse_type_list:
                 logging.error(
                      '\nERROR: The landuse type {} is invalid.'
-                     '\nERROR: Set landuse_type to {}'.format(
+                     '\nERROR: Set landuse_type to {}\n  Exiting'.format(
                         landuse_type, ', '.join(landuse_type_list)))
                 return False
         # Otherwise script reads landuse from "full" path,
@@ -674,14 +674,14 @@ def metric_model2(image_ws, ini_path, bs=None,
         elif cold_xy is None and not os.path.isfile(cold_path):
             logging.error(
                  '\nERROR: The cold calibration shapefile '
-                 'does not exist\n  {}\n'.format(cold_path))
+                 'does not exist\n  {}\n  Exiting\n'.format(cold_path))
             return False
         if hot_xy is None and os.path.isfile(hot_path):
             hot_xy = drigo.point_path_xy(hot_path)
         elif hot_xy is None and not os.path.isfile(hot_path):
             logging.error(
                  '\nERROR: The hot calibration shapefile '
-                 'does not exist\n  {}\n'.format(hot_path))
+                 'does not exist\n  {}\n  Exiting\n'.format(hot_path))
             return False
 
         # Check that hot/cold pixel are within study area extent
@@ -715,7 +715,8 @@ def metric_model2(image_ws, ini_path, bs=None,
         if weather_data_source not in ['NLDAS', 'REFET', 'MANUAL']:
             logging.error(
                  '\nERROR: The weather data source {} is invalid.'
-                 '\nERROR: Set weather_data_source to REFET or MANUAL'.format(
+                 '\nERROR: Set weather_data_source to REFET or MANUAL'
+                 '  Exiting\n'.format(
                     weather_data_source))
             return False
         elif weather_data_source == 'NLDAS':
