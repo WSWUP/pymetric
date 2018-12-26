@@ -241,7 +241,8 @@ def main(ini_path, mc_iter_str='', tile_list=None,
                 mc_args = ['-mc', str(mc_iter)]
             else:
                 mc_args = []
-            for image_folder in image_folder_list:
+            for image_id in image_id_list:
+                image_folder = os.path.join(tile_ws, image_id)
                 logging.debug('  {}'.format(os.path.basename(image_folder)))
                 if mp_procs > 1:
                     mp_list.append([
