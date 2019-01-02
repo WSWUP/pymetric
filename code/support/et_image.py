@@ -390,7 +390,7 @@ class Image:
         self.acq_date = self.acq_datetime.replace(
             hour=0, minute=0, second=0, microsecond=0)
 
-        # Standard clock time of satelite overpass
+        # Standard clock time of satellite overpass
         #   GMT in hours (exp 14:30 = 14.5)
         self.acq_time = ((self.acq_datetime - self.acq_date).seconds) / 3600.
 
@@ -406,6 +406,7 @@ class Image:
 
         # All US Landsat scenes are WGS 84 Zone XXN -> EPSG 326XX
         self.epsg = 32600 + int(self.utm_zone)
+        
         # Display Header Information
         logging.debug('  MTL File Variables')
         log_f = '  {:<18s} {}'

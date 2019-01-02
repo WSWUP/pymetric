@@ -397,10 +397,10 @@ def metric_model2(image_ws, ini_path, bs=None,
     if calc_dict['g']:
         g_model_type = dripy.read_param(
             'g_model_type', 'METRIC', config, 'INPUTS').upper()
-        if g_model_type not in ['METRIC', 'WIM']:
+        if g_model_type not in ['METRIC', 'SEBAL']:
             logging.error(
                  '\nERROR: The G model type {} is invalid.' +
-                 '\nERROR: Set g_model_type to METRIC or WIM'.format(
+                 '\nERROR: Set g_model_type to METRIC or SEBAL'.format(
                     g_model_type))
             return False
         g_refl_type = dripy.read_param(
@@ -419,7 +419,7 @@ def metric_model2(image_ws, ini_path, bs=None,
                 calc_dict['lai_toa'] = True
             elif g_refl_type == 'SUR':
                 calc_dict['lai_sur'] = True
-        elif g_model_type == 'WIM':
+        elif g_model_type == 'SEBAL':
             calc_dict['ts'] = True
             calc_dict['albedo_sur'] = True
             if g_refl_type == 'TOA':
@@ -1020,11 +1020,11 @@ def metric_model2(image_ws, ini_path, bs=None,
         elif g_model_type == 'METRIC' and g_refl_type == 'SUR':
             g_array = et_numpy.g_ag_func(
                 lai_sur_array, ts_array, rn_array, 1.8, 0.084)
-        elif g_model_type == 'WIM' and g_refl_type == 'TOA':
-            g_array = et_numpy.g_wim_func(
+        elif g_model_type == 'SEBAL' and g_refl_type == 'TOA':
+            g_array = et_numpy.g_sebal_func(
                 ts_array, albedo_sur_array, ndvi_toa_array)
-        elif g_model_type == 'WIM' and g_refl_type == 'SUR':
-            g_array = et_numpy.g_wim_func(
+        elif g_model_type == 'SEBAL' and g_refl_type == 'SUR':
+            g_array = et_numpy.g_sebal_func(
                 ts_array, albedo_sur_array, ndvi_sur_array)
 
         # Calculate Zom
@@ -1464,12 +1464,12 @@ def metric_model2(image_ws, ini_path, bs=None,
             elif g_refl_type == 'SUR':
                 g_array = et_numpy.g_ag_func(
                     lai_sur_array, ts_array, rn_array, 1.8, 0.084)
-        elif calc_dict['g'] and g_model_type == 'WIM':
+        elif calc_dict['g'] and g_model_type == 'SEBAL':
             if g_refl_type == 'TOA':
-                g_array = et_numpy.g_wim_func(
+                g_array = et_numpy.g_sebal_func(
                     ts_array, albedo_sur_array, ndvi_toa_array)
             elif g_refl_type == 'SUR':
-                g_array = et_numpy.g_wim_func(
+                g_array = et_numpy.g_sebal_func(
                     ts_array, albedo_sur_array, ndvi_sur_array)
         # Averaged of delapsed ts_hot & ts_cold (for water filter)
         # if calc_dict['ts_avg_delap']:

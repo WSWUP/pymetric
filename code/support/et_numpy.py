@@ -1496,7 +1496,7 @@ def g_ag_func(lai, ts, rn, coef1=1.80, coef2=0.084):
     return np.where(lai >= 0.5, a, b).astype(np.float32)
 
 
-def g_wim_func(ts, albedo_sur, ndvi):
+def g_sebal_func(ts, albedo_sur, ndvi):
     """Calculate ground heat flux using SEBAL approach
 
     Parameters
