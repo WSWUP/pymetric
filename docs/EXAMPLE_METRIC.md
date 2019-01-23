@@ -43,3 +43,15 @@ python C:\pymetric\code\local\metric_model2.py -i C:\pymetric\example\landsat_20
 python C:\pymetric\code\local\landsat_interpolate.py -i C:\pymetric\example\landsat_2015.ini --tables
 python C:\pymetric\code\local\landsat_interpolate.py -i C:\pymetric\example\landsat_2015.ini --rasters
 ```
+
+## Running Monte Carlo Tool
+
+The following will run one iteration of the Monte Carlo tool with fixed tail sizes of 1% (cold) and 4% (hot).  This value is the percent of agricultural pixels with ETrFs greater than the cold calibration ETrF value (for the cold calibration point).
+```
+python C:\pymetric\code\local\metric_monte_carlo.py -i C:\pymetric\example\landsat_2015.ini -mc 0 --tails 1 4
+```
+
+The following will run ten different iterations of the Monte Carlo tool with varying tail sizes (developed from the training data in 'misc/etrf_training_test.csv').  The "mc" parameter specifies which iterations to run.
+```
+python C:\pymetric\code\local\metric_monte_carlo.py -i C:\pymetric\example\landsat_2015.ini -mc 1-10
+```
