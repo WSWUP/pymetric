@@ -286,6 +286,7 @@ python C:\pymetric\tools\download\download_ned.py --extent C:\pymetric\example\s
 python C:\pymetric\tools\download\download_cdl.py --year 2015
 python C:\pymetric\tools\download\download_landfire.py
 python C:\pymetric\tools\download\download_nlcd.py --year 2011
+python C:\pymetric\tools\download\download_soils.py
 ```
 
 #### Landsat data download and prep
