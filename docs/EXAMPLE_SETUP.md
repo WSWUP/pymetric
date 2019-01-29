@@ -9,7 +9,7 @@ This example will step through setting up and running pyMETRIC for a single Land
 All of the example script calls listed below assume that the pyMETRIC repository was installed on a Windows computer to "C:\pymetric", that a "Harney" project folder was created in this folder, and that the scripts are being called from within the project folder (see [Setup Example](EXAMPLE_SETUP.md)).  If you haven't already, change directory into the Harney project folder.
 
 ```
-C:\pymetric>cd harney
+C:\pymetric>cd example
 ```
 
 ## INI
@@ -18,7 +18,7 @@ Need to explain the difference between the INIs.  The project INI is the main IN
 
 ## Project INI
 
-Copy the template landsat_project.ini from the code\ini_templates folder to the Harney folder.
+Copy the template landsat_project.ini from the code\ini_templates folder to the example folder.
 
 Rename the template INI to "landsat_2015.ini" using the command line or file explorer.  Typically, a separate INI file will be needed for each year that is processed.
 
