@@ -113,7 +113,9 @@ def main(extent_path, output_folder, overwrite_flag=False):
         try:
             zip_name = zip_files[lat_lon_key]
         except KeyError:
-            logging.exception('Error finding zip file for {}'.format(lat_lon))
+            logging.exception(
+                'Error finding zip file for {}, skipping tile'.format(lat_lon))
+            continue
         zip_url = '/'.join([site_url, site_folder, zip_name])
         zip_path = os.path.join(output_folder, zip_name)
 
