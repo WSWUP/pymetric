@@ -146,7 +146,12 @@ def main(grb_ws, ancillary_ws, output_ws, scene_list_path=None,
         logging.debug('  Extent: {}'.format(output_extent))
     elif extent_path is not None:
         logging.info('\nComputing subset extent & geo')
-        if extent_path.lower().endswith('.shp'):
+        if not os.path.isfile(extent_path):
+            logging.error(
+                '\nThe extent object not exist, exiting\n'
+                '  {}'.format(extent_path))
+            return False
+        elif extent_path.lower().endswith('.shp'):
             nldas_extent = drigo.feature_path_extent(extent_path)
             extent_osr = drigo.feature_path_osr(extent_path)
             extent_cs = None
