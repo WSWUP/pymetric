@@ -18,7 +18,7 @@ def main(year, output_folder, overwrite_flag=False):
 
     Parameters
     ----------
-    year : str
+    year : int
         4 digit year.
     output_folder : str
         Folder path where files will be saved.
@@ -70,7 +70,8 @@ def arg_parse():
         description='Download CDL',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
-        '-y', '--year', help='Year', metavar='YEAR', required=True)
+        '-y', '--year', help='Year', metavar='YEAR', required=True,
+        choices=range(2008, dt.datetime.today().year), type=int)
     parser.add_argument(
         '--output', default=output_folder, metavar='FOLDER',
         help='Output folder')
