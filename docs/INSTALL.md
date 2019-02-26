@@ -1,6 +1,6 @@
 ## Installation
 
-pyMETRIC is most easily installed by cloning the [GitHub repository](https://github.com/DRI-WSWUP/pymetric).
+pyMETRIC is most easily installed by cloning the [GitHub repository](https://github.com/WSWUP/pymetric).
 
 Most of the documentation and examples are written assuming you are running pyMETRIC on a Windows PC and that the pyMETRIC repository was cloned directly to the C: drive.  If you are using a different operating system or cloned the repository to a different location, you will need adjust commands, drive letters, and paths accordingly.
 
@@ -20,8 +20,8 @@ The following external Python modules must be present to run pyMETRIC:
 * [pandas](http://pandas.pydata.org) (used to perform data processing)
 * [requests](http://docs.python-requests.org/en/master/) (adds enhanced http functionality)
 * [scipy](https://www.scipy.org/) (provides numerous packages required for the processing of data)
-* [refet](https://github.com/DRI-WSWUP/RefET) (for computing reference ET)
-* [drigo](https://github.com/DRI-WSWUP/drigo) (GDAL/OGR helper functions)
+* [refet](https://github.com/WSWUP/RefET) (for computing reference ET)
+* [drigo](https://github.com/WSWUP/drigo) (GDAL/OGR helper functions)
 
 Please see the [requirements](../requirements.txt) file for details on the versioning requirements.  The module version numbers listed in the file were tested and are known to work.  Other combinations of versions may work but have not been tested.
 

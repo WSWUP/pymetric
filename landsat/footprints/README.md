@@ -4,4 +4,4 @@ The Landsat WRS2 Descending footprint shapefile can be downloaded directly from 
 C:\pymetric>python tools\download\download_footprints.py
 ```
 
-The file "wrs2_tile_utm_zones.json" was generated from the bulk metadata CSV files.  Path/rows that did not have any images in the metadata CSV files were removed.  Please refer to the [cloud-free-scene-counts repository](https://github.com/DRI-WSWUP/cloud-free-scene-counts) for additional details on acquiring the bulk metadata CSV files.
+The file "wrs2_tile_utm_zones.json" was generated from the bulk metadata CSV files.  Path/rows that did not have any images in the metadata CSV files were removed.  Please refer to the [cloud-free-scene-counts repository](https://github.com/WSWUP/cloud-free-scene-counts) for additional details on acquiring the bulk metadata CSV files.
