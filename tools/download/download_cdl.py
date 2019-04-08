@@ -35,6 +35,10 @@ def main(year, output_folder, overwrite_flag=False):
     zip_name = '{}_30m_cdls.zip'.format(year)
     zip_path = os.path.join(output_folder, zip_name)
 
+    if int(year) < 2008:
+        logging.error('\nERROR: CDL data is not available before 2008, exiting')
+        return False
+
     if not os.path.isdir(output_folder):
         os.makedirs(output_folder)
 
