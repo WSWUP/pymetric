@@ -190,7 +190,7 @@ def open_ini(ini_path):
         config.read_file(open(ini_path, 'r'))
         # This doesn't raise an exception when the file doesn't exist
         # config.read(ini_path)
-    except [FileNotFoundError, IOError] as e:
+    except (FileNotFoundError, IOError) as e:
         logging.error('\nERROR: INI file does not exist\n'
                       '  {}\n'.format(ini_path))
         sys.exit()
