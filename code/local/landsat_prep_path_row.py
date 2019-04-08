@@ -21,7 +21,14 @@ import drigo
 import numpy as np
 from osgeo import gdal, ogr, osr
 
-import et_common
+try:
+    import et_common
+except (ImportError, ModuleNotFoundError) as e:
+    print(
+        '\nERROR: The pymetric "et_common" module could not be imported'
+        '\nPlease ensure your PYTHONPATH environment variable was set following:'
+        '\n  https://github.com/WSWUP/pymetric/blob/master/docs/INSTALL.md')
+    sys.exit()
 import et_image
 import python_common as dripy
 
