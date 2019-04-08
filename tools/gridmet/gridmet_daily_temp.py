@@ -96,7 +96,7 @@ def main(start_dt, end_dt, netcdf_ws, ancillary_ws, output_ws,
         logging.info('\nComputing subset extent & geo')
         if not os.path.isfile(extent_path):
             logging.error(
-                '\nThe extent object not exist, exiting\n'
+                '\nThe extent object does not exist, exiting\n'
                 '  {}'.format(extent_path))
             return False
         elif extent_path.lower().endswith('.shp'):
