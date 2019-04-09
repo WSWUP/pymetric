@@ -152,7 +152,7 @@ def main(image_ws, ini_path, bs=2048, stats_flag=False, overwrite_flag=False):
     # to compute SWB Ke for each Landsat scene
     calc_swb_ke_flag = dripy.read_param(
         'calc_swb_ke_flag', False, config, 'INPUTS')
-    if cloud_mask_flag:
+    if calc_swb_ke_flag:
         spinup_days = dripy.read_param(
             'swb_spinup_days', 30, config, 'INPUTS')
         min_spinup_days = dripy.read_param(
