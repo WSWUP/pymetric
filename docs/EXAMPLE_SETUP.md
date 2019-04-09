@@ -2,19 +2,19 @@ Quicklinks: [Data Preparation](EXAMPLE_DATA.md) --- [Project Setup](EXAMPLE_SETU
 
 # pyMETRIC Project Setup Example
 
-This example will step through setting up and running pyMETRIC for a single Landsat path/row.  The target study area for this example is the Harney basin in central Oregon, located in Landsat path 43 row 30.  Before going through this example, make sure that the Landsat images and ancillary data have been acquired and prepped following the steps in the [Setup Example](EXAMPLE_SETUP.md).
+This example will step through setting up and running pyMETRIC for a single Landsat path/row.  The target study area for this example is the Harney basin in central Oregon, located in Landsat path 43 row 30.  Before going through this example, make sure that the Landsat images and ancillary data have been downloaded and prepared following the steps in the [Setup Example](EXAMPLE_SETUP.md).
 
 ## Project Folder
 
-All of the example script calls listed below assume that the pyMETRIC repository was installed on a Windows computer to "C:\pymetric", that a "Harney" project folder was created in this folder, and that the scripts are being called from within the project folder (see [Setup Example](EXAMPLE_SETUP.md)).  If you haven't already, change directory into the Harney project folder.
+All of the example script calls listed below assume that the pyMETRIC repository was installed on a Windows computer to "C:\pymetric" and that the scripts are being called from within the "example" project folder (see [Setup Example](EXAMPLE_SETUP.md)).  If you haven't already, change directory into the example project folder.
 
 ```
 C:\pymetric>cd example
 ```
 
-## INI
+## Control / Config / Parameter INI Files
 
-Need to explain the difference between the INIs.  The project INI is the main INI the user will change when running pyMETRIC.  The values in the project INI are passed to the script specific INIs using the prep INI tool, but they can also be manually changed/overwritten by the user.
+The parameters for controlling pyMETRIC are primarily set using ".INI" configuration files.  The project INI is the main INI the user will change when running pyMETRIC.  The values in the project INI are passed to the script specific INIs using the prep INI tool, but they can also be manually changed/overwritten by the user.
 
 ## Project INI
 
@@ -26,11 +26,11 @@ After renaming the INI, open the INI file in your favorite text editor.  The def
 
 ### Snap Point
 
-The study_area_snap and zones_snap parameters should both be set to 15, 15 in the project INI.  This ensures that alignment of the final ET maps and zonal statistics calculations will align with a Landsat image of the study area.  The snap points will typically be set to 0, 0 if the final image is in a non-WGS84 Zone XX (EPSG:326XX) coordinate system and doesn't not need to align with a Landsat image.
+The study_area_snap and zones_snap parameters should both be set to 15, 15 in the project INI.  This ensures that alignment of the final ET maps and zonal statistics calculations will align with a Landsat image of the study area.  The snap points will typically be set to 0, 0 if the final image is in a non-WGS84 Zone XX coordinate system (e.g. the NLCD/CDL CONUS Albers) and doesn't need to align with a Landsat image.
 
 ### Fields
 
-A field polygon dataset is not currently being provided or available for this example  The cropland data layer (CDL) could be used to generated quasi field boundaries if desired.  For now, the user should ensure that the following flags in the project INI are all false: "cdl_flag", "landfire_flag", "field_flag".
+A field polygon dataset is not currently being provided or available for this example.  The cropland data layer (CDL) could be used to generate quasi field boundaries if desired.  For now, the user should ensure that the following flags in the project INI are all false: "cdl_flag", "landfire_flag", "field_flag".
 
 ## pyMETRIC Setup
 
