@@ -4,7 +4,6 @@
 #--------------------------------
 
 import argparse
-from argparse import Namespace
 import datetime as dt
 import logging
 import os
