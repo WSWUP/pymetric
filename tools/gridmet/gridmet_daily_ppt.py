@@ -4,6 +4,7 @@
 #--------------------------------
 
 import argparse
+from argparse import Namespace
 import datetime as dt
 import logging
 import os
@@ -191,9 +192,16 @@ def main(start_dt, end_dt, netcdf_ws, ancillary_ws, output_ws,
         # Read in the GRIDMET NetCDF file
         # Immediately clip input array to save memory
         input_nc_f = netCDF4.Dataset(input_raster, 'r')
-        input_nc = input_nc_f.variables[gridmet_band_dict[input_var]][
-            :, row_a: row_b, col_a: col_b].copy()
-        input_nc = np.flip(input_nc, 1)
+        if input_nc_f.file_format == 'NETCDF3_CLASSIC':
+            input_nc = input_nc_f.variables[gridmet_band_dict[input_var]][
+                       :, row_a: row_b, col_a: col_b].copy()
+            input_nc = np.flip(input_nc, 1)
+        elif input_nc_f.file_format == 'NETCDF4':
+            input_nc = np.flip(input_nc_f.variables[gridmet_band_dict[input_var]], 1)
+            input_nc = input_nc[:, row_a: row_b, col_a: col_b].copy()
+            input_nc = np.flip(input_nc, 1)
+        else:
+            raise TypeError('The netcdf file {} format is invalid'.format(input_raster))
         input_nc_f.close()
         del input_nc_f
 
@@ -266,9 +274,9 @@ def main(start_dt, end_dt, netcdf_ws, ancillary_ws, output_ws,
 
 def arg_parse():
     """Base all default folders from script location
-        scripts: ./pymetric/tools/gridmet
-        tools:   ./pymetric/tools
-        output:  ./pymetric/gridmet
+        scripts: ./pymetric_/tools/gridmet
+        tools:   ./pymetric_/tools
+        output:  ./pymetric_/gridmet
     """
     script_folder = sys.path[0]
     code_folder = os.path.dirname(script_folder)
