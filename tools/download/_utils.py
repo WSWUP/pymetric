@@ -4,6 +4,7 @@ from ftplib import FTP
 import logging
 
 import requests
+from requests_html import HTMLSession
 
 
 def ftp_download(site_url, site_folder, file_name, output_path):
@@ -34,6 +35,14 @@ def ftp_file_list(site_url, site_folder):
         logging.info('  Unhandled exception: {}'.format(e))
         files = []
     return files
+
+
+def html_link_list(url):
+    """List all links at the url."""
+    session = HTMLSession()
+    r = session.get(url)
+    r.html.render(timeout=10, sleep=10)
+    return list(r.html.links)
 
 
 def url_download(download_url, output_path, verify=True):

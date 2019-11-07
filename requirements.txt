@@ -8,4 +8,5 @@ numpy>=1.14.0
 pandas>=0.22.0
 refet>=0.3.7
 requests>=2.2.0
+requests-html>=0.10.0
 scipy>=1.0.0

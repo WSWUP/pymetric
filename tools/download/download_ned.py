@@ -43,9 +43,15 @@ def main(extent_path, output_folder, overwrite_flag=False):
 
     """
     logging.info('\nDownload NED tiles')
-    site_url = 'rockyftp.cr.usgs.gov'
-    site_folder = 'vdelivery/Datasets/Staged/Elevation/1/IMG'
-    # site_url = 'ftp://rockyftp.cr.usgs.gov/vdelivery/Datasets/Staged/Elevation/1/IMG'
+    # site_url = 'rockyftp.cr.usgs.gov'
+    site_url = 'https://prd-tnm.s3.amazonaws.com'
+
+    # site_folder = 'vdelivery/Datasets/Staged/Elevation/1/IMG'
+    site_folder = 'StagedProducts/Elevation/1/IMG'
+
+    # This path is what must be queried to list the links
+    site_file_list_path = 'https://prd-tnm.s3.amazonaws.com/index.html?prefix=StagedProducts/Elevation/1/IMG/'
+
 
     # Use 1 degree snap point and "cellsize" to get 1x1 degree tiles
     tile_osr = drigo.epsg_osr(4326)
@@ -95,11 +101,11 @@ def main(extent_path, output_folder, overwrite_flag=False):
             for lat in range(int(tile_extent.ymax), int(tile_extent.ymin), -1)])
     lat_lon_list = sorted(list(set(lat_lon_list)))
 
-    # Retrieve a list of files available on the FTP server (keyed by lat/lon)
+    # Retrieve a list of files available on the site (keyed by lat/lon)
     logging.debug('  Retrieving NED tile list from server')
     zip_files = {
-        m.group(1): x
-        for x in utils.ftp_file_list(site_url, site_folder)
+        m.group(1): x.split('/')[-1]
+        for x in utils.html_link_list(site_file_list_path)
         for m in [re.search('[\w]*(n\d{2}w\d{3})[\w]*.zip', x)] if m}
     # logging.debug(zip_files[:10])
 
@@ -132,7 +138,7 @@ def main(extent_path, output_folder, overwrite_flag=False):
                 logging.debug('  tile already exists, removing')
                 os.remove(tile_path)
 
-        utils.ftp_download(site_url, site_folder, zip_name, zip_path)
+        utils.url_download(zip_url, zip_path)
 
         logging.debug('  Extracting')
         try:
