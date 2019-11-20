@@ -7,19 +7,52 @@ The following scripts should be ran in the following sequence in order to produc
 Prepare Landsat path/row data and populates input files to be used later in the PyMETRIC process.
 
 ### landsat_prep_scene.py
-Prepares Landsat scenes for processing.
+Prepares Landsat scenes for processing.  This step inlcudes the creation of rasters which are a subset of those data downloaded during the Data Preperation step of pymetric.  
+
+#####Expected Raster Output:
+* Common Area Raster
+* Vapor Pressure
+* Wind
+* fmask
+* Reference ETr
+* Modified Cropland Data Layer
+
 
 ### metric_model1.py
 Runs METRIC Model 1 for all images.
 
+#####Expected Raster Output:
+* Cosine of Theta (cos_theta.img)
+* Albedo
+* Top of Atmosphere Reflectance
+* Delapsed Temperature
+* Ts Brightness ('ts_bt.img')
+* NDVI (Normalized Difference Vegetation Index)
+* NDWI (Normalized Difference Water Index)
+* SAVI (Soil Adjusted Vegetation Index)
+* LAI (Leaf Area Index)
+
+
 ### metric_pixel_rating.py 
 Runs METRIC pixel rating function for all images, identifying potential calibration points.
+
+#####Expected Raster Output:
+* Region Mask
+* Cold Pixel Rating
+* Cold Pixel Suggestion
+* Hot Pixel Rating
+* Hot Pixel Suggestion
+
+
 
 ### metric_pixel_points.py
 Runs METRIC pixel points function for all images, selecting initial calibration points for each Landsat image.
 
 ### metric_model2.py
 Runs METRIC Model 2 for all images.
+
+Expected Raster Output:
+* Fraction of Reference ET 
 
 ### landsat_interpolate.py
 Interpolates seasonal ET data from individual METRIC scenes
