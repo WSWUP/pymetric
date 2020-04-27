@@ -13,7 +13,7 @@ pyMETRIC has only been tested using Python 2.7 and 3.6, but may work with other 
 The following external Python modules must be present to run pyMETRIC:
 * [fiona](http://toblerity.org/fiona/) (used to read and write multi-layered GIS file formats)
 * [future](https://pypi.python.org/pypi/future) (adds features from Python 3 to Python 2 installations)
-* [gdal](http://www.gdal.org/) (version >2.2) (the Geospatial Data Abstraction Library is used to interact with raster and vector geospatial data)
+* [gdal](http://www.gdal.org/) (version >2.2 and <3.0.0) (the Geospatial Data Abstraction Library is used to interact with raster and vector geospatial data)
 * [matplotlib](https://matplotlib.org/) (necessary for creating plots of ET related data)
 * [netcdf4](https://www.unidata.ucar.edu/software/netcdf/) (for interacting with multi-dimensional scientific datasets, such as GRIDMET/DAYMET)
 * [numpy](http://www.numpy.org/)
@@ -54,7 +54,8 @@ The environment must be "activated" before use:
 
 Most of the external modules can then be installed by calling:
 ```
-> conda install future gdal matplotlib netcdf4 numpy pandas refet requests scipy
+> conda install future matplotlib netcdf4 numpy pandas refet requests scipy 
+> conda install gdal<=3.0.0
 ```
 
 The drigo modules must be installed separately with pip:
