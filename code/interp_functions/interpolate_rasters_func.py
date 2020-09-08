@@ -4,7 +4,6 @@
 # Purpose:      Interpolate ETrF rasters between Landsat scenes based on DOY
 #--------------------------------
 
-from __future__ import division
 import argparse
 from builtins import input
 from collections import defaultdict

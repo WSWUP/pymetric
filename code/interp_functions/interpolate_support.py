@@ -3,7 +3,6 @@
 # Purpose:      Interpolator support functions
 #--------------------------------
 
-from __future__ import division
 import datetime as dt
 # import gc
 import logging
