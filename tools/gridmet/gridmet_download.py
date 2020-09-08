@@ -26,7 +26,7 @@ def main(start_dt, end_dt, netcdf_ws, variables=['etr', 'pr'],
         Folder of GRIDMET netcdf files.
     variable : list, optional
         GRIDMET variables to download (the default is ['etr', 'ppt']).
-        Choices: 'eto', 'etr', 'pr', 'srad', 'sph', 'tmmn', 'tmmx', 'vs'
+        Choices: 'etr', 'pet', 'pr', 'srad', 'sph', 'tmmn', 'tmmx', 'vs'
     overwrite_flag : bool, optional
         If True, overwrite existing files (the default is False).
 
@@ -42,7 +42,7 @@ def main(start_dt, end_dt, netcdf_ws, variables=['etr', 'pr'],
     site_url = 'https://www.northwestknowledge.net/metdata/data'
 
     # GRIDMET rasters to extract
-    data_full_list = ['eto', 'etr', 'pr', 'srad', 'sph', 'tmmn', 'tmmx', 'vs']
+    data_full_list = ['etr', 'pet', 'pr', 'srad', 'sph', 'tmmn', 'tmmx', 'vs']
     if not variables:
         logging.error('\nERROR: variables parameter is empty\n')
         sys.exit()
@@ -134,7 +134,7 @@ def arg_parse():
         help='Output netCDF folder path')
     parser.add_argument(
         '--vars', default=['etr', 'pr'], nargs='+',
-        choices=['etr', 'eto', 'pr', 'srad', 'sph', 'tmmn', 'tmmx', 'vs'],
+        choices=['etr', 'pet', 'pr', 'srad', 'sph', 'tmmn', 'tmmx', 'vs'],
         help='GRIDMET variables to download')
     parser.add_argument(
         '-o', '--overwrite', default=False, action="store_true",

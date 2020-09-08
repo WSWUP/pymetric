@@ -192,8 +192,7 @@ def metric_interpolate(year_ws, ini_path, mc_iter=None, bs=None,
 
     # Adjust ETrF based on daily soil water balance
     swb_adjust_dict = dict()
-    swb_adjust_dict['flag'] = dripy.read_param(
-        'swb_adjust_flag', False, config)
+    swb_adjust_dict['flag'] = dripy.read_param('swb_adjust_flag', False, config)
     if swb_adjust_dict['flag']:
         swb_adjust_dict['awc'] = dripy.read_param(
             'awc_input_path', None, config)
@@ -795,19 +794,23 @@ def metric_interpolate(year_ws, ini_path, mc_iter=None, bs=None,
     # etr_array[np.isnan(etr_array)] = drigo.numpy_type_nodata(etr_array.dtype)
     # ppt_array[np.isnan(ppt_array)] = drigo.numpy_type_nodata(ppt_array.dtype)
     # awc_array[np.isnan(awc_array)] = drigo.numpy_type_nodata(awc_array.dtype)
+
     # Replace ETr array with a shared memory version
     etr_shape = etr_array.shape
     etr_ctypes = sharedctypes.RawArray(ctypes.c_float, etr_array.flat)
     etr_shmem = np.frombuffer(
         etr_ctypes, dtype=np.float32, count=etr_array.size)
+    # DEADBEEF - Is this right, it seems backwards since shmem is defined above
     etr_shmem = etr_array
+
     # Replace PPT array with a shared memory version
     ppt_shape = ppt_array.shape
     ppt_ctypes = sharedctypes.RawArray(ctypes.c_float, ppt_array.flat)
     ppt_shmem = np.frombuffer(
         ppt_ctypes, dtype=np.float32, count=ppt_array.size)
     ppt_shmem = ppt_array
-    # Replace AWX array with a shared memory version
+
+    # Replace AWC array with a shared memory version
     awc_shape = awc_array.shape
     awc_ctypes = sharedctypes.RawArray(ctypes.c_float, awc_array.flat)
     awc_shmem = np.frombuffer(

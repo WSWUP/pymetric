@@ -229,6 +229,8 @@ def main(ini_path, tile_list=None, overwrite_flag=False):
         ppt_input_re = config.get('INPUTS', 'ppt_input_re')
     if monte_carlo_flag or interp_rasters_flag or interp_tables_flag:
         awc_input_path = config.get('INPUTS', 'awc_input_path')
+        swb_adjust_flag = dripy.read_param(
+            'swb_adjust_flag', 30, config, 'INPUTS')
         spinup_days = dripy.read_param(
             'swb_spinup_days', 30, config, 'INPUTS')
         min_spinup_days = dripy.read_param(
@@ -568,6 +570,7 @@ def main(ini_path, tile_list=None, overwrite_flag=False):
             config.set('INPUTS', 'etr_re', etr_input_re)
             config.set('INPUTS', 'ppt_re', ppt_input_re)
             config.set('INPUTS', 'awc_path', awc_input_path)
+            config.set('INPUTS', 'swb_adjust_flag', swb_adjust_flag)
             config.set('INPUTS', 'swb_spinup_days', spinup_days)
             config.set('INPUTS', 'swb_min_spinup_days', min_spinup_days)
 
@@ -667,6 +670,7 @@ def main(ini_path, tile_list=None, overwrite_flag=False):
             config.set('INPUTS', 'ppt_input_re', ppt_input_re)
             # DEADBEEF - add check for SWB flag
             config.set('INPUTS', 'awc_input_path', awc_input_path)
+            config.set('INPUTS', 'swb_adjust_flag', swb_adjust_flag)
             config.set('INPUTS', 'swb_spinup_days', spinup_days)
             config.set('INPUTS', 'swb_min_spinup_days', min_spinup_days)
 
