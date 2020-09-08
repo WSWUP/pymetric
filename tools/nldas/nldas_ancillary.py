@@ -41,7 +41,7 @@ def main(ancillary_ws=os.getcwd(), zero_elev_nodata_flag=False,
 
     # Site URLs
     mask_url = 'https://ldas.gsfc.nasa.gov/sites/default/files/ldas/nldas/NLDAS_masks-veg-soil.nc4'
-    # elev_url = 'http://ldas.gsfc.nasa.gov/nldas/asc/gtopomean15k.asc'
+    elev_url = 'https://ldas.gsfc.nasa.gov/sites/default/files/ldas/nldas/NLDAS_elevation.nc4'
 
     # Manually define the spatial reference and extent of the NLDAS data
     # This could be read in from a raster
@@ -54,7 +54,7 @@ def main(ancillary_ws=os.getcwd(), zero_elev_nodata_flag=False,
     nldas_geo = (-125.0005,  0.125, 0., 53.0005, 0., -0.125)
     # nldas_geo = (-124.9375,  0.125, 0., 25.0625 + 224 * 0.125, 0., -0.125)
     logging.debug('  Geo: {}'.format(nldas_geo))
-    # nldas_nodata = -9999.0
+    nldas_nodata = -9999.0
     # logging.debug('  X/Y: {} {}'.format(gridmet_x, gridmet_y))
     # logging.debug('  Cellsize: {}'.format(gridmet_cs))
 
@@ -64,16 +64,14 @@ def main(ancillary_ws=os.getcwd(), zero_elev_nodata_flag=False,
 
     # Input paths
     mask_nc = os.path.join(ancillary_ws, os.path.basename(mask_url))
-    # input_elev_ascii = os.path.join(ancillary_ws, os.path.basename(elev_url))
+    elev_nc = os.path.join(ancillary_ws, os.path.basename(elev_url))
 
     # Output paths
-    # elev_ascii = os.path.join(ancillary_ws, 'nldas_elev.asc')
-    # elev_raster = os.path.join(ancillary_ws, 'nldas_elev.img')
+    elev_raster = os.path.join(ancillary_ws, 'nldas_elev.img')
     mask_raster = os.path.join(ancillary_ws, 'nldas_mask.img')
     lat_raster = os.path.join(ancillary_ws, 'nldas_lat.img')
     lon_raster = os.path.join(ancillary_ws, 'nldas_lon.img')
 
-    # Download the land/water mask if necessary
     if overwrite_flag or not os.path.isfile(mask_raster):
         logging.info('\nNLDAS Mask')
         logging.info('  Downloading')
@@ -87,11 +85,43 @@ def main(ancillary_ws=os.getcwd(), zero_elev_nodata_flag=False,
         mask_array = np.flipud(mask_nc_f.variables['NLDAS_mask'][0, :, :])
         # mask_array = np.flipud(mask_nc_f.variables['CONUS_mask'][0, :, :])
         drigo.array_to_raster(
-            mask_array, mask_raster,
+            mask_array.astype(np.uint8), mask_raster,
             output_geo=nldas_geo, output_proj=nldas_proj)
         mask_nc_f.close()
         del mask_nc_f, mask_array
         # os.remove(mask_nc)
+
+    if overwrite_flag or not os.path.isfile(elev_raster):
+        logging.info('\nNLDAS Elevation')
+        logging.info('  Downloading')
+        logging.debug('    {}'.format(elev_url))
+        logging.debug('    {}'.format(elev_nc))
+        _utils.url_download(elev_url, elev_nc)
+
+        logging.info('  Extracting')
+        logging.debug('  {}'.format(elev_raster))
+        elev_nc_f = netCDF4.Dataset(elev_nc, 'r')
+        elev_ma = elev_nc_f.variables['NLDAS_elev'][0, :, :]
+        # elev_ma = elev_nc_f.variables['CONUS_mask'][0, :, :]
+        elev_array = np.flipud(elev_ma.data.astype(np.float32))
+        # elev_nodata = float(elev_ma.fill_value)
+        elev_array[
+            (elev_array == elev_ma.fill_value) |
+            (elev_array <= -300)] = np.nan
+        if zero_elev_nodata_flag:
+            elev_array[np.isnan(elev_array)] = 0
+        if np.all(np.isnan(elev_array)):
+            logging.error(
+                '\nERROR: The elevation array is all nodata, exiting\n')
+            sys.exit()
+
+        drigo.array_to_raster(
+            elev_array, elev_raster,
+            output_geo=nldas_geo, output_proj=nldas_proj)
+        elev_nc_f.close()
+        del elev_nc_f, elev_array
+        # os.remove(mask_nc)
+
 
     # Compute latitude/longitude rasters
     if ((overwrite_flag or
