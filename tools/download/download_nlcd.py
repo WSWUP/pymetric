@@ -13,15 +13,15 @@ import zipfile
 import _utils
 
 
-def main(output_folder, year='2011', overwrite_flag=False):
+def main(output_folder, year='2016', overwrite_flag=False):
     """Download NLCD raster
 
     Parameters
     ----------
     output_folder : str
         Folder path where files will be saved.
-    year : {2001, 2006, 2011}; optional
-        NLCD year (the default is 2011).
+    year : {2001, 2004, 2006, 2008, 2011, 2013, 2016}; optional
+        NLCD year (the default is 2016).
     overwrite_flag : bool, optional
         If True, overwrite existing files (the default is False).
 
@@ -29,19 +29,16 @@ def main(output_folder, year='2011', overwrite_flag=False):
     -------
     None
 
+    Notes
+    -----
+    https://s3-us-west-2.amazonaws.com/mrlc/NLCD_2016_Land_Cover_L48_20190424.zip
+
     """
 
-    download_url = (
-        'https://prd-tnm.s3.amazonaws.com/StagedProducts/NLCD2011/Land_Cover/'
-        'CONUS/nlcd_{}_landcover_2011_edition_2014_10_10.zip').format(year)
-    # download_url = (
-    #     'http://www.landfire.gov/bulk/downloadfile.php?'
-    #     'TYPE=nlcd{0}&FNAME=nlcd_{0}_landcover_2011_edition_2014_10_10.zip').format(year)
-    # download_url = (
-    #     'http://gisdata.usgs.gov/TDDS/DownloadFile.php?'
-    #     'TYPE=nlcd{0}&FNAME=nlcd_{0}_landcover_2011_edition_2014_10_10.zip').format(year)
+    download_url = f'https://s3-us-west-2.amazonaws.com/mrlc/' \
+                   f'NLCD_{year}_Land_Cover_L48_20190424.zip'
 
-    zip_name = 'nlcd_{}_landcover_2011_edition_2014_10_10.zip'.format(year)
+    zip_name = download_url.split('/')[-1]
     zip_path = os.path.join(output_folder, zip_name)
 
     output_name = zip_name.replace('.zip', '.img')
@@ -89,9 +86,9 @@ def arg_parse():
         '--output', default=output_folder, metavar='FOLDER',
         help='Output folder')
     parser.add_argument(
-        '-y', '--year', metavar='YEAR', default='2011',
-        choices=['2001', '2006', '2011'],
-        help='NLCD Year (2001, 2006, or 2011)')
+        '-y', '--year', metavar='YEAR', default='2016',
+        choices=['2001', '2004', '2006', '2008', '2011', '2013', '2016'],
+        help='NLCD Year (2001, 2004, 2006, 2008, 2011, 2013, or 2016)')
     parser.add_argument(
         '-o', '--overwrite', default=None, action="store_true",
         help='Force overwrite of existing files')
