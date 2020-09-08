@@ -14,9 +14,11 @@ import drigo
 import netCDF4
 import numpy as np
 from osgeo import gdal
-# import refet
 
 import _utils
+
+
+# import refet
 
 
 def main(start_dt, end_dt, netcdf_ws, ancillary_ws, output_ws,
@@ -248,17 +250,32 @@ def main(start_dt, end_dt, netcdf_ws, ancillary_ws, output_ws,
         if eto_flag:
             logging.debug("    {}".format(eto_path))
             eto_nc_f = netCDF4.Dataset(eto_path, 'r')
-            eto_nc = eto_nc_f.variables[gridmet_band_dict['eto']][
-                :, row_a: row_b, col_a: col_b].copy()
-            eto_nc = np.flip(eto_nc, 1)
+            if eto_nc_f.file_format == 'NETCDF3_CLASSIC':
+                eto_nc = eto_nc_f.variables[gridmet_band_dict['eto']][
+                           :, row_a: row_b, col_a: col_b].copy()
+                eto_nc = np.flip(eto_nc, 1)
+            elif eto_nc_f.file_format == 'NETCDF4':
+                eto_nc = np.flip(eto_nc_f.variables[gridmet_band_dict['etr']], 1)
+                eto_nc = eto_nc[:, row_a: row_b, col_a: col_b].copy()
+                eto_nc = np.flip(eto_nc, 1)
+            else:
+                raise TypeError('The netcdf file {} format is invalid'.format(eto_path))
             eto_nc_f.close()
             del eto_nc_f
+
         if etr_flag:
             logging.debug("    {}".format(etr_path))
             etr_nc_f = netCDF4.Dataset(etr_path, 'r')
-            etr_nc = etr_nc_f.variables[gridmet_band_dict['etr']][
-                :, row_a: row_b, col_a: col_b].copy()
-            etr_nc = np.flip(etr_nc, 1)
+            if etr_nc_f.file_format == 'NETCDF3_CLASSIC':
+                etr_nc = etr_nc_f.variables[gridmet_band_dict['etr']][
+                           :, row_a: row_b, col_a: col_b].copy()
+                etr_nc = np.flip(etr_nc, 1)
+            elif etr_nc_f.file_format == 'NETCDF4':
+                etr_nc = np.flip(etr_nc_f.variables[gridmet_band_dict['etr']], 1)
+                etr_nc = etr_nc[:, row_a: row_b, col_a: col_b].copy()
+                etr_nc = np.flip(etr_nc, 1)
+            else:
+                raise TypeError('The netcdf file {} format is invalid'.format(eto_path))
             etr_nc_f.close()
             del etr_nc_f
 
@@ -624,9 +641,9 @@ def main(start_dt, end_dt, netcdf_ws, ancillary_ws, output_ws,
 
 def arg_parse():
     """Base all default folders from script location
-        scripts: ./pymetric/tools/gridmet
-        tools:   ./pymetric/tools
-        output:  ./pymetric/gridmet
+        scripts: ./pymetric_/tools/gridmet
+        tools:   ./pymetric_/tools
+        output:  ./pymetric_/gridmet
     """
     script_folder = sys.path[0]
     code_folder = os.path.dirname(script_folder)
