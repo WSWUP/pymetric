@@ -37,30 +37,30 @@ TODO: Add more explanation about where to install Miniconda (ideally to the root
 
 After installing Miniconda, make sure to add the [conda-forge](https://conda-forge.github.io/) channel by entering the following in the command prompt or terminal:
 ```
-> conda config --add channels conda-forge
+conda config --add channels conda-forge
 ```
 
 ## Conda Environment
 
 The user is strongly encouraged to setup a dedicated conda environment for pyMETRIC:
 ```
-> conda create -n pymetric python=3.6
+conda create -n pymetric python=3.6
 ```
 
 The environment must be "activated" before use:
 ```
-> conda activate pymetric
+conda activate pymetric
 ```
 
 Most of the external modules can then be installed by calling:
 ```
-> conda install future matplotlib netcdf4 numpy pandas refet requests scipy 
-> conda install gdal<=3.0.0
+conda install future matplotlib netcdf4 numpy pandas refet requests scipy 
+conda install gdal<=3.0.0
 ```
 
 The drigo modules must be installed separately with pip:
 ```
-> pip install drigo --no-deps
+pip install drigo --no-deps
 ```
 
 ## Environment Variables
@@ -77,7 +77,7 @@ echo %PYTHONPATH%
 ```
 If PYTHONPATH is not set, type the following in the command prompt:
 ```
-> setx PYTHONPATH "C:\pymetric\code\support"
+setx PYTHONPATH "C:\pymetric\code\support"
 ```
 To append to an existing PYTHONPATH, type:
 ```
@@ -100,7 +100,7 @@ echo %GDAL_DATA%
 
 If GDAL_DATA is not set, type the following in the command prompt:
 ```
-> setx GDAL_DATA "C:\Miniconda3\envs\pymetric\Library\share\gdal"
+setx GDAL_DATA "C:\Miniconda3\envs\pymetric\Library\share\gdal"
 ```
 
 ### Mac / Linux
