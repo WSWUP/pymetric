@@ -55,7 +55,7 @@ conda activate pymetric
 Most of the external modules can then be installed by calling:
 ```
 conda install future matplotlib netcdf4 numpy pandas refet requests scipy 
-conda install gdal<=3.0.0
+conda install gdal==3.3.2
 ```
 
 The drigo modules must be installed separately with pip:
