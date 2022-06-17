@@ -29,9 +29,9 @@ import drigo
 import numpy as np
 from numpy import ctypeslib
 from osgeo import gdal, ogr, osr
+import interpolate_support as interp
 
 import et_common
-import interpolate_support as interp
 import python_common as dripy
 
 np.seterr(invalid='ignore')
@@ -109,6 +109,7 @@ def metric_interpolate(year_ws, ini_path, mc_iter=None, bs=None,
     etrf_input_ws = dripy.read_param('etrf_input_folder', None, config)
     etr_input_ws = config.get('INPUTS', 'etr_input_folder')
     etr_input_re = re.compile(config.get('INPUTS', 'etr_input_re'))
+    use_bias_corrected_etr_flag = config.get('INPUTS', 'use_bias_corrected_etr_flag')
     ppt_input_ws = config.get('INPUTS', 'ppt_input_folder')
     ppt_input_re = re.compile(config.get('INPUTS', 'ppt_input_re'))
     footprint_path = config.get('INPUTS', 'footprint_path')
@@ -129,6 +130,8 @@ def metric_interpolate(year_ws, ini_path, mc_iter=None, bs=None,
     tile_gcs_buffer = dripy.read_param('tile_buffer', 0.25, config)
     # doy_remove_list = dripy.read_param('doy_remove_list', [], config)
 
+    # Save original base calibration ETrF output path to use if Monte Carlo fails
+    etrf_raster_org = etrf_raster
     # Read Monte Carlo iteration ETrF raster
     if mc_iter is not None:
         etrf_raster = os.path.splitext(etrf_raster)[0] + iter_fmt
@@ -675,7 +678,7 @@ def metric_interpolate(year_ws, ini_path, mc_iter=None, bs=None,
         etr_array, etr_osr, etr_cs, etr_extent = interp.load_year_array_func(
             etr_input_ws, etr_input_re, etr_date_list,
             env.snap_osr, env.cellsize, env.mask_extent,
-            etr_name, return_geo_array=True)
+            etr_name, return_geo_array=True, bias_corrected_etr=use_bias_corrected_etr_flag)
         if np.all(np.isnan(etr_array)):
             logging.error(
                 '\nERROR: The Reference ET array is all nodata, exiting\n')
@@ -1081,7 +1084,7 @@ def metric_interpolate(year_ws, ini_path, mc_iter=None, bs=None,
             ppt_shmem, ppt_shape, drigo.osr_proj(ppt_osr), ppt_cs, ppt_extent,
             awc_shmem, awc_shape, drigo.osr_proj(awc_osr), awc_cs, awc_extent,
             etrf_raster, ndvi_raster, swb_adjust_dict, etrf_ndvi_dict,
-            study_area_mask_flag, study_area_path,
+            etrf_raster_org, study_area_mask_flag, study_area_path,
             usable_scene_cnt, mosaic_method, fill_method, interp_method,
             calc_flags, low_etrf_limit, high_etrf_limit, debug_flag])
         queue_cnt += 1
@@ -1587,7 +1590,7 @@ def block_func(block_rows, block_cols, block_extent, block_tile_list,
                ppt_shmem, ppt_shape, ppt_proj, ppt_cs, ppt_extent,
                awc_shmem, awc_shape, awc_proj, awc_cs, awc_extent,
                etrf_raster, ndvi_raster, swb_adjust_dict, etrf_ndvi_dict,
-               study_area_mask_flag=False, study_area_path=None,
+               etrf_raster_org, study_area_mask_flag=False, study_area_path=None,
                usable_image_count=2, mosaic_method='mean',
                fill_method='linear', interp_method='linear',
                calc_flags={}, low_etrf_limit=None, high_etrf_limit=None,
@@ -1642,7 +1645,7 @@ def block_func(block_rows, block_cols, block_extent, block_tile_list,
     if calc_flags['etrf'] and block_data_flag:
         etrf_array = interp.load_etrf_func(
             array_shape, interp_date_list, etrf_input_ws, year,
-            etrf_raster, block_tile_list, block_extent,
+            etrf_raster, etrf_raster_org, block_tile_list, block_extent,
             tile_image_dict, mosaic_method, gdal.GRA_Bilinear,
             drigo.proj_osr(snap_proj), cellsize, block_extent, debug_flag)
         if np.any(block_data_mask):
@@ -1663,7 +1666,7 @@ def block_func(block_rows, block_cols, block_extent, block_tile_list,
     if calc_flags['ndvi'] and block_data_flag:
         ndvi_array = interp.load_etrf_func(
             array_shape, interp_date_list, etrf_input_ws, year,
-            ndvi_raster, block_tile_list, block_extent,
+            ndvi_raster, ndvi_raster, block_tile_list, block_extent,
             tile_image_dict, mosaic_method, gdal.GRA_Bilinear,
             drigo.proj_osr(snap_proj), cellsize, block_extent, debug_flag)
         if np.any(block_data_mask):

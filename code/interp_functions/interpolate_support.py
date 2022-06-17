@@ -16,7 +16,6 @@ import numpy as np
 from osgeo import gdal, ogr
 from scipy import interpolate
 
-# import et_common
 import python_common as dripy
 
 # np.seterr(invalid='ignore')
@@ -149,7 +148,7 @@ def mosaic_func(mosaic_array, input_array, mosaic_method):
 
 
 def load_etrf_func(array_shape, date_list, year_ws, year,
-                   etrf_raster, block_tile_list, block_extent,
+                   etrf_raster, etrf_raster_org, block_tile_list, block_extent,
                    tile_image_dict, mosaic_method, resampling_type,
                    output_osr, output_cs, output_extent, debug_flag):
     """Load ETrF from rasters to an array for all images/dates
@@ -199,8 +198,14 @@ def load_etrf_func(array_shape, date_list, year_ws, year,
             tile_ws = os.path.join(year_ws, tile_name)
             image_ws = os.path.join(tile_ws, image_id)
             image_etrf_raster = os.path.join(image_ws, etrf_raster)
+            image_etrf_raster_org = os.path.join(image_ws, etrf_raster_org)
             if not os.path.isfile(image_etrf_raster):
-                logging.debug('  ETrF raster does not exist')
+                logging.debug('  ETrF raster specified does not exist, checking if different from original ETrF output')
+                if etrf_raster != etrf_raster_org:
+                    etrf_raster = etrf_raster_org
+                    image_etrf_raster = image_etrf_raster_org
+            if not os.path.isfile(image_etrf_raster):
+                logging.debug('  Original ETrF raster does not exist')
                 continue
 
             # Get projection and extent for each image
@@ -845,7 +850,7 @@ def block_interpolate_worker(args, input_q, output_q):
 
 def load_year_array_func(input_ws, input_re, date_list,
                          mask_osr, mask_cs, mask_extent,
-                         name='ETr', return_geo_array=True):
+                         name='ETr', return_geo_array=True, bias_corrected_etr=False):
     """Load
 
     Parameters
@@ -867,20 +872,30 @@ def load_year_array_func(input_ws, input_re, date_list,
     """
     logging.info('\n{}'.format(name))
     logging.debug('  {} workspace: {}'.format(name, input_ws))
-    year_str_list = sorted(list(set([
-        date.strftime('%Y') for date in date_list])))
 
     if not os.path.isdir(input_ws):
         logging.error(
             '\nERROR: The {} folder does not exist:\n  {}'.format(
                 name, input_ws))
         sys.exit()
-    input_dict = {
-        input_match.group('YYYY'): os.path.join(input_ws, input_name)
-        for input_name in os.listdir(os.path.join(input_ws))
-        for input_match in [input_re.match(input_name)]
-        if (input_match and input_match.group('YYYY') and
-            input_match.group('YYYY') in year_str_list)}
+    if name == 'ETr' and bias_corrected_etr:
+        year_str_list = sorted(list(set([
+            date.strftime('%Y%m%d') for date in date_list])))
+        input_dict = {
+            input_match.group('YYYYMMDD'): os.path.join(input_ws, input_name)
+            for input_name in os.listdir(os.path.join(input_ws))
+            for input_match in [input_re.match(input_name)]
+            if (input_match and input_match.group('YYYYMMDD') and
+                input_match.group('YYYYMMDD') in year_str_list)}
+    else:
+        year_str_list = sorted(list(set([
+            date.strftime('%Y') for date in date_list])))
+        input_dict = {
+            input_match.group('YYYY'): os.path.join(input_ws, input_name)
+            for input_name in os.listdir(os.path.join(input_ws))
+            for input_match in [input_re.match(input_name)]
+            if (input_match and input_match.group('YYYY') and
+                input_match.group('YYYY') in year_str_list)}
     if not input_dict:
         logging.error(
             ('  No {0} files found in {1} for {2}\n'
@@ -892,7 +907,10 @@ def load_year_array_func(input_ws, input_re, date_list,
     # Assume all rasters have same projection, cellsize, and snap
     for date_obj in date_list:
         try:
-            input_path = input_dict[date_obj.strftime('%Y')]
+            if name == 'ETr' and bias_corrected_etr:
+                input_path = input_dict[date_obj.strftime('%Y%m%d')]
+            else:
+                input_path = input_dict[date_obj.strftime('%Y')]
             break
         except KeyError:
             logging.debug(
@@ -919,15 +937,23 @@ def load_year_array_func(input_ws, input_re, date_list,
     # Read in the raster for each date
     for date_i, date_obj in enumerate(date_list):
         try:
-            input_path = input_dict[date_obj.strftime('%Y')]
+            if name == 'ETr' and bias_corrected_etr:
+                input_path = input_dict[date_obj.strftime('%Y%m%d')]
+            else:
+                input_path = input_dict[date_obj.strftime('%Y')]
         except KeyError:
             logging.debug(
                 '  {} - {} raster does not exist'.format(
                     date_obj.strftime('%Y%m%d'), name))
             continue
-        output_array[date_i, :, :] = drigo.raster_to_array(
-            input_path, band=int(date_obj.strftime('%j')),
-            mask_extent=output_extent, return_nodata=False,)
+        if name == 'ETr' and bias_corrected_etr:
+            output_array[date_i, :, :] = drigo.raster_to_array(
+                input_path, band=1,
+                mask_extent=output_extent, return_nodata=False, )
+        else:
+            output_array[date_i, :, :] = drigo.raster_to_array(
+                input_path, band=int(date_obj.strftime('%j')),
+                mask_extent=output_extent, return_nodata=False, )
 
     if return_geo_array:
         return output_array, input_osr, input_cs, output_extent
