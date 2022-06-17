@@ -41,7 +41,7 @@ def html_link_list(url):
     """List all links at the url."""
     session = HTMLSession()
     r = session.get(url)
-    r.html.render(timeout=10, sleep=10)
+    r.html.render(timeout=10, sleep=10, scrolldown=2)
     return list(r.html.links)
 
 
