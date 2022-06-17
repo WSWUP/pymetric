@@ -17,6 +17,8 @@ The following external Python modules must be present to run pyMETRIC:
 * [matplotlib](https://matplotlib.org/) (necessary for creating plots of ET related data)
 * [netcdf4](https://www.unidata.ucar.edu/software/netcdf/) (for interacting with multi-dimensional scientific datasets, such as GRIDMET/DAYMET)
 * [numpy](http://www.numpy.org/)
+* [numexpr](https://github.com/pydata/numexpr) (for fast numerical expressions for numpy)
+* [richdem](https://github.com/r-barnes/richdem) (for calculation of dem attributes)
 * [pandas](http://pandas.pydata.org) (used to perform data processing)
 * [requests](http://docs.python-requests.org/en/master/) (adds enhanced http functionality)
 * [scipy](https://www.scipy.org/) (provides numerous packages required for the processing of data)
