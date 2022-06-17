@@ -883,7 +883,7 @@ def solar_time_rad_func(lon, time, sc):
     ndarray
 
     """
-    return time + (lon * 24 / (2 * math.pi)) + sc - 12
+    return time + (lon * 12 / math.pi) + sc
 
 
 # def solar_time_func(lon, time, sc):
@@ -909,7 +909,7 @@ def omega_func(solar_time):
     omega : ndarray
 
     """
-    omega = (2 * math.pi / 24.0) * solar_time
+    omega = (solar_time - 12) * (math.pi / 12.0)
 
     # Need to adjust omega so that the values go from -pi to pi
     # Values outside this range are wrapped (i.e. -3*pi/2 -> pi/2)
@@ -956,36 +956,6 @@ def omega_sunset_func(lat, delta):
     return np.arccos(-np.tan(lat) * np.tan(delta))
 
 
-def ra_daily_func(lat, doy):
-    """Daily extraterrestrial radiation [MJ m-2 d-1]
-
-    Parameters
-    ----------
-    lat : array_like
-        Latitude [radians].
-    doy : array_like
-        Day of year.
-
-    Returns
-    -------
-    ndarray
-
-    Notes
-    -----
-    This function  is only being called by et_numpy.rn_24_func().
-    That function could be changed to use the refet.calcs._ra_daily() function
-    instead, in which case this function could be removed.
-
-    """
-
-    delta = delta_func(doy)
-    omegas = omega_sunset_func(lat, delta)
-    theta = (omegas * np.sin(lat) * np.sin(delta) +
-             np.cos(lat) * np.cos(delta) * np.sin(omegas))
-
-    return (24. / math.pi) * 4.92 * dr_func(doy) * theta
-
-
 def cos_theta_solar_func(sun_elevation):
     """Cosine of theta at a point given sun elevation angle"""
     return math.sin(sun_elevation * math.pi / 180.)
@@ -1019,10 +989,11 @@ def cos_theta_centroid_func(t, doy, dr, lon_center, lat_center):
                  (math.cos(delta) * math.cos(lat_center) * math.cos(omega)))
     log_f = '  {:<18s} {}'
     logging.debug('\n' + log_f.format(
-        'Latitude Center:', (lat_center * math.pi / 180)))
+        'Latitude Center:', (lat_center * 180 / math.pi)))
     logging.debug(log_f.format(
-        'Longitude Center:', (lon_center * math.pi / 180)))
+        'Longitude Center:', (lon_center * 180 / math.pi)))
     logging.debug(log_f.format('Delta:', delta))
+    logging.debug(log_f.format('Acq Time [hour]:', t))
     logging.debug(log_f.format('Sc [hour]:', sc))
     logging.debug(log_f.format('Sc [min]:', sc*60))
     logging.debug(log_f.format('Phi:', lat_center))
