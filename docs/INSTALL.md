@@ -6,13 +6,14 @@ Most of the documentation and examples are written assuming you are running pyME
 
 ## Python
 
-pyMETRIC will only officially work with Python 3.6+, but may work with older versions.
+pyMETRIC has only been tested using Python 2.7 and 3.6, but may work with other versions.
 
 ## Dependencies
 
 The following external Python modules must be present to run pyMETRIC:
 * [fiona](http://toblerity.org/fiona/) (used to read and write multi-layered GIS file formats)
-* [gdal](http://www.gdal.org/) (version >=3.0) (the Geospatial Data Abstraction Library is used to interact with raster and vector geospatial data)
+* [future](https://pypi.python.org/pypi/future) (adds features from Python 3 to Python 2 installations)
+* [gdal](http://www.gdal.org/) (version >2.2 and <3.0.0) (the Geospatial Data Abstraction Library is used to interact with raster and vector geospatial data)
 * [matplotlib](https://matplotlib.org/) (necessary for creating plots of ET related data)
 * [netcdf4](https://www.unidata.ucar.edu/software/netcdf/) (for interacting with multi-dimensional scientific datasets, such as GRIDMET/DAYMET)
 * [numpy](http://www.numpy.org/)
@@ -24,6 +25,10 @@ The following external Python modules must be present to run pyMETRIC:
 
 Please see the [requirements](../requirements.txt) file for details on the versioning requirements.  The module version numbers listed in the file were tested and are known to work.  Other combinations of versions may work but have not been tested.
 
+### Python 2
+The following external Python modules must be present to run pyMETRIC on Python 2
+* [configparser]()(Python 2 implementation of the Python 3 configparser module)
+
 ## Anaconda/Miniconda
 
 The easiest way of obtaining Python and all of the necessary external modules, is to install [Miniconda](https://conda.io/miniconda.html) or [Anaconda](https://www.anaconda.com/download/).
@@ -32,29 +37,30 @@ TODO: Add more explanation about where to install Miniconda (ideally to the root
 
 After installing Miniconda, make sure to add the [conda-forge](https://conda-forge.github.io/) channel by entering the following in the command prompt or terminal:
 ```
-> conda config --add channels conda-forge
+conda config --add channels conda-forge
 ```
 
 ## Conda Environment
 
 The user is strongly encouraged to setup a dedicated conda environment for pyMETRIC:
 ```
-> conda create -n pymetric python=3.7
+conda create -n pymetric python=3.6
 ```
 
 The environment must be "activated" before use:
 ```
-> conda activate pymetric
+conda activate pymetric
 ```
 
 Most of the external modules can then be installed by calling:
 ```
-> conda install gdal>=3.0.0 matplotlib netcdf4 numpy pandas refet requests scipy
+conda install future matplotlib netcdf4 numpy pandas refet requests scipy 
+conda install gdal==3.3.2
 ```
 
 The drigo modules must be installed separately with pip:
 ```
-> pip install drigo --no-deps
+pip install drigo --no-deps
 ```
 
 ## Environment Variables
@@ -71,7 +77,7 @@ echo %PYTHONPATH%
 ```
 If PYTHONPATH is not set, type the following in the command prompt:
 ```
-> setx PYTHONPATH "C:\pymetric\code\support"
+setx PYTHONPATH "C:\pymetric\code\support"
 ```
 To append to an existing PYTHONPATH, type:
 ```
@@ -94,7 +100,7 @@ echo %GDAL_DATA%
 
 If GDAL_DATA is not set, type the following in the command prompt:
 ```
-> setx GDAL_DATA "C:\Miniconda3\envs\pymetric\Library\share\gdal"
+setx GDAL_DATA "C:\Miniconda3\envs\pymetric\Library\share\gdal"
 ```
 
 ### Mac / Linux
