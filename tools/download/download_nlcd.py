@@ -20,7 +20,7 @@ def main(output_folder, year='2016', overwrite_flag=False):
     ----------
     output_folder : str
         Folder path where files will be saved.
-    year : {2001, 2004, 2006, 2008, 2011, 2013, 2016}; optional
+    year : {2001, 2004, 2006, 2008, 2011, 2013, 2016, 2019}; optional
         NLCD year (the default is 2016).
     overwrite_flag : bool, optional
         If True, overwrite existing files (the default is False).
@@ -36,7 +36,7 @@ def main(output_folder, year='2016', overwrite_flag=False):
     """
 
     download_url = f'https://s3-us-west-2.amazonaws.com/mrlc/' \
-                   f'NLCD_{year}_Land_Cover_L48_20190424.zip'
+                   f'nlcd_{year}_land_cover_l48_20210604.zip'
 
     zip_name = download_url.split('/')[-1]
     zip_path = os.path.join(output_folder, zip_name)
