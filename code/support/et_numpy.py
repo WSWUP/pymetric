@@ -5,13 +5,15 @@
 
 # import logging
 import math
+import drigo
 
 import numpy as np
+import numexpr as ne
 
 import et_common
 
 
-def cos_theta_spatial_func(time, doy, dr, lon, lat):
+def cos_theta_spatial_func(time, doy, dr, lat, lon):
     """
 
     Parameters
@@ -28,7 +30,8 @@ def cos_theta_spatial_func(time, doy, dr, lon, lat):
     """
     sc = et_common.seasonal_correction_func(doy)
     delta = et_common.delta_func(doy)
-    omega = et_common.omega_func(et_common.solar_time_rad_func(time, lon, sc))
+    omega = et_common.omega_func(et_common.solar_time_rad_func(lon, time, sc))
+
     cos_theta = ((math.sin(delta) * np.sin(lat)) +
                  (math.cos(delta) * np.cos(lat) * np.cos(omega)))
     return cos_theta
@@ -52,9 +55,15 @@ def cos_theta_mountain_func(time, doy, dr, lon, lat, slope, aspect):
     ndarray
 
     """
+
+    # Convert slope (degrees to radians for calculation)
+    slope = slope * (math.pi / 180.0)
+    # Convert aspect (degrees to radians for calculation)
+    aspect = aspect * (math.pi / 180.0)
+
     sc = et_common.seasonal_correction_func(doy)
     delta = et_common.delta_func(doy)
-    omega = et_common.omega_func(et_common.solar_time_rad_func(time, lon, sc))
+    omega = et_common.omega_func(et_common.solar_time_rad_func(lon, time, sc))
     sin_omega = np.sin(omega)
     cos_omega = np.cos(omega)
     del omega
@@ -612,6 +621,20 @@ def albedo_sur_func(refl_sur, wb):
     return np.sum(refl_sur * wb, axis=2)
 
 
+def albedo_ts_corrected_func(albedo_sur, ndvi_toa, ts_array, hot_px_temp,
+                             cold_px_temp, k_value, dense_veg_min_albedo):
+    """Updated Ts based on METRIC Manual - Eqn. 16-1"""
+    masked = (albedo_sur < dense_veg_min_albedo) & (ndvi_toa > 0.45)
+    ts_array[masked] = ts_array[masked] + ((dense_veg_min_albedo  - albedo_sur[masked]) * k_value * ((hot_px_temp-cold_px_temp) * (0.95)))
+
+    """Updated albedo based on METRIC Manual - Eqn. 16-1"""
+    masked = (albedo_sur < dense_veg_min_albedo) & (ndvi_toa > 0.6)
+    albedo_sur[masked] = dense_veg_min_albedo
+    masked = (albedo_sur < dense_veg_min_albedo) & ((ndvi_toa > 0.4) & (ndvi_toa < 0.6))
+    albedo_sur[masked] = dense_veg_min_albedo - (dense_veg_min_albedo - albedo_sur[masked]) * (1 - ((ndvi_toa[masked] - 0.4) / (0.6 - 0.4)))
+    return ts_array, albedo_sur
+
+
 # Vegetation Indices
 def ndi_func(a, b, l=0.0):
     """Normalized difference index function
@@ -1143,17 +1166,183 @@ def thermal_rad_func(ts_bt, k1, k2):
     return thermal_rad.astype(np.float32)
 
 
-def ts_lapsed_func(ts, elevation, datum, lapse_rate=6.0):
-    """Lapse surface temperature based on elevation
+def lapse_func(elevation, datum, lapse_elev, lapse_flat, lapse_mtn):
+    """Calculates and returns lapse component only for lapsing/ delapsing surface temperature based on elevation"""
+    ts_a = np.copy(elevation).astype(np.float64)
+    ts_a -= datum
+    ts_a *= (lapse_flat * 0.001)
+    ts_b = np.copy(elevation).astype(np.float64)
+    ts_b -= lapse_elev
+    ts_b *= (lapse_mtn * 0.001)
+    ts_b += ((lapse_elev - datum) * lapse_flat * 0.001)
+    return np.where(elevation <= lapse_elev, ts_a, ts_b).astype(np.float32)
+
+
+def ts_lapsed_func(ts, elevation, datum, lapse_elev, lapse_flat, lapse_mtn):
+    """Lapse surface temperature based on elevation"""
+    ts_a = np.copy(elevation).astype(np.float64)
+    ts_a -= datum
+    ts_a *= (lapse_flat * - 0.001)
+    ts_a += ts
+    ts_b = np.copy(elevation).astype(np.float64)
+    ts_b -= lapse_elev
+    ts_b *= (lapse_mtn * - 0.001)
+    ts_b += ((lapse_elev - datum) * lapse_flat * -0.001)
+    ts_b += ts
+    return np.where(elevation <= lapse_elev, ts_a, ts_b).astype(np.float32)
+
+
+def ts_delapsed_func(ts, elevation, datum, lapse_elev, lapse_flat, lapse_mtn):
+    """Delapse surface temperature based on elevation"""
+    ts_a = np.copy(elevation).astype(np.float64)
+    ts_a -= datum
+    ts_a *= (lapse_flat * 0.001)
+    ts_a += ts
+    ts_b = np.copy(elevation).astype(np.float64)
+    ts_b -= lapse_elev
+    ts_b *= (lapse_mtn * 0.001)
+    ts_b += ((lapse_elev - datum) * lapse_flat * 0.001)
+    ts_b += ts
+    return np.where(elevation <= lapse_elev, ts_a, ts_b).astype(np.float32)
+
+
+def ts_dem_dry_func(ts_dem_cold, ts_dem_hot, kc_cold, kc_hot):
+    """"""
+    return (ts_dem_hot + (kc_hot * ((ts_dem_hot - ts_dem_cold) /
+                                    (kc_cold - kc_hot))))
+
+
+def calculate_lst_terrain_general(lst_tall_veg, slope, aspect, sun_azimuth, temp_diff=10.0):
+
+    # Calculating the factor k, 0, 2PI = facing sun, PI=away from sun. JK April 29 2009
+
+    mem_1 = (aspect - sun_azimuth) * math.pi / 180
+    mem_1 = np.where(aspect < sun_azimuth, (360 - sun_azimuth + aspect) * math.pi / 180, mem_1)
+
+    mem_2 = np.where(mem_1 < 0, mem_1 * -1, mem_1)
+
+    lst_terrain = lst_tall_veg - temp_diff * np.cos(mem_2)
+    lst_terrain = np.where(slope <= 5, lst_tall_veg, lst_terrain)
+
+    return lst_terrain
+
+
+def sin_beta_daily(lat, doy):
+    # Sin of the angle of the sun above the horizon (D.5 and Eqn 62 from ASCE Ref ET Allen, 2005)
+    sin_beta_24 = np.sin(
+        0.85 + 0.3 * lat * np.sin(et_common.doy_fraction_func(doy) - 1.39435) -
+        0.42 * np.power(lat, 2))
+    sin_beta_24 = np.maximum(sin_beta_24, 0.1)
+    return sin_beta_24
+
+
+def rso_24_func_flat(lat, doy, pair, ea, ra):
+
+    # This is taken from the daily reference ET calculation for daily Rso
+    # This is the full clear sky solar formulation
+
+    sin_beta_24 = sin_beta_daily(lat, doy)
+
+    # Precipitable water (Eqn D.3)
+    w = et_common.precipitable_water_func(pair, ea)
+
+    # Clearness index for direct beam radiation (Eqn D.2)
+    # Limit sin_beta >= 0.01 so that KB does not go undefined
+    kb_24 = (0.98 * np.exp((-0.00146 * pair) / sin_beta_24 -
+                        0.075 * np.power((w / sin_beta_24), 0.4)))
+
+    # Transmissivity index for diffuse radiation (Eqn D.4)
+    kd_24 = np.minimum(-0.36 * kb_24 + 0.35, 0.82 * kb_24 + 0.18)
+
+    # Clear sky solar radiation (Eqn D.1)
+    rso = ra * (kb_24 + kd_24)
+    return rso
+
+
+def rso_24_func_mountain(rso_24_flat, ra_24, lat, slope, doy, pair, ea):
+
+    # Convert slope (degrees to radians for calculation)
+    slope = slope * (math.pi / 180.0)
+
+    sin_beta_24 = sin_beta_daily(lat, doy)
+
+    delta = et_common.delta_func(doy)
+    w = et_common.precipitable_water_func(pair, ea)
+    del ea
+    KB_24 = tau_direct_func(pair, w, sin_beta_24)
+    del w, pair, sin_beta_24
+    KD_24 = tau_diffuse_func(KB_24)
+
+    terrain_albedo = np.zeros_like(KB_24) + 0.2
+    pi = math.pi
+
+    rso_24 = ne.evaluate("KB_24*ra_24\
+        +KD_24*1367.0/pi*(1+0.033*cos(2*pi/365*doy))\
+        *(arccos(-tan(lat)*tan(delta))*sin(delta)*sin(lat)\
+        +cos(delta)*cos(lat)*sin(arccos(-tan(lat)*tan(delta))))\
+        *(0.75+0.25*cos(slope)-0.5*(slope)/pi)\
+        +rso_24_flat*terrain_albedo*(1-(0.75+0.25*cos(slope)-0.5*(slope)/pi))",
+                         {'rso_24_flat': rso_24_flat,
+                          'ra_24': ra_24,
+                          'slope': slope,
+                          'delta': delta,
+                          'KB_24': KB_24,
+                          'KD_24': KD_24,
+                          'terrain_albedo': terrain_albedo,
+                          'pi': pi,
+                          'doy': doy,
+                          'lat': lat
+                          }
+                         )
+
+    del rso_24_flat, ra_24, slope, delta, KB_24, KD_24, terrain_albedo,
+
+    return rso_24
+
+
+def daylight_hours_func(latitude, doy):
+    """Compute the number of daylight hours.
+
+    :param latitude: Latitude [radians]
+    :param doy: day of year (julian date)
+    :returns: daylight hours
+    :rtype: ee.Image
+    """
+    pi = math.pi
+
+    return ne.evaluate(
+        '24.0/pi*arccos(-tan(latitude)*tan(0.409*sin(2*pi*doy/365-1.39)))')
+
+
+def g_water_func(rn, acq_doy):
+    """Adjust water heat storage based on day of year"""
+    return rn * (-1.25 + (0.0217 * acq_doy) - (5.87E-5 * (acq_doy ** 2)))
+
+
+def excess_res_func(u3):
+    """
+
+    Excess res. needs to be recalculated if additional wind is applied
+    """
+    if u3 < 2.6:
+        return 0.0
+    elif u3 > 15.0:
+        return 2.0
+    else:
+        return (
+            (0.01303 * u3 ** 3) - (0.43508 * u3 ** 2) +
+            (4.27477 * u3) - 8.283524)
+
+
+def ra_daily_func(lat, doy):
+    """Daily extraterrestrial radiation [W m -2]
 
     Parameters
     ----------
-    ts : array_like
-        Surface temperature [K].
-    elevation : array_like
-        Elevation [m].
-    datum : float
-    lapse_rate : float
+    lat : array_like
+        Latitude [radians].
+    doy : array_like
+        Day of year.
 
     Returns
     -------
@@ -1161,31 +1350,33 @@ def ts_lapsed_func(ts, elevation, datum, lapse_rate=6.0):
 
     Notes
     -----
-
-
-    References
-    ----------
-
+    This function  is only being called by et_numpy.rn_24_func().
+    That function could be changed to use the refet.calcs._ra_daily() function
+    instead, in which case this function could be removed.
 
     """
-    ts_adjust = np.copy(elevation).astype(np.float64)
-    ts_adjust -= datum
-    ts_adjust *= (lapse_rate * -0.001)
-    ts_adjust += ts
-    return ts_adjust.astype(np.float32)
+
+    delta = et_common.delta_func(doy)
+    omegas = et_common.omega_sunset_func(lat, delta)
+    theta = (omegas * np.sin(lat) * np.sin(delta) +
+             np.cos(lat) * np.cos(delta) * np.sin(omegas))
+
+    return (1367 / math.pi) * et_common.dr_func(doy) * theta
 
 
-def ts_delapsed_func(ts, elevation, datum, lapse_rate=6.0):
-    """Delapse surface temperature based on elevation
+def ra_daily_mountain_func(lat, doy, slope, aspect, ra_min=0.1):
+    """Daily extraterrestrial radiation [W m-2]
 
     Parameters
     ----------
-    ts : array_like
-        Surface temperature [K].
-    elevation : array_like
-        Elevation [m].
-    datum : float
-    lapse_rate : float
+    lat : array_like
+        Latitude [radians].
+    doy : array_like
+        Day of year.
+    slope : array_like
+        slope [degrees]
+    aspect : array_like
+        aspect [degrees]
 
     Returns
     -------
@@ -1193,18 +1384,92 @@ def ts_delapsed_func(ts, elevation, datum, lapse_rate=6.0):
 
     Notes
     -----
-
-
-    References
-    ----------
-
+    This function  is only being called by et_numpy.rn_24_func().
+    That function could be changed to use the refet.calcs._ra_daily() function
+    instead, in which case this function could be removed.
 
     """
-    ts_adjust = np.copy(elevation).astype(np.float64)
-    ts_adjust -= datum
-    ts_adjust *= (lapse_rate * 0.001)
-    ts_adjust += ts
-    return ts_adjust.astype(np.float32)
+
+    # Convert slope from degrees to radians
+    slope *= math.pi / 180
+
+    def hour_angle(time):
+        return 15 * (time - 12.0) * (math.pi / 180)
+
+    time = [(0.5 * i) + 0.25 for i in range(0, 48)]
+
+    sun_hour_angles = [hour_angle(t) for t in time]
+
+    # Reshape to (48, 1, 1) to allow broadcasting to work correctly with block rasters
+    hour_angles = np.array(sun_hour_angles)[:, None, None]
+
+    delta = et_common.delta_func(doy)
+    dr = et_common.dr_func(doy)
+
+    x = ne.evaluate('sin(delta)*sin(lat)*cos(slope)-sin(delta)*cos(lat)*sin(slope)*cos((aspect-180)*pi/180)', {
+        'delta': delta,
+        'slope': slope,
+        'aspect': aspect,
+        'lat': lat,
+        'pi': math.pi
+    })
+
+    y = ne.evaluate('cos(delta)*cos(lat)*cos(slope)+cos(delta)*sin(lat)*sin(slope)*cos((aspect-180)*pi/180)', {
+        'delta': delta,
+        'slope': slope,
+        'aspect': aspect,
+        'lat': lat,
+        'pi': math.pi
+    })
+
+    z = ne.evaluate('cos(delta)*sin(slope)*sin((aspect-180)*pi/180)', {
+        'delta': delta,
+        'aspect': aspect,
+        'slope': slope,
+        'pi': math.pi
+    })
+
+    Ra_24_1 = ne.evaluate('(x+y*cos(hour_angles)+z*sin(hour_angles))', {
+        'y': y,
+        'x': x,
+        'hour_angles': hour_angles,
+        'z': z
+    })
+
+    lim_1 = ne.evaluate('(sin(delta)*sin(lat)+cos(delta)*cos(lat)*cos(hour_angles))',
+                        {
+                            'lat': lat,
+                            'delta': delta,
+                            'hour_angles': hour_angles
+                        })
+
+    lim_2 = ne.evaluate('(x+y*cos(hour_angles)+z*sin(hour_angles))',
+                        {
+                            'x': x,
+                            'y': y,
+                            'hour_angles': hour_angles,
+                            'z': z
+    })
+
+    Ra_24_1 = np.where(lim_1 <= 0, 0, Ra_24_1)
+    Ra_24_1 = np.where(lim_2 <= 0, 0, Ra_24_1)
+
+    # New array is shape (48, blocksize, blocksize) so want to sum over first axis (0) to sum over hour angles
+    Ra_24_2 = np.sum(Ra_24_1, axis=0)
+
+    Ra_24_temp = Ra_24_2 * 0.5 * dr * (1367 / 24)
+
+    delta = et_common.delta_func(doy)
+    omegas = et_common.omega_sunset_func(lat, delta)
+    theta = (omegas * np.sin(lat) * np.sin(delta) +
+             np.cos(lat) * np.cos(delta) * np.sin(omegas))
+
+    Ra_24_min_flat = ((1367 * ra_min / math.pi) * et_common.dr_func(doy) * theta)
+    Ra_24_min = Ra_24_min_flat / np.cos(slope)
+
+    Ra_24 = np.where(Ra_24_temp > Ra_24_min_flat, Ra_24_temp / np.cos(slope), Ra_24_min)
+
+    return Ra_24
 
 
 def rl_in_func(tau, ts, ea_coef1=0.85, ea_coef2=0.09):
@@ -1247,6 +1512,34 @@ def rl_in_func(tau, ts, ea_coef1=0.85, ea_coef2=0.09):
     return rl_in.astype(np.float32)
 
 
+def calculate_radiation_lw_incoming_mountain(
+        surface_temperature_dem_cold_pixels,
+        transmissivity,
+        slope,
+        broad_band_emissivity,
+        surface_temperature_terrain):
+    '''
+    Computes the incoming longwave radiation incoming adjusting for terrain.
+    Slope in degrees.
+    '''
+
+    RLin = ne.evaluate(
+        '(0.85*((-log(bb_trans))**0.09))*(5.67*(10**-8)*(ts_cold_dem**4))\
+        *(0.75+0.25*cos(slope)-0.5*(slope)/pi)\
+        +(bb_emiss*(5.67*(10**-8))*(lst_terrain**4))*(1-(0.75+0.25*cos(slope)-0.5*(slope)/pi))',
+        {
+            'bb_trans': transmissivity,
+            'slope': slope * (math.pi / 180),
+            'pi': math.pi,
+            'bb_emiss': broad_band_emissivity,
+            'lst_terrain': surface_temperature_terrain,
+            'ts_cold_dem': surface_temperature_dem_cold_pixels
+        }
+    )
+
+    return RLin
+
+
 def rl_out_func(rl_in, ts, em_0):
     """Outgoing Longwave Radiation (Emitted + Reflected)
 
@@ -1282,6 +1575,50 @@ def rl_out_func(rl_in, ts, em_0):
     rl_out += rl_in
     rl_out -= em_0 * rl_in
     return rl_out.astype(np.float32)
+
+
+def rso_instant_mountain_func(rso_inst_flat, lat, lon, slope, cos_theta, cos_theta_mountain, pair, ea, dr, doy, hour):
+
+    """Instantaneous clearsky solar radiation adjusted for slope and other terrain effects
+
+       .. topic:: References
+
+       - "METRIC Applications Manual - Version 3.0"
+         Allen R.G., Trezza R., Tasumi M., Kjaersgaard J., (2014)"""
+
+    slope = slope * (math.pi / 180)
+
+    sc = et_common.seasonal_correction_func(doy)
+    img_time = et_common.solar_time_rad_func(lon, hour, sc)
+    delta = et_common.delta_func(doy)
+
+    w = et_common.precipitable_water_func(pair, ea)
+    TauB = tau_direct_func(pair, w, cos_theta)
+    TauD = tau_diffuse_func(TauB)
+
+    pi = math.pi
+    terrain_albedo = np.zeros_like(TauB) + 0.2
+
+    Rso_inst = ne.evaluate(
+        "TauB*1367*(1+0.033*cos(doy*2*pi/365))*cos_theta_mm\
+        +TauD*1367*(1+0.033*cos(doy*2*pi/365))*cos(pi/2-arcsin(sin(lat)\
+        *sin(delta)+cos(lat)*cos(delta)*cos(pi/12*(img_time-12))))\
+        *(0.75+0.25*cos(slope)-0.5*(slope)/pi)\
+        +rso_inst_flat*terrain_albedo*(1-(0.75+0.25*cos(slope)-0.5*(slope)/pi))",
+        {'slope': slope,
+         'lat': lat,
+         'doy': doy,
+         'rso_inst_flat': rso_inst_flat,
+         'terrain_albedo': terrain_albedo,
+         'img_time': img_time,
+         'delta': delta,
+         'TauB': TauB,
+         'TauD': TauD,
+         'pi': pi,
+         'cos_theta_mm': cos_theta_mountain
+         })
+
+    return Rso_inst
 
 
 def rs_in_func(cos_theta, tau, dr, gsc=1367.0):
@@ -1442,6 +1779,128 @@ def rn_24_func(albedo_sur, rs_in, lat, doy, cs=110):
     rn_24 *= rs_in
     rn_24 -= rnl_24
     return rn_24
+
+
+def rn_mountain_func(Rso_inst_flat, Rso_inst, RLin, bb_emiss, ts, albedo):
+
+    """Instantaneous Net Radiation
+
+       .. topic:: References
+
+       - "METRIC Applications Manual - Version 3.0"
+         Allen R.G., Trezza R., Tasumi M., Kjaersgaard J., (2014)"""
+
+    Rso_adj = np.zeros_like(albedo)
+
+    rn = ne.evaluate(
+        '((1-albedo)*Rso_inst+RLin-(bb_emiss*(5.67*10**-8)*(lst**4))-((1-bb_emiss)*RLin))', {
+            'Rso_inst': Rso_inst,
+            'albedo': albedo,
+            'RLin': RLin,
+            'bb_emiss': bb_emiss,
+            'lst': ts
+        })
+
+    rn_1 = ne.evaluate(
+                   '((1-albedo)*(Rso_inst**(1.0/2.0))*(Rso_inst_flat**(1.0/2.0))+RLin\
+                   -(bb_emiss*(5.67*10**-8)*(lst**4))-((1-bb_emiss)*RLin))', {
+                       'Rso_inst': Rso_inst,
+                       'albedo': albedo,
+                       'Rso_inst_flat': Rso_inst_flat,
+                       'RLin': RLin,
+                       'bb_emiss': bb_emiss,
+                       'lst': ts
+                   })
+    lim_1 = Rso_inst / Rso_inst_flat
+
+    rn_2 = ne.evaluate(
+                   '((1-albedo)*Rso_inst+RLin-(bb_emiss*(5.67*10**-8)*(lst**4))-((1-bb_emiss)*RLin))', {
+                       'Rso_inst': Rso_inst,
+                       'albedo': albedo,
+                       'RLin': RLin,
+                       'bb_emiss': bb_emiss,
+                       'lst': ts
+                   })
+
+    rn = np.where(np.logical_and(lim_1 <= 0, Rso_adj == 1.0), rn_1, rn)
+    rn = np.where(lim_1 >= 1, rn_2, rn)
+
+    return rn
+
+
+def rn_24_slob_func(lat, ts, ts_cold, ts_hot, lapsed_ts_cold, lapse, ts_dem_dry, ts_dem_point_array, albedo_sur,
+                    rso_daily, ra_daily, doy, cold_xy, hot_xy, radiation_longwave_in_flat,
+                    radiation_longwave_in_mountain, radiation_longwave_out):
+    """Daily Net Radiation - Slob method
+
+       .. topic:: References
+
+       - "METRIC Applications Manual - Version 3.0"
+         Allen R.G., Trezza R., Tasumi M., Kjaersgaard J., (2014)"""
+
+    ts_dem_hot = ts_dem_point_array[1]
+    num_daylight_hrs = daylight_hours_func(lat, doy)
+    del lat
+
+    # (rso_daily / ra_daily) is equivalent to daily Tau = TauB+TauD
+    tau = rso_daily / ra_daily
+    del ra_daily
+
+    # 0.5 is the daylength weight
+    rnl_cold_24 = 140.0 * 0.5 + (0.5 * 180) * tau
+    rnl_hot_24 = 115.0 * 0.5 + (0.5 * 145) * tau
+
+    ts_dry = ts_hot + (ts_dem_dry - ts_dem_hot)
+    lapsed_ts_dry = ts_dry - lapse
+    del ts_dry, lapse, ts_dem_hot
+
+    net_radiation_mountain_reduction = ne.evaluate(
+        '(rl_out-rl_in_mtn)/(rl_out-rl_in)',
+        {
+            'rl_out': radiation_longwave_out,
+            'rl_in_mtn': radiation_longwave_in_mountain,
+            'rl_in': radiation_longwave_in_flat
+        }
+    )
+    del radiation_longwave_in_flat, radiation_longwave_in_mountain, radiation_longwave_out
+
+    net_radiation_mountain_reduction = np.maximum(np.minimum(net_radiation_mountain_reduction, 1.0), 0.6)
+
+    # TODO: Is it necessary to extract values at pixels for Rnl_hot / Rnl_cold?
+    # Rnl_hot = np.array(drigo.array_value_at_xy(input_array, input_geo, input_xy,
+    #                   input_nodata=None, band=1)()
+    #     .cell_value_set(
+    #         Rnl_hot, 'rnl_hot', cold_xy, hot_xy))
+    #
+    #     # This creates a variable from the temp of hot and cold pixels
+    #     # (for Ts correction)
+    #     cold_px_temp = ts_array.item(0)
+    #     hot_px_temp = ts_array.item(1)
+
+    rnl_24_pixel = (
+        ((ts - lapsed_ts_cold) / (lapsed_ts_dry - lapsed_ts_cold)) *
+        (rnl_hot_24 - rnl_cold_24) + rnl_cold_24)
+    rnl_24_pixel = np.where(rnl_24_pixel < rnl_cold_24, rnl_cold_24, rnl_24_pixel)
+    rnl_24_pixel = np.where(rnl_24_pixel > rnl_hot_24, rnl_hot_24, rnl_24_pixel)
+
+    del rnl_cold_24, rnl_hot_24
+    del ts, lapsed_ts_cold, lapsed_ts_dry
+
+    rn_daily = ne.evaluate(
+        '(1 - albedo_tall_vegetation) * rso_daily * 24.0\
+        / (effective_daylight_weight * 24.0 + (1 - effective_daylight_weight) * num_daylight_hrs)\
+        - rnl * radiation_reduction',
+        {
+            'rso_daily': rso_daily,
+            'albedo_tall_vegetation': albedo_sur,
+            'effective_daylight_weight': 0.5,
+            'num_daylight_hrs': num_daylight_hrs,
+            'rnl': rnl_24_pixel,
+            'radiation_reduction': net_radiation_mountain_reduction
+        }
+    )
+
+    return rn_daily
 
 
 def g_ag_func(lai, ts, rn, coef1=1.80, coef2=0.084):
@@ -1805,42 +2264,14 @@ def u_star_func(u3, z3, zom, psi_z3, wind_coef=1):
     return u_star
 
 
-def rah_func(z_flt_dict, psi_z2, psi_z1, u_star):
-    """
-
-    Parameters
-    ----------
-    z_flt_dict : dict
-
-    psi_z2 : array_like
-
-    psi_z1 : array_like
-
-    u_star : array_like
-        Friction velocity [m s-1].
-
-    Returns
-    -------
-    rah : ndarray
-        Aerodynamic resistance to heat transport [s m-1].
-
-    Notes
-    -----
-    rah = ((log(z2 / z1) - psi_z2 + psi_z1) / (0.41 * u_star))
-
-    References
-    ----------
-    .. [1] Allen, R., Tasumi, M., & Trezza, R. (2007). Satellite-Based Energy
-       Balance for Mapping Evapotranspiration with Internalized Calibration
-       (METRIC)-Model. Journal of Irrigation and Drainage Engineering, 133(4).
-       https://doi.org/10.1061/(ASCE)0733-9437(2007)133:4(380)
-
-    """
+def rah_func(z_flt_dict, psi_z2, psi_z1, u_star, excess_res=0):
+    """"""
     rah = np.array(psi_z1, copy=True, ndmin=1)
     rah -= psi_z2
     rah += math.log(z_flt_dict[2] / z_flt_dict[1])
     rah /= 0.41
     rah /= u_star
+    rah += excess_res
     return rah
 
 
@@ -2000,23 +2431,25 @@ def psi_func(l, z_index, z):
     psi[l_mask] = psi_stable[l_mask]
 
     return psi
-    # return np.where((l > 0), psi_stable, psi_unstable)
 
 
-# The following equations are array specific and are separate from the
-# "calibration" functions above
-def dt_func(ts, a, b):
-    """
-
+def dt_func(dt_adjust_flag, ts_dem, a, b, ts_cold_threshold, ts_hot_threshold, dt_slope_factor=8):
+    """dT function
     Parameters
     ----------
-    ts : array_like
-        Surface temperature [K].  As described in [1]_, this should be the
+    ts_dem : array_like
+        Surface temperature [K].  As described in [1], this should be the
         delapsed surface temperature.
     a : float
         Calibration parameter.
     b : float
         Calibration parameter.
+    ts_cold_threshold: float
+        Surface temperature [K] threshold below cold pixel
+    ts_hot_threshold: float
+        Surface temperature [K] threshold above hot pixel
+    dt_slope_factor: float
+        Factor reducing the slope (b) of the dT function above and below the hot and cold pixel
 
     Returns
     -------
@@ -2032,11 +2465,22 @@ def dt_func(ts, a, b):
        Balance for Mapping Evapotranspiration with Internalized Calibration
        (METRIC)-Model. Journal of Irrigation and Drainage Engineering, 133(4).
        https://doi.org/10.1061/(ASCE)0733-9437(2007)133:4(380)
-
-    """
-    dt = np.copy(ts)
+    .. [2] "METRIC Applications Manual - Version 3.0"
+         Allen R.G., Trezza R., Tasumi M., Kjaersgaard J., (2014)"""
+    """"""
+    dt = np.copy(ts_dem)
     dt *= a
     dt += b
+    if dt_adjust_flag:
+        dt_adjust = ts_dem - ts_hot_threshold
+        dt_adjust *= (a / dt_slope_factor)
+        dt_adjust += (a * ts_hot_threshold + b)
+        dt_adjust_low = ts_dem - ts_cold_threshold
+        dt_adjust_low *= (a / dt_slope_factor)
+        dt_adjust_low += (a * ts_cold_threshold + b)
+        np.where(ts_dem > ts_hot_threshold, dt_adjust, dt)
+        np.where(ts_dem < ts_cold_threshold, dt_adjust_low, dt)
+
     return dt
 
 
@@ -2269,3 +2713,34 @@ def et_24_func(etr_24hr, etrf):
 
     """
     return etr_24hr * etrf
+
+
+def calculate_et_ef(lat, doy, rn_daily, rn, g, et_inst):
+    """Compute the ET using the evaporative fraction.
+
+    .. topic:: References
+
+        - "METRIC Applications Manual - Version 3.0"
+          Allen R.G., Trezza R., Tasumi M., Kjaersgaard J., (2014)
+
+    """
+
+    effective_daylight_weight = 0.5
+    num_daylight_hrs = daylight_hours_func(lat, doy)
+
+    # Allen et al. (2014)
+    et24_non_ag = ne.evaluate(
+        'et_inst * (num_daylight_hrs * (1.0 - effective_daylight_weight) + 24.0 * effective_daylight_weight)\
+         / (rn - g) * (rn_daily - g * (1.0 - effective_daylight_weight))',
+        {
+            'et_inst': et_inst,
+            'num_daylight_hrs': num_daylight_hrs,
+            'effective_daylight_weight': effective_daylight_weight,
+            'rn': rn,
+            'g': g,
+            'rn_daily': rn_daily
+        }
+    )
+    del rn, g, rn_daily
+
+    return et24_non_ag
