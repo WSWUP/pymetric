@@ -34,8 +34,9 @@ from numpy import ctypeslib
 from osgeo import gdal, ogr, osr
 import pandas as pd
 
-import et_common
 import interpolate_support as interp
+
+import et_common
 import python_common as dripy
 
 np.seterr(invalid='ignore')
@@ -106,6 +107,9 @@ def metric_interpolate(year_ws, ini_path, mc_iter=None, bs=None,
     zones_name_field = dripy.read_param('zones_name_field', 'FID', config)
     # zones_buffer = dripy.read_param('zones_buffer', 0.0, config)
     zones_buffer = 0
+    nlcd_path = dripy.read_param('nlcd_input_path', None, config)
+    landuse_list = dripy.read_param('landuse_types', [81, 82], config)
+    landuse_list = list(map(int, landuse_list))
     output_snap = dripy.read_param('zones_snap', (0, 0), config)
     output_cs = dripy.read_param('zones_cellsize', 30.0, config)
     # output_proj = dripy.read_param('zones_proj', None, config)
@@ -113,6 +117,7 @@ def metric_interpolate(year_ws, ini_path, mc_iter=None, bs=None,
     etrf_input_ws = dripy.read_param('etrf_input_folder', None, config)
     etr_input_ws = config.get('INPUTS', 'etr_input_folder')
     etr_input_re = re.compile(config.get('INPUTS', 'etr_input_re'))
+    use_bias_corrected_etr_flag = config.get('INPUTS', 'use_bias_corrected_etr_flag')
     ppt_input_ws = config.get('INPUTS', 'ppt_input_folder')
     ppt_input_re = re.compile(config.get('INPUTS', 'ppt_input_re'))
     footprint_path = config.get('INPUTS', 'footprint_path')
@@ -220,6 +225,10 @@ def metric_interpolate(year_ws, ini_path, mc_iter=None, bs=None,
 
     # Process control flags
     calc_flags = dict()
+
+    # Calc by land cover
+    calc_flags['calc_by_land_cover'] = dripy.read_param(
+        'calc_by_land_cover', True, config)
 
     # Zones
     calc_flags['daily_zones_table'] = dripy.read_param(
@@ -727,12 +736,39 @@ def metric_interpolate(year_ws, ini_path, mc_iter=None, bs=None,
     logging.debug('  Mask extent: {}'.format(env.mask_extent))
     logging.debug('  Mask geo: {}'.format(env.mask_geo))
 
+    if calc_flags['calc_by_land_cover']:
+        nlcd_ds = gdal.Open(nlcd_path, 0)
+        input_osr = drigo.raster_ds_osr(nlcd_ds)
+        nlcd_proj = drigo.osr_proj(input_osr)
+        nlcd_cs = drigo.raster_ds_cellsize(nlcd_ds, x_only=True)
+        nlcd_extent = drigo.raster_ds_extent(nlcd_ds)
+
+        nlcd_array = et_common.clip_project_raster_func(nlcd_path, 1, gdal.GRA_NearestNeighbour,
+                             input_osr, nlcd_cs, nlcd_extent,
+                             env.snap_osr, output_cs, env.mask_extent)
+        nlcd_ds = None
+        nlcd_shape = nlcd_array.shape
+
+        # Get mask extent in the original spat. ref.
+        # output_extent = drigo.project_extent(
+        #     mask_extent, mask_osr, input_osr, mask_cs)
+        # output_extent.adjust_to_snap('EXPAND', input_x, input_y, input_cs)
+        # output_rows, output_cols = output_extent.shape(cs=input_cs)
+
+        # Project to output spatial reference, cellsize, and extent
+        # ke = drigo.project_array(
+        #     # ke, gdal.GRA_NearestNeighbour,
+        #     ke, gdal.GRA_Bilinear,
+        #     awc_osr, awc_cs, awc_extent,
+        #     output_osr, output_cs, output_extent,
+        #     output_nodata=None)
+
     # ETr
     if calc_flags['etr']:
         etr_array, etr_osr, etr_cs, etr_extent = interp.load_year_array_func(
             etr_input_ws, etr_input_re, etr_date_list,
             env.snap_osr, env.cellsize, env.mask_extent,
-            etr_name, return_geo_array=True)
+            etr_name, return_geo_array=True, bias_corrected_etr=use_bias_corrected_etr_flag)
         if np.all(np.isnan(etr_array)):
             logging.error(
                 '\nERROR: The Reference ET array is all nodata, exiting\n')
@@ -752,7 +788,7 @@ def metric_interpolate(year_ws, ini_path, mc_iter=None, bs=None,
         ppt_array, ppt_osr, ppt_cs, ppt_extent = interp.load_year_array_func(
             ppt_input_ws, ppt_input_re, ppt_date_list,
             env.snap_osr, env.cellsize, env.mask_extent,
-            ppt_name, return_geo_array=True)
+            ppt_name, return_geo_array=True, bias_corrected_etr=use_bias_corrected_etr_flag)
         if np.all(np.isnan(ppt_array)):
             logging.error(
                 '\nERROR: The precipitation array is all nodata, exiting\n')
@@ -926,6 +962,7 @@ def metric_interpolate(year_ws, ini_path, mc_iter=None, bs=None,
             etr_shmem, etr_shape, drigo.osr_proj(etr_osr), etr_cs, etr_extent,
             ppt_shmem, ppt_shape, drigo.osr_proj(ppt_osr), ppt_cs, ppt_extent,
             awc_shmem, awc_shape, drigo.osr_proj(awc_osr), awc_cs, awc_extent,
+            nlcd_array, nlcd_shape, nlcd_proj, nlcd_cs, nlcd_extent,
             etrf_raster, ndvi_raster, swb_adjust_dict, etrf_ndvi_dict,
             zones_path, zones_fid_list, zones_mask, zones_buffer,
             usable_scene_cnt, mosaic_method, fill_method, interp_method,
@@ -1356,6 +1393,7 @@ def block_func(block_rows, block_cols, block_extent, block_tile_list,
                etr_shmem, etr_shape, etr_proj, etr_cs, etr_extent,
                ppt_shmem, ppt_shape, ppt_proj, ppt_cs, ppt_extent,
                awc_shmem, awc_shape, awc_proj, awc_cs, awc_extent,
+               nlcd_array, nlcd_shape, nlcd_proj, nlcd_cs, nlcd_extent,
                etrf_raster, ndvi_raster, swb_adjust_dict, etrf_ndvi_dict,
                zones_path, zones_fid_list, zones_mask, zones_buffer,
                usable_image_count=2, mosaic_method='mean',
@@ -1410,6 +1448,16 @@ def block_func(block_rows, block_cols, block_extent, block_tile_list,
             etrf_array[:, clear_mask] = np.nan
             etrf_mask[:, clear_mask] = False
         del clear_mask, count_array
+
+    if calc_flags['calc_by_land_cover']:
+        nlcd_input_array = nlcd_array
+        nlcd_input_array.shape = nlcd_shape
+
+        # Project nlcd to block
+        nlcd_array = drigo.project_array(
+            nlcd_input_array, gdal.GRA_NearestNeighbour,
+            drigo.proj_osr(nlcd_proj), nlcd_cs, nlcd_extent,
+            drigo.proj_osr(snap_proj), cellsize, block_extent)
 
     if calc_flags['ndvi']:
         ndvi_array = interp.load_etrf_func(
@@ -1702,14 +1750,16 @@ def block_func(block_rows, block_cols, block_extent, block_tile_list,
             zone_array = drigo.raster_ds_to_array(
                 zones_raster_ds, return_nodata=False)
             zone_mask = (zone_array > 0) & count_mask
-            if np.any(zone_mask):
+            # Add nlcd land use type to zones mask
+            final_mask = zone_mask & ((nlcd_array == 81) | (nlcd_array == 82))
+            if np.any(final_mask):
                 block_zone_stats.append(
-                    [zone_fid, np.sum(zone_mask),
-                     np.nanmean(ndvi_array[:, zone_mask], axis=1),
-                     np.nanmean(etrf_array[:, zone_mask], axis=1),
-                     np.nanmean(etr_array[:, zone_mask], axis=1),
-                     np.nanmean(ppt_array[:, zone_mask], axis=1)])
-            del zone_array, zone_mask
+                    [zone_fid, np.sum(final_mask),
+                     np.nanmean(ndvi_array[:, final_mask], axis=1),
+                     np.nanmean(etrf_array[:, final_mask], axis=1),
+                     np.nanmean(etr_array[:, final_mask], axis=1),
+                     np.nanmean(ppt_array[:, final_mask], axis=1)])
+            del zone_array, final_mask
         zones_ftr_ds = None
         zones_raster_ds = None
     return pickle.dumps(block_zone_stats, protocol=-1)
