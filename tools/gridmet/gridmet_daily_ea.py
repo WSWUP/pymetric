@@ -125,10 +125,16 @@ def main(start_dt, end_dt, netcdf_ws, ancillary_ws, output_ws,
         gridmet_full_geo, gridmet_geo, cs=gridmet_cs)
     g_rows, g_cols = gridmet_extent.shape(cs=gridmet_cs)
 
+    # row_a, row_b = 585 - g_j, 585 - (g_j + g_rows),
+    # col_a, col_b = g_i + g_cols, g_i,
+
     # Flip row indices since GRIDMET arrays are flipped up/down
     # Hard coding GRIDMET row count for now
-    row_a, row_b = 585 - (g_j + g_rows), 585 - g_j,
-    col_a, col_b = g_i, g_i + g_cols
+
+    # Flipping is used for other GRIDMET netcdfs but ea appears to not need (
+    # TODO: Why is this? Still seems flipped but ouputting data now
+    row_a, row_b = g_j, (g_j + g_rows),
+    col_a, col_b = g_i, (g_i + g_cols),
 
     # Read the elevation array
     elev_array = drigo.raster_to_array(
