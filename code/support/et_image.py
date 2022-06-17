@@ -504,6 +504,8 @@ class Image:
         # Hourly/daily weather rasters
         self.metric_ea_raster = os.path.join(
             self.support_ws, 'ea_metric' + r_fmt)
+        self.metric_ea_24hr_raster = os.path.join(
+            self.support_ws, 'ea_24hr_metric' + r_fmt)
         self.metric_wind_raster = os.path.join(
             self.support_ws, 'wind_metric' + r_fmt)
         self.metric_etr_raster = os.path.join(
