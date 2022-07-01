@@ -16,7 +16,7 @@ import sys
 import python_common as dripy
 
 
-def main(ini_path, tile_list=None, blocksize=None, stats_flag=True,
+def main(ini_path, tile_list=None, blocksize=None, stats_flag=True, adj_flag=False, adj_file=None,
          overwrite_flag=False, mp_procs=1, delay=0,
          debug_flag=False, new_window_flag=False):
     """Run METRIC Model 2 for all images
@@ -33,6 +33,8 @@ def main(ini_path, tile_list=None, blocksize=None, stats_flag=True,
         parameter will be used instead of the value in the INI file.
     stats_flag : bool, optional
         If True, compute raster statistics (the default is True).
+    adj_flag : bool, optional
+        If True, read in file with hot cold kc adjustments (the default is False).
     overwrite_flag : bool, optional
         If True, overwrite existing files (the default is False).
     mp_procs : int, optional
@@ -157,6 +159,8 @@ def main(ini_path, tile_list=None, blocksize=None, stats_flag=True,
             call_args.append('--overwrite')
         if debug_flag:
             call_args.append('--debug')
+        if adj_flag:
+            call_args.extend(['--adj_file', str(adj_file)])
 
         # Run METRIC Model 2 for each Monte Carlo iteration
         for image_id in image_id_list:
@@ -215,6 +219,12 @@ def arg_parse():
     parser.add_argument(
         '--window', default=False, action="store_true",
         help='Open each process in a new terminal (windows only)')
+    parser.add_argument(
+        '-adj_flag', '--adj_flag', default=False, action="store_true",
+        help='Scene adjustment flag')
+    parser.add_argument(
+        '-adj', '--adj_file', default=None, type=dripy.arg_valid_file,
+        help='Scene adjustment input csv file', metavar='FILE')
     args = parser.parse_args()
 
     # Default is to build statistics (opposite of --no_stats default=False)
@@ -240,4 +250,5 @@ if __name__ == '__main__':
     main(ini_path=args.ini, tile_list=args.path_row, blocksize=args.blocksize,
          stats_flag=args.stats, overwrite_flag=args.overwrite,
          mp_procs=args.multiprocessing, delay=args.delay,
-         debug_flag=args.loglevel==logging.DEBUG, new_window_flag=args.window)
+         debug_flag=args.loglevel==logging.DEBUG, new_window_flag=args.window,
+         adj_flag=args.adj_flag, adj_file=args.adj_file)
