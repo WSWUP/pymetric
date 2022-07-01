@@ -108,8 +108,6 @@ def metric_interpolate(year_ws, ini_path, mc_iter=None, bs=None,
     # zones_buffer = dripy.read_param('zones_buffer', 0.0, config)
     zones_buffer = 0
     nlcd_path = dripy.read_param('nlcd_input_path', None, config)
-    landuse_list = dripy.read_param('landuse_types', [81, 82], config)
-    landuse_list = list(map(int, landuse_list))
     output_snap = dripy.read_param('zones_snap', (0, 0), config)
     output_cs = dripy.read_param('zones_cellsize', 30.0, config)
     # output_proj = dripy.read_param('zones_proj', None, config)
@@ -229,6 +227,10 @@ def metric_interpolate(year_ws, ini_path, mc_iter=None, bs=None,
     # Calc by land cover
     calc_flags['calc_by_land_cover'] = dripy.read_param(
         'calc_by_land_cover', True, config)
+    if calc_flags['calc_by_land_cover']:
+        # TODO: List is not correctly applied and used to mask for stats calculation, just hardcoded for 81, 82
+        landuse_list = dripy.read_param('landuse_types', [81, 82], config)
+        landuse_list = list(map(int, landuse_list))
 
     # Zones
     calc_flags['daily_zones_table'] = dripy.read_param(
