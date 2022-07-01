@@ -1213,8 +1213,15 @@ def ts_dem_dry_func(ts_dem_cold, ts_dem_hot, kc_cold, kc_hot):
 
 
 def calculate_lst_terrain_general(lst_tall_veg, slope, aspect, sun_azimuth, temp_diff=10.0):
+    """Compute the LST temperature of opposing shaded slopes.
 
-    # Calculating the factor k, 0, 2PI = facing sun, PI=away from sun. JK April 29 2009
+    .. topic:: References
+
+        - "METRIC Applications Manual - Version 3.0"
+          Allen R.G., Trezza R., Tasumi M., Kjaersgaard J., (2014)
+
+    """
+    # Calculating the factor k, 0, 2PI = facing sun, PI=away from sun.
 
     mem_1 = (aspect - sun_azimuth) * math.pi / 180
     mem_1 = np.where(aspect < sun_azimuth, (360 - sun_azimuth + aspect) * math.pi / 180, mem_1)
@@ -1228,7 +1235,19 @@ def calculate_lst_terrain_general(lst_tall_veg, slope, aspect, sun_azimuth, temp
 
 
 def sin_beta_daily(lat, doy):
-    # Sin of the angle of the sun above the horizon (D.5 and Eqn 62 from ASCE Ref ET Allen, 2005)
+    """ Daily sin of the angle of the sun above the horizon (D.5 and Eqn 62 from ASCE Ref ET Allen, 2005)
+
+    .. topic:: References
+
+    ASCE-EWRI, 2005.
+    The ASCE Standardized Reference Evapotranspiration Equation.
+    ASCE, Reston, Virginia.
+
+    Allen, R. G., Trezza, R., & Tasumi, M. (2006).
+    Analytical integrated functions for daily solar radiation on slopes.
+    Agricultural and Forest Meteorology, 139(1-2), 55-73.
+    """
+
     sin_beta_24 = np.sin(
         0.85 + 0.3 * lat * np.sin(et_common.doy_fraction_func(doy) - 1.39435) -
         0.42 * np.power(lat, 2))
@@ -1260,6 +1279,16 @@ def rso_24_func_flat(lat, doy, pair, ea, ra):
 
 
 def rso_24_func_mountain(rso_24_flat, ra_24, lat, slope, doy, pair, ea):
+    """Compute the 24 hr clear sky solar radiation for a sloping surface
+
+    .. topic:: References
+
+    Allen, R. G., Trezza, R., & Tasumi, M. (2006).
+    Analytical integrated functions for daily solar radiation on slopes.
+    Agricultural and Forest Meteorology, 139(1-2), 55-73.
+
+
+    """
 
     # Convert slope (degrees to radians for calculation)
     slope = slope * (math.pi / 180.0)
@@ -1320,7 +1349,12 @@ def g_water_func(rn, acq_doy):
 
 
 def excess_res_func(u3):
-    """
+    """Excess resistance function that can be applied for shrub and grassland
+
+         .. topic:: References
+
+         - "METRIC Applications Manual - Version 3.0"
+           Allen R.G., Trezza R., Tasumi M., Kjaersgaard J., (2014)
 
     Excess res. needs to be recalculated if additional wind is applied
     """
@@ -1336,6 +1370,13 @@ def excess_res_func(u3):
 
 def ra_daily_func(lat, doy):
     """Daily extraterrestrial radiation [W m -2]
+
+    ..topic: References
+
+    Allen, R. G., Trezza, R., & Tasumi, M. (2006).
+    Analytical integrated functions for daily solar radiation on slopes.
+    Agricultural and Forest Meteorology, 139(1-2), 55-73.
+
 
     Parameters
     ----------
@@ -1365,7 +1406,14 @@ def ra_daily_func(lat, doy):
 
 
 def ra_daily_mountain_func(lat, doy, slope, aspect, ra_min=0.1):
-    """Daily extraterrestrial radiation [W m-2]
+    """Daily extraterrestrial radiation for mountain terrain [W m-2]
+
+    .. topic:: References
+
+    Allen, R. G., Trezza, R., & Tasumi, M. (2006).
+    Analytical integrated functions for daily solar radiation on slopes.
+    Agricultural and Forest Meteorology, 139(1-2), 55-73.
+
 
     Parameters
     ----------
@@ -1381,12 +1429,6 @@ def ra_daily_mountain_func(lat, doy, slope, aspect, ra_min=0.1):
     Returns
     -------
     ndarray
-
-    Notes
-    -----
-    This function  is only being called by et_numpy.rn_24_func().
-    That function could be changed to use the refet.calcs._ra_daily() function
-    instead, in which case this function could be removed.
 
     """
 
@@ -1521,6 +1563,11 @@ def calculate_radiation_lw_incoming_mountain(
     '''
     Computes the incoming longwave radiation incoming adjusting for terrain.
     Slope in degrees.
+
+           .. topic:: References
+
+       - "METRIC Applications Manual - Version 3.0"
+         Allen R.G., Trezza R., Tasumi M., Kjaersgaard J., (2014)"""
     '''
 
     RLin = ne.evaluate(
@@ -1579,12 +1626,18 @@ def rl_out_func(rl_in, ts, em_0):
 
 def rso_instant_mountain_func(rso_inst_flat, lat, lon, slope, cos_theta, cos_theta_mountain, pair, ea, dr, doy, hour):
 
-    """Instantaneous clearsky solar radiation adjusted for slope and other terrain effects
+    """Instantaneous clear-sky solar radiation adjusted for slope and other terrain effects
 
        .. topic:: References
 
        - "METRIC Applications Manual - Version 3.0"
-         Allen R.G., Trezza R., Tasumi M., Kjaersgaard J., (2014)"""
+         Allen R.G., Trezza R., Tasumi M., Kjaersgaard J., (2014)
+
+       - Allen, R. G., Trezza, R., & Tasumi, M. (2006).
+         Analytical integrated functions for daily solar radiation on slopes.
+         Agricultural and Forest Meteorology, 139(1-2), 55-73.
+
+         """
 
     slope = slope * (math.pi / 180)
 
@@ -2741,6 +2794,5 @@ def calculate_et_ef(lat, doy, rn_daily, rn, g, et_inst):
             'rn_daily': rn_daily
         }
     )
-    del rn, g, rn_daily
 
     return et24_non_ag
