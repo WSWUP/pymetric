@@ -107,6 +107,7 @@ def metric_model1(image_ws, ini_path, bs=None, stats_flag=None,
     raster_dict['lat'] = os.path.join(image.support_ws, 'latitude' + r_fmt)
     raster_dict['lon'] = os.path.join(image.support_ws, 'longitude' + r_fmt)
     raster_dict['cos_theta'] = os.path.join(image.support_ws, 'cos_theta' + r_fmt)
+    raster_dict['cos_theta_flat'] = os.path.join(image.support_ws, 'cos_theta_flat' + r_fmt)
     raster_dict['albedo_sur'] = image.albedo_sur_raster
     raster_dict['tau'] = os.path.join(image_ws, 'transmittance' + r_fmt)
     raster_dict['ea'] = image.metric_ea_raster
@@ -143,6 +144,7 @@ def metric_model1(image_ws, ini_path, bs=None, stats_flag=None,
     save_dict['lat'] = dripy.read_param('save_mountain_rasters_flag', False, config)
     save_dict['lon'] = dripy.read_param('save_mountain_rasters_flag', False, config)
     save_dict['cos_theta'] = dripy.read_param('save_cos_theta_raster_flag', True, config)
+    save_dict['cos_theta_flat'] = dripy.read_param('save_cos_theta_raster_flag', True, config)
 
     # You can only save Tasumi, not LEDAPS, at-surface reflectance
     save_dict['refl_sur_tasumi'] = dripy.read_param('save_refl_sur_raster_flag', True, config)
@@ -255,7 +257,10 @@ def metric_model1(image_ws, ini_path, bs=None, stats_flag=None,
     if calc_dict['ts_dem']:
         calc_dict['ts'] = True
         calc_dict['dem'] = True
-        lapse_rate_flt = dripy.read_param('lapse_rate', 6.5, config)
+        lapse_flat_flt = dripy.read_param('lapse_flat', 6.5, config, 'INPUTS')
+        lapse_mtn_flt = dripy.read_param('lapse_mtn', 10.0, config, 'INPUTS')
+        lapse_elev_flt = float(config.get('INPUTS', 'lapse_elev'))
+        datum_flt = float(config.get('INPUTS', 'datum'))
     if calc_dict['ts']:
         calc_dict['rc'] = True
     if calc_dict['rc']:
@@ -394,7 +399,7 @@ def metric_model1(image_ws, ini_path, bs=None, stats_flag=None,
     if calc_dict['cos_theta']:
         logging.debug('\nCos(theta)')
         # Get mask extent center in decimal degrees
-        lon_center, lat_center = drigo.project_point(
+        lat_center, lon_center = drigo.project_point(
             env.mask_extent.center(), env.snap_osr, env.snap_gcs_osr)
         cos_theta_centroid_flt = et_common.cos_theta_centroid_func(
             image.acq_time, image.acq_doy, image.dr,
@@ -403,57 +408,57 @@ def metric_model1(image_ws, ini_path, bs=None, stats_flag=None,
         logging.debug('  Centroid: {}'.format(cos_theta_centroid_flt))
 
     # Spatial/Mountain model input rasters
-    if calc_dict['cos_theta']:
-        cos_theta_model_list = ['SOLAR', 'CENTROID', 'SPATIAL', 'MOUNTAIN']
-        cos_theta_model = dripy.read_param(
-            'cos_theta_model', 'CENTROID', config).upper()
-        if cos_theta_model not in cos_theta_model_list:
-            logging.error(
-                ('\nERROR: The Cos(theta) model {} is not a valid option.' +
-                 '\nERROR: Set cos_theta_model to {}').format(
-                    cos_theta_model, ', '.join(cos_theta_model_list)))
-            return False
-        # I can't move these up since I have to read cos_theta_model first
-        if cos_theta_model == 'MOUNTAIN':
-            calc_dict['lon'] = True
-            calc_dict['lat'] = True
-            calc_dict['slp'] = True
-            calc_dict['asp'] = True
-        elif cos_theta_model == 'SPATIAL':
-            calc_dict['lon'] = True
-            calc_dict['lat'] = True
-            calc_dict['slp'] = False
-            calc_dict['asp'] = False
-        else:
-            calc_dict['lon'] = False
-            calc_dict['lat'] = False
-            calc_dict['slp'] = False
-            calc_dict['asp'] = False
-
-    # Rasters can be read from local copy or clipped from remote copy
-    for key, raster_name in [
-            ['dem', 'dem_raster'],
-            ['landuse', 'landuse_raster'],
-            ['slp', 'slope_raster'],
-            ['asp', 'aspect_raster'],
-            ['lat', 'latitude_raster'],
-            ['lon', 'longitude_raster']]:
-        # Skip if raster is not needed and reset save flag
-        if not calc_dict[key]:
-            save_dict[key] = False
-        # Read local raster if possible
-        elif (os.path.isfile(raster_dict[key]) and
-                drigo.raster_path_extent(raster_dict[key]) == env.mask_extent):
-            raster_dict[key + '_full'] = raster_dict[key]
-            save_dict[key] = False
-        # Otherwise try to read read full/external path
-        else:
-            raster_dict[key + '_full'] = config.get('INPUTS', raster_name)
-            if not os.path.isfile(raster_dict[key + '_full']):
-                logging.error(
-                    '\nERROR: The raster path {} is not valid'.format(
-                        raster_dict[key + '_full']))
-                return False
+    # if calc_dict['cos_theta']:
+    #     cos_theta_model_list = ['SOLAR', 'CENTROID', 'SPATIAL', 'MOUNTAIN']
+    #     cos_theta_model = dripy.read_param(
+    #         'cos_theta_model', 'CENTROID', config).upper()
+    #     if cos_theta_model not in cos_theta_model_list:
+    #         logging.error(
+    #             ('\nERROR: The Cos(theta) model {} is not a valid option.' +
+    #              '\nERROR: Set cos_theta_model to {}').format(
+    #                 cos_theta_model, ', '.join(cos_theta_model_list)))
+    #         return False
+    #     # I can't move these up since I have to read cos_theta_model first
+    #     if cos_theta_model == 'MOUNTAIN':
+    #         calc_dict['lon'] = True
+    #         calc_dict['lat'] = True
+    #         calc_dict['slp'] = True
+    #         calc_dict['asp'] = True
+    #     elif cos_theta_model == 'SPATIAL':
+    #         calc_dict['lon'] = True
+    #         calc_dict['lat'] = True
+    #         calc_dict['slp'] = False
+    #         calc_dict['asp'] = False
+    #     else:
+    #         calc_dict['lon'] = False
+    #         calc_dict['lat'] = False
+    #         calc_dict['slp'] = False
+    #         calc_dict['asp'] = False
+    #
+    # # Rasters can be read from local copy or clipped from remote copy
+    # for key, raster_name in [
+    #         ['dem', 'dem_raster'],
+    #         ['landuse', 'landuse_raster'],
+    #         ['slp', 'slope_raster'],
+    #         ['asp', 'aspect_raster'],
+    #         ['lat', 'latitude_raster'],
+    #         ['lon', 'longitude_raster']]:
+    #     # Skip if raster is not needed and reset save flag
+    #     if not calc_dict[key]:
+    #         save_dict[key] = False
+    #     # Read local raster if possible
+    #     elif (os.path.isfile(raster_dict[key]) and
+    #             drigo.raster_path_extent(raster_dict[key]) == env.mask_extent):
+    #         raster_dict[key + '_full'] = raster_dict[key]
+    #         save_dict[key] = False
+    #     # Otherwise try to read read full/external path
+    #     else:
+    #         raster_dict[key + '_full'] = config.get('INPUTS', raster_name)
+    #         if not os.path.isfile(raster_dict[key + '_full']):
+    #             logging.error(
+    #                 '\nERROR: The raster path {} is not valid'.format(
+    #                     raster_dict[key + '_full']))
+    #             return False
 
     # Landuse type
     if calc_dict['landuse']:
@@ -469,75 +474,73 @@ def metric_model1(image_ws, ini_path, bs=None, stats_flag=None,
                     landuse_type, ', '.join(landuse_type_list)))
             return False
 
-    # # Spatial/Mountain model input rasters
-    # if calc_dict['cos_theta']:
-    #     cos_theta_model_list = ['SOLAR', 'CENTROID', 'SPATIAL', 'MOUNTAIN']
-    #     cos_theta_model = dripy.read_param('cos_theta_model', 'CENTROID', config).upper()
-    #     if cos_theta_model not in cos_theta_model_list:
-    #          logging.error(
-    #              ('\nERROR: The Cos(theta) model {} is not a valid option.' +
-    #               '\nERROR: Set cos_theta_model to {}').format(
-    #              cos_theta_model, ', '.join(cos_theta_model_list)))
-    #          return False
-    #     # I can't move these up since I have to read cos_theta_model first
-    #     if cos_theta_model in ['SPATIAL', 'MOUNTAIN']:
-    #          calc_dict['lon'] = True
-    #          calc_dict['lat'] = True
-    #     if cos_theta_model == 'MOUNTAIN':
-    #          calc_dict['slp'] = True
-    #          calc_dict['asp'] = True
-    #     for local_key, full_key, raster_name in [
-    #          ['slp', 'slp_full', 'slope_raster'],
-    #          ['asp', 'asp_full', 'aspect_raster'],
-    #          ['lat', 'lat_full', 'latitude_raster'],
-    #          ['lon', 'lon_full', 'longitude_raster']]:
-    #          # Check that the output/sub rasters exist
-    #          # Check that they have the correct shape
-    #          if calc_dict[local_key]:
-    #              if (save_dict[local_key] or
-    #                  not os.path.isfile(raster_dict[local_key]) or
-    #                  drigo.raster_path_extent(raster_dict[local_key]) != env.mask_extent):
-    #                  save_dict[local_key] = True
-    #                  raster_dict[full_key] = config.get('INPUTS', raster_name)
-    #                  # Check that the input rasters exist
-    #                  if not os.path.isfile(raster_dict[full_key]):
-    #                      logging.error(
-    #                          '\nERROR: The raster path {} is not valid'.format(
-    #                              raster_dict[full_key]))
-    #                      return False
-    #              # Otherwise script reads from "full" path,
-    #              #   so set full path to local path
-    #              else:
-    #                  raster_dict[full_key] = raster_dict[local_key]
-    # # Terrain model dependent parameters
-    # # if True:
-    # #     terrain_model_list = ['FLAT', 'MOUNTAIN']
-    # #     terrain_model = dripy.read_param('terrain_model', 'FLAT', config).upper()
-    # #     if terrain_model not in terrain_model_list:
-    # #         logging.error(
-    # #             ('\nERROR: The terrain model {} is not a valid option.' +
-    # #              '\nERROR: Set terrain_model to FLAT or MOUNTAIN').format(
-    # #             terrain_model))
-    # #         return False
+    # Spatial/Mountain model input rasters
+    if calc_dict['cos_theta']:
+        cos_theta_model_list = ['SOLAR', 'CENTROID', 'SPATIAL', 'MOUNTAIN']
+        cos_theta_model = dripy.read_param('cos_theta_model', 'CENTROID', config).upper()
+        if cos_theta_model not in cos_theta_model_list:
+             logging.error(
+                 ('\nERROR: The Cos(theta) model {} is not a valid option.' +
+                  '\nERROR: Set cos_theta_model to {}').format(
+                 cos_theta_model, ', '.join(cos_theta_model_list)))
+             return False
+        # I can't move these up since I have to read cos_theta_model first
+        if cos_theta_model in ['SPATIAL', 'MOUNTAIN']:
+             calc_dict['lon'] = True
+             calc_dict['lat'] = True
+        if cos_theta_model == 'MOUNTAIN':
+             calc_dict['slp'] = True
+             calc_dict['asp'] = True
+        for local_key, full_key, raster_name in [
+             ['slp', 'slp_full', 'slope_raster'],
+             ['asp', 'asp_full', 'aspect_raster']]:
+             # Check that the output/sub rasters exist
+             # Check that they have the correct shape
+             if calc_dict[local_key]:
+                 if (save_dict[local_key] or
+                     not os.path.isfile(raster_dict[local_key]) or
+                     drigo.raster_path_extent(raster_dict[local_key]) != env.mask_extent):
+                     # save_dict[local_key] = True
+                     raster_dict[full_key] = config.get('INPUTS', raster_name)
+                     # Check that the input rasters exist
+                     if not os.path.isfile(raster_dict[full_key]):
+                         logging.error(
+                             '\nERROR: The raster path {} is not valid'.format(
+                                 raster_dict[full_key]))
+                         return False
+                 # Otherwise script reads from "full" path,
+                 #   so set full path to local path
+                 else:
+                     raster_dict[full_key] = raster_dict[local_key]
+    # Terrain model dependent parameters
+    # if True:
+    #     terrain_model_list = ['FLAT', 'MOUNTAIN']
+    #     terrain_model = dripy.read_param('terrain_model', 'FLAT', config).upper()
+    #     if terrain_model not in terrain_model_list:
+    #         logging.error(
+    #             ('\nERROR: The terrain model {} is not a valid option.' +
+    #              '\nERROR: Set terrain_model to FLAT or MOUNTAIN').format(
+    #             terrain_model))
+    #         return False
     # # For elevation rasters, calc means it will be read locally
     # #   save means it will be extracted from remote location first
 
     # # DEM
-    # if calc_dict['dem']:
-    #     # Get the input file DEM raster path if needed
-    #     if (save_dict['dem'] or
-    #         not os.path.isfile(raster_dict['dem']) or
-    #         drigo.raster_path_extent(raster_dict['dem']) != env.mask_extent):
-    #         raster_dict['dem_full'] = config.get('INPUTS','dem_raster')
-    #         if not os.path.isfile(raster_dict['dem_full']):
-    #             logging.error(
-    #                 '\nERROR: The dem_raster path {} is not valid'.format(
-    #                     raster_dict['dem_full']))
-    #             return False
-    #     # Otherwise script reads from "full" path,
-    #     #   so set full path to local path
-    #     else:
-    #         raster_dict['dem_full'] = raster_dict['dem']
+    if calc_dict['dem']:
+        # Get the input file DEM raster path if needed
+        if (save_dict['dem'] or
+            not os.path.isfile(raster_dict['dem']) or
+            drigo.raster_path_extent(raster_dict['dem']) != env.mask_extent):
+            raster_dict['dem_full'] = config.get('INPUTS','dem_raster')
+            if not os.path.isfile(raster_dict['dem_full']):
+                logging.error(
+                    '\nERROR: The dem_raster path {} is not valid'.format(
+                        raster_dict['dem_full']))
+                return False
+        # Otherwise script reads from "full" path,
+        #   so set full path to local path
+        else:
+            raster_dict['dem_full'] = raster_dict['dem']
     #
     # # Landuse
     # if calc_dict['landuse']:
@@ -670,36 +673,42 @@ def metric_model1(image_ws, ini_path, bs=None, stats_flag=None,
         if calc_dict['landuse']:
             del landuse_array, landuse_nodata
 
+
         # Mountain rasters, and landuse by block
         if calc_dict['slp']:
             slope_array, slope_nodata = drigo.raster_to_array(
-                raster_dict['slp'], 1, block_extent, return_nodata=True)
+                raster_dict['slp_full'], 1, block_extent, return_nodata=True)
             slope_array[block_nodata_mask] = slope_nodata
         if calc_dict['asp']:
             aspect_array, aspect_nodata = drigo.raster_to_array(
-                raster_dict['asp'], 1, block_extent, return_nodata=True)
+                raster_dict['asp_full'], 1, block_extent, return_nodata=True)
             aspect_array[block_nodata_mask] = aspect_nodata
-        if calc_dict['lat']:
-            lat_array, lat_nodata = drigo.raster_to_array(
-                raster_dict['lat'], 1, block_extent, return_nodata=True)
-            lat_array[block_nodata_mask] = lat_nodata
-        if calc_dict['lon']:
-            lon_array, lon_nodata = drigo.raster_to_array(
-                raster_dict['lon'], 1, block_extent, return_nodata=True)
-            lon_array[block_nodata_mask] = lon_nodata
-        if save_dict['slp']:
-            drigo.block_to_raster(slope_array, raster_dict['slp'], b_i, b_j, bs)
-        if save_dict['asp']:
-            drigo.block_to_raster(aspect_array, raster_dict['asp'], b_i, b_j, bs)
-        if save_dict['lat']:
-            drigo.block_to_raster(lat_array, raster_dict['lat'], b_i, b_j, bs)
-        if save_dict['lon']:
-            drigo.block_to_raster(lon_array, raster_dict['lon'], b_i, b_j, bs)
+        # if calc_dict['lat']:
+        #     lat_array, lat_nodata = drigo.raster_to_array(
+        #         raster_dict['lat_full'], 1, block_extent, return_nodata=True)
+        #     lat_array[block_nodata_mask] = lat_nodata
+        # if calc_dict['lon']:
+        #     lon_array, lon_nodata = drigo.raster_to_array(
+        #         raster_dict['lon_full'], 1, block_extent, return_nodata=True)
+        #     lon_array[block_nodata_mask] = lon_nodata
+        # if save_dict['slp']:
+        #     drigo.block_to_raster(slope_array, raster_dict['slp'], b_i, b_j, bs)
+        # if save_dict['asp']:
+        #     drigo.block_to_raster(aspect_array, raster_dict['asp'], b_i, b_j, bs)
+        # if save_dict['lat']:
+        #     drigo.block_to_raster(lat_array, raster_dict['lat'], b_i, b_j, bs)
+        # if save_dict['lon']:
+        #     drigo.block_to_raster(lon_array, raster_dict['lon'], b_i, b_j, bs)
         # logging.info('Build Latitude/Longitude Rasters for Common Area')
         # lat_lon_array_func(lat_sub_raster, lon_sub_raster)
 
         # Cos(theta) by block
         if calc_dict['cos_theta']:
+            # Also build a simple cos(theta) array for refl_toa
+            cos_theta_toa_array = np.empty(
+                block_data_mask.shape).astype(np.float32)
+            cos_theta_toa_array[block_data_mask] = image.cos_theta_solar
+            cos_theta_toa_array[block_nodata_mask] = np.nan
             if cos_theta_model == 'MOUNTAIN':
                 # lon_array = drigo.raster_to_block(
                 #     raster_dict['lon_sub'],
@@ -713,26 +722,28 @@ def metric_model1(image_ws, ini_path, bs=None, stats_flag=None,
                 # aspect_array = drigo.raster_to_block(
                 #     raster_dict['aspect_sub'],
                 #     b_i, b_j, bs, return_nodata=False)
+                lat_array, lon_array = drigo.array_lat_lon_func(
+                    env.snap_osr, env.cellsize, block_extent,
+                    gcs_cs=0.005, radians_flag=True)
                 cos_theta_array = et_numpy.cos_theta_mountain_func(
                     image.acq_time, image.acq_doy, image.dr,
                     lon_array, lat_array, slope_array, aspect_array)
+
+                # Calculate flat cos theta using lat/lon for mountain model calculations
+                cos_theta_array_flat = et_numpy.cos_theta_spatial_func(
+                    image.acq_time, image.acq_doy, image.dr,
+                    lat_array, lon_array)
                 del lon_array, lat_array, slope_array, aspect_array
-                # Also build a simple cos(theta) array for refl_toa
-                cos_theta_toa_array = np.empty(
-                    block_data_mask.shape).astype(np.float32)
-                cos_theta_toa_array[block_data_mask] = image.cos_theta_solar
-                cos_theta_toa_array[block_nodata_mask] = np.nan
+
             elif cos_theta_model == 'SPATIAL':
-                # lon_array = drigo.raster_to_block(
-                #     raster_dict['lon_sub'],
-                #     b_i, b_j, bs, return_nodata=False)
-                # lat_array = drigo.raster_to_block(
-                #     raster_dict['lat_sub'],
-                #     b_i, b_j, bs, return_nodata=False)
+                lat_array, lon_array = drigo.array_lat_lon_func(
+                    env.snap_osr, env.cellsize, block_extent,
+                    gcs_cs=0.005, radians_flag=True)
                 cos_theta_array = et_numpy.cos_theta_spatial_func(
                     image.acq_time, image.acq_doy, image.dr,
-                    lon_array, lat_array)
+                    lat_array, lon_array)
                 del lon_array, lat_array
+
             elif cos_theta_model == 'CENTROID':
                 cos_theta_array = np.empty(
                     block_data_mask.shape).astype(np.float32)
@@ -747,14 +758,20 @@ def metric_model1(image_ws, ini_path, bs=None, stats_flag=None,
             drigo.block_to_raster(
                 cos_theta_array, raster_dict['cos_theta'],
                 b_i, b_j, bs)
-        if calc_dict['slp']:
-            del slope_array
-        if calc_dict['asp']:
-            del aspect_array
-        if calc_dict['lat']:
-            del lat_array
-        if calc_dict['lon']:
-            del lon_array
+            # Save spatial flat cos theta theta for mountain model calculations
+            if cos_theta_model == 'MOUNTAIN':
+                drigo.block_to_raster(
+                cos_theta_array_flat, raster_dict['cos_theta_flat'],
+                b_i, b_j, bs)
+
+        # if calc_dict['slp']:
+        #     del slope_array
+        # if calc_dict['asp']:
+        #     del aspect_array
+        # if calc_dict['lat']:
+        #     del lat_array
+        # if calc_dict['lon']:
+        #     del lon_array
 
         # Read in TOA Reflectance
         if calc_dict['refl_toa']:
@@ -1013,7 +1030,8 @@ def metric_model1(image_ws, ini_path, bs=None, stats_flag=None,
         #         raster_dict['ts'], b_i, b_j, bs, return_nodata=False)
         if calc_dict['ts_dem']:
             ts_dem_array = et_numpy.ts_delapsed_func(
-                ts_array, elev_array, datum_flt, lapse_rate_flt)
+                ts_array, elev_array, datum_flt,
+                lapse_elev_flt, lapse_flat_flt, lapse_mtn_flt)
         if save_dict['ts_dem']:
             drigo.block_to_raster(
                 ts_dem_array, raster_dict['ts_dem'], b_i, b_j, bs)
