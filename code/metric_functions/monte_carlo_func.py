@@ -328,6 +328,7 @@ def monte_carlo(image_ws, metric_ini_path, mc_ini_path, mc_iter=None,
 
     # Adjust Kc hot for soil water balance
     logging.info(break_line)
+    # TODO: Need to fix function so can work with bias corrected ETr file names
     cal_dict = auto_calibration.hot_kc_swb_adjust(
         cal_dict, hot_xy, env.snap_osr, image.acq_date, awc_path,
         etr_ws, etr_re, ppt_ws, ppt_re,
