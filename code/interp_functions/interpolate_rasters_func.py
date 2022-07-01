@@ -98,6 +98,8 @@ def metric_interpolate(year_ws, ini_path, mc_iter=None, bs=None,
     # Get input parameters
     logging.debug('  Reading Input File')
     year = config.getint('INPUTS', 'year')
+    keep_list_path = dripy.read_param(
+        'keep_list_path', '', config, 'INPUTS')
     output_folder_name = config.get('INPUTS', 'folder_name')
     study_area_path = config.get('INPUTS', 'study_area_path')
     study_area_mask_flag = dripy.read_param('study_area_mask', False, config)
@@ -531,6 +533,17 @@ def metric_interpolate(year_ws, ini_path, mc_iter=None, bs=None,
             for tile_year, tile_name in year_tile_list
             if tile_name in tile_list]
 
+    # Read keep/skip lists
+    if keep_list_path:
+        logging.debug('\nReading scene keep list')
+        with open(keep_list_path) as keep_list_f:
+            image_keep_list = keep_list_f.readlines()
+            image_keep_list = [image_id.strip() for image_id in image_keep_list
+                               if image_id_re.match(image_id.strip())]
+    else:
+        logging.debug('\nScene keep list not set in INI')
+        image_keep_list = []
+
     # Get scene lists for each year and path/row
     tile_image_dict = defaultdict(dict)
     for year, tile_name in year_tile_list:
@@ -540,8 +553,8 @@ def metric_interpolate(year_ws, ini_path, mc_iter=None, bs=None,
         image_id_list = [
             image_id for image_id in sorted(os.listdir(tile_ws))
             if (image_id_re.match(image_id) and
-                os.path.isdir(os.path.join(tile_ws, image_id)))]
-        #         (image_keep_list and image_id in image_keep_list))]
+                os.path.isdir(os.path.join(tile_ws, image_id))) and
+                (image_keep_list and image_id in image_keep_list)]
         image_id_list = [
             image_id for image_id in image_id_list
             if ((use_landsat4_flag and image_id[:4] == 'LT04') or
