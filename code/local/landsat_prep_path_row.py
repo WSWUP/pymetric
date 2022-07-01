@@ -19,6 +19,7 @@ import warnings
 
 import drigo
 import numpy as np
+import richdem
 from osgeo import gdal, ogr, osr
 
 try:
@@ -97,6 +98,7 @@ def main(ini_path, tile_list=None, overwrite_flag=False, mp_procs=1):
         'landsat_flag', True, config, 'INPUTS')
     ledaps_flag = False
     dem_flag = dripy.read_param('dem_flag', True, config, 'INPUTS')
+    mountain_flag = dripy.read_param('mountain_flag', True, config, 'INPUTS')
     nlcd_flag = dripy.read_param('nlcd_flag', True, config, 'INPUTS')
     cdl_flag = dripy.read_param('cdl_flag', False, config, 'INPUTS')
     landfire_flag = dripy.read_param(
@@ -123,6 +125,16 @@ def main(ini_path, tile_list=None, overwrite_flag=False, mp_procs=1):
         dem_output_name = dripy.read_param(
             'dem_output_name', 'dem.img', config)
         # dem_output_name = config.get('INPUTS', 'dem_output_name')
+    if mountain_flag:
+        mountain_input_ws = config.get('INPUTS', 'mountain_input_folder')
+        mountain_output_ws = config.get('INPUTS', 'mountain_output_folder')
+
+        slope_output_name = dripy.read_param(
+            'slope_output_name', 'slope.img', config)
+        aspect_output_name = dripy.read_param(
+            'aspect_output_name', 'aspect.img', config)
+        mountain_input_names = ['slope', 'aspect']
+        mountain_output_names = [slope_output_name, aspect_output_name]
     else:
         dem_input_ws, dem_tile_fmt = None, None
         dem_output_ws, dem_output_name = None, None
@@ -206,6 +218,8 @@ def main(ini_path, tile_list=None, overwrite_flag=False, mp_procs=1):
     #     folder_check(ledaps_input_ws)
     if dem_flag:
         folder_check(dem_input_ws)
+    if mountain_flag:
+        folder_check(mountain_input_ws)
     if nlcd_flag:
         file_check(nlcd_input_path)
     if cdl_flag:
@@ -544,6 +558,148 @@ def main(ini_path, tile_list=None, overwrite_flag=False, mp_procs=1):
             pool.close()
             pool.join()
             del results, pool
+
+        # Project/clip mountain rasters for each path/row
+        if mountain_flag:
+            logging.info('\nBuild mountain rasters for each path/row')
+            project_mp_list = []
+            mountain_paths = zip(mountain_input_names, mountain_output_names)
+            for rast_name, mt_rast_out in mountain_paths:
+                logging.info('Generating  {} rasters'.format(rast_name))
+                for tile_name in tile_list:
+                    logging.info('  {}'.format(tile_name))
+                    mountain_output_path = os.path.join(
+                        mountain_output_ws, tile_name)
+                    if not overwrite_flag and os.path.isfile(mountain_output_path):
+                        logging.debug('    {} already exists, skipping'.format(
+                            os.path.basename(mountain_output_path)))
+                        continue
+                    mt_rast_output_path = os.path.join(
+                        mountain_output_path, mt_rast_out)
+                    dem_path = os.path.join(
+                        dem_output_ws, tile_name, dem_output_name)
+                    # Set the nodata value on the DEM raster if it is not set
+                    # dem_ds = gdal.Open(dem_path, 0)
+                    # dem_band = dem_ds.GetRasterBand(1)
+                    # dem_nodata = dem_band.GetNoDataValue()
+                    # dem_ds = None
+                    # if dem_nodata is None:
+                    #     dem_nodata = 255
+                    dem_nodata = -9999
+
+                    # dem_array = drigo.raster_ds_to_array(dem_ds, band=1, mask_extent=None,
+                    #                    fill_value=None, return_nodata=True)
+                    dem_array = richdem.LoadGDAL(dem_path)
+
+                    if rast_name == 'slope':
+                        # Save as temp raster then delete
+                        temp_name = os.path.split(mt_rast_output_path)[1]
+                        temp_name = temp_name.replace('slope', 'temp_slope')
+                        mt_rast_in = os.path.join(mountain_output_path, temp_name)
+                        slope_temp = os.path.join(mountain_output_path, temp_name)
+                        slope = richdem.TerrainAttribute(dem_array, "slope_degrees", zscale=1.0)
+                        richdem.SaveGDAL(mt_rast_in, slope)
+                    if rast_name == 'aspect':
+                        temp_name = os.path.split(mt_rast_output_path)[1]
+                        temp_name = temp_name.replace('aspect', 'temp_aspect')
+                        mt_rast_in = os.path.join(mountain_output_path, temp_name)
+                        aspect_temp = os.path.join(mountain_output_path, temp_name)
+                        aspect = richdem.TerrainAttribute(dem_array, "aspect", zscale=1.0)
+                        richdem.SaveGDAL(mt_rast_in, aspect)
+
+                    # Clip and project
+                    tile_utm_osr = drigo.epsg_osr(
+                        32600 + int(tile_utm_zone_dict[tile_name]))
+                    tile_utm_proj = drigo.epsg_proj(
+                        32600 + int(tile_utm_zone_dict[tile_name]))
+                    tile_utm_extent = tile_utm_extent_dict[tile_name]
+                    tile_utm_ullr = tile_utm_extent.ul_lr_swap()
+
+                    if mp_procs > 1:
+                        project_mp_list.append([
+                            mt_rast_in, mt_rast_output_path, gdal.GRA_NearestNeighbour,
+                            tile_utm_proj, snap_cs, tile_utm_extent, dem_nodata])
+                    else:
+                        drigo.project_raster(
+                            mt_rast_in, mt_rast_output_path, gdal.GRA_NearestNeighbour,
+                            tile_utm_osr, snap_cs, tile_utm_extent, dem_nodata)
+
+                    # Project mountain rasters using multiprocessing
+                    if project_mp_list:
+                        pool = mp.Pool(mp_procs)
+                        results = pool.map(
+                            drigo.project_raster_mp, project_mp_list, chunksize=1)
+                        pool.close()
+                        pool.join()
+                        del results, pool
+
+                    # Clean up temporary saved rasters
+                    if rast_name == 'slope':
+                        os.remove(slope_temp)
+                    elif rast_name == 'aspect':
+                        os.remove(aspect_temp)
+
+            # Cleanup
+            del mt_rast_output_path
+            # del dem_ds, dem_band, dem_nodata
+            del tile_utm_osr, tile_utm_proj, tile_utm_extent
+
+
+        # Project/clip mountain rasters for each path/row
+        # if mountain_flag:
+        #     logging.info('\nBuild mountain rasters for each path/row')
+        #     project_mp_list = []
+        #     mountain_paths = zip(mountain_input_paths, mountain_input_names, mountain_output_names)
+        #     for mt_rast_in, rast_name, mt_rast_out in mountain_paths:
+        #         logging.info('Generating  {} rasters'.format(rast_name))
+        #         for tile_name in tile_list:
+        #             logging.info('  {}'.format(tile_name))
+        #             mountain_output_path = os.path.join(
+        #                 mountain_output_ws, tile_name)
+        #             if not overwrite_flag and os.path.isfile(mountain_output_path):
+        #                 logging.debug('    {} already exists, skipping'.format(
+        #                     os.path.basename(mountain_output_path)))
+        #                 continue
+        #             mt_rast_output_path = os.path.join(
+        #                 mountain_output_path, mt_rast_out)
+        #             # Set the nodata value on the NLCD raster if it is not set
+        #             mt_raster_ds = gdal.Open(mt_rast_in, 0)
+        #             mt_raster_band = mt_raster_ds.GetRasterBand(1)
+        #             mt_raster_nodata = mt_raster_band.GetNoDataValue()
+        #             mt_raster_ds = None
+        #             if mt_raster_nodata is None:
+        #                 mt_raster_nodata = 255
+        #
+        #             # Clip and project
+        #             tile_utm_osr = drigo.epsg_osr(
+        #                 32600 + int(tile_utm_zone_dict[tile_name]))
+        #             tile_utm_proj = drigo.epsg_proj(
+        #                 32600 + int(tile_utm_zone_dict[tile_name]))
+        #             tile_utm_extent = tile_utm_extent_dict[tile_name]
+        #             tile_utm_ullr = tile_utm_extent.ul_lr_swap()
+        #
+        #             if mp_procs > 1:
+        #                 project_mp_list.append([
+        #                     mt_rast_in, mt_rast_output_path, gdal.GRA_NearestNeighbour,
+        #                     tile_utm_proj, snap_cs, tile_utm_extent, mt_raster_nodata])
+        #             else:
+        #                 drigo.project_raster(
+        #                     mt_rast_in, mt_rast_output_path, gdal.GRA_NearestNeighbour,
+        #                     tile_utm_osr, snap_cs, tile_utm_extent, mt_raster_nodata)
+        #
+        #             # Project mountain rasters using multiprocessing
+        #             if project_mp_list:
+        #                 pool = mp.Pool(mp_procs)
+        #                 results = pool.map(
+        #                     drigo.project_raster_mp, project_mp_list, chunksize=1)
+        #                 pool.close()
+        #                 pool.join()
+        #                 del results, pool
+        #
+        #     # Cleanup
+        #     del mt_rast_output_path
+        #     del mt_raster_ds, mt_raster_band, mt_raster_nodata
+        #     del tile_utm_osr, tile_utm_proj, tile_utm_extent
 
     # Project/clip NLCD for each path/row
     if nlcd_flag:
