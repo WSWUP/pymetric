@@ -110,8 +110,8 @@ def pixel_rating(image_ws, ini_path, bs=None, stats_flag=False,
 
     # Read Pixel Regions config file
     # Currently there is no code to support applying an NLCD mask
-    apply_nlcd_mask = False
-    # apply_nlcd_mask = dripy.read_param('apply_nlcd_mask', False, config)
+    # apply_nlcd_mask = False
+    apply_nlcd_mask = dripy.read_param('apply_nlcd_mask', False, config)
     apply_cdl_ag_mask = dripy.read_param('apply_cdl_ag_mask', False, config)
     apply_field_mask = dripy.read_param('apply_field_mask', False, config)
     apply_ndwi_mask = dripy.read_param('apply_ndwi_mask', True, config)
@@ -309,6 +309,15 @@ def pixel_rating(image_ws, ini_path, bs=None, stats_flag=False,
             return_nodata=True)
         region_mask &= cdl_array != cdl_nodata
         del cdl_array, cdl_nodata
+    if apply_nlcd_mask:
+        nlcd_array, nlcd_nodata = drigo.raster_to_array(
+            nlcd_raster, mask_extent=env.mask_extent,
+            return_nodata=True)
+        # Ag cover is hard coded as 81 or 82 for now
+        nlcd_ag_mask = np.logical_or(nlcd_array == 81, nlcd_array == 82)
+        nlcd_array = np.where(nlcd_ag_mask, nlcd_array, nlcd_nodata)
+        region_mask &= nlcd_array != nlcd_nodata
+        del nlcd_array, nlcd_nodata
     if save_dict['region_mask']:
         drigo.array_to_raster(
             region_mask, raster_dict['region_mask'],
