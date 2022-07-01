@@ -13,6 +13,7 @@ import os
 import random
 import sys
 from time import sleep
+import shutil
 
 import drigo
 import numpy as np
@@ -24,7 +25,7 @@ import et_numpy
 import python_common as dripy
 
 
-def metric_model2(image_ws, ini_path, bs=None,
+def metric_model2(image_ws, ini_path, adj_path=None, bs=None,
                   mc_iter=None, kc_cold=None, kc_hot=None,
                   cold_xy=None, hot_xy=None, stats_flag=None,
                   overwrite_flag=None, ts_diff_threshold=4):
@@ -36,6 +37,8 @@ def metric_model2(image_ws, ini_path, bs=None,
         Image folder path.
     ini_path : str
         METRIC config file path.
+    adj_path : str
+        Scene hot/cold kc adjustments file path.
     bs : int, optional
         Processing block size (the default is None).  If set, this blocksize
         parameter will be used instead of the value in the INI file.
@@ -88,8 +91,10 @@ def metric_model2(image_ws, ini_path, bs=None,
     # Get input parameters
     logging.debug('  Reading Input File')
     # Recently added to read in variables for Ts correction
-    ts_correction_flag  = dripy.read_param(
+    ts_correction_flag = dripy.read_param(
         'Ts_correction_flag', True, config, 'INPUTS')
+    albedo_correction_flag = dripy.read_param(
+        'albedo_correction_flag', True, config, 'INPUTS')
     k_value = dripy.read_param('K_value', 2, config, 'INPUTS')
     dense_veg_min_albedo = dripy.read_param(
         'dense_veg_min_albedo', 0.18, config, 'INPUTS')
@@ -127,7 +132,7 @@ def metric_model2(image_ws, ini_path, bs=None,
             '\nERROR: Please rerun prep tool to build these files.\n')
         return False
 
-    # Use common_area to set mask parameters
+     # Use common_area to set mask parameters
     common_ds = gdal.Open(image.common_area_raster)
     env.mask_geo = drigo.raster_ds_geo(common_ds)
     env.mask_rows, env.mask_cols = drigo.raster_ds_shape(common_ds)
@@ -148,10 +153,12 @@ def metric_model2(image_ws, ini_path, bs=None,
     raster_dict['lat'] = os.path.join(image.support_ws, 'latitude' + r_fmt)
     raster_dict['lon'] = os.path.join(image.support_ws, 'longitude' + r_fmt)
     raster_dict['cos_theta'] = os.path.join(image.support_ws, 'cos_theta' + r_fmt)
+    raster_dict['cos_theta_flat'] = os.path.join(image.support_ws, 'cos_theta_flat' + r_fmt)
     raster_dict['albedo_sur'] = image.albedo_sur_raster
     raster_dict['tau'] = os.path.join(image_ws, 'transmittance' + r_fmt)
 
     raster_dict['ea'] = image.metric_ea_raster
+    raster_dict['ea_24hr'] = image.metric_ea_24hr_raster
     raster_dict['wind'] = image.metric_wind_raster
     raster_dict['etr'] = image.metric_etr_raster
     raster_dict['etr_24hr'] = image.metric_etr_24hr_raster
@@ -168,13 +175,20 @@ def metric_model2(image_ws, ini_path, bs=None,
     raster_dict['ts_dem'] = os.path.join(image_ws, 'ts_dem' + r_fmt)
 
     raster_dict['rn'] = os.path.join(rn_ws, 'rn' + iter_fmt)
-    raster_dict['rn_24'] = os.path.join(rn_ws, 'rn' + iter_fmt)
+    raster_dict['rn_24'] = os.path.join(rn_ws, 'rn_24' + iter_fmt)
+    raster_dict['rs_in'] = os.path.join(rn_ws, 'rs_in' + iter_fmt)
+    raster_dict['rs_in_24'] = os.path.join(rn_ws, 'rs_in_24' + iter_fmt)
+    raster_dict['rs_out'] = os.path.join(rn_ws, 'rs_out' + iter_fmt)
+    raster_dict['rl_in'] = os.path.join(rn_ws, 'rl_in' + iter_fmt)
+    raster_dict['rl_out'] = os.path.join(rn_ws, 'rl_out' + iter_fmt)
+
     raster_dict['g_water'] = os.path.join(g_ws, 'g_water' + iter_fmt)
     raster_dict['g_snow'] = os.path.join(g_ws, 'g_snow' + iter_fmt)
     raster_dict['g_wetland']= os.path.join(g_ws, 'g_wetland' + iter_fmt)
     raster_dict['g'] = os.path.join(g_ws, 'g' + iter_fmt)
 
     raster_dict['zom'] = os.path.join(zom_ws, 'zom' + iter_fmt)
+    raster_dict['excess_res'] = os.path.join(zom_ws, 'excess_res' + iter_fmt)
 
     raster_dict['dt'] = os.path.join(h_ws, 'dt' + iter_fmt)
     raster_dict['h'] = os.path.join(h_ws, 'h' + iter_fmt)
@@ -188,8 +202,14 @@ def metric_model2(image_ws, ini_path, bs=None,
     raster_dict['le'] = os.path.join(le_ws, 'le' + iter_fmt)
     raster_dict['et_inst'] = os.path.join(le_ws, 'et_inst' + iter_fmt)
     raster_dict['etrf'] = os.path.join(etrf_ws, 'et_rf' + iter_fmt)
+    raster_dict['etrf_noadj'] = os.path.join(etrf_ws, 'et_rf_noadj' + iter_fmt)
+    raster_dict['etrf_no_ef'] = os.path.join(etrf_ws, 'et_rf_no_ef' + iter_fmt)
     raster_dict['et_24'] = os.path.join(et24_ws, 'et_24' + iter_fmt)
-    # raster_dict['ef'] = os.path.join(le_ws, 'ef' + iter_fmt)
+    raster_dict['ef'] = os.path.join(le_ws, 'ef' + iter_fmt)
+
+    # crad_raster = os.path.join(etrf_ws, 'crad' + iter_fmt)
+    # drigo.build_empty_raster(crad_raster, 1, np.float32)
+
 
     # Read MODEL 2 raster flags
     save_dict = dict()
@@ -197,6 +217,12 @@ def metric_model2(image_ws, ini_path, bs=None,
         'save_rn_raster_flag', False, config, 'INPUTS')
     save_dict['rn_24'] = dripy.read_param(
         'save_rn_24_raster_flag', False, config, 'INPUTS')
+    save_dict['rs_in'] = dripy.read_param(
+        'save_rs_in_raster_flag', False, config, 'INPUTS')
+    save_dict['rs_in_24'] = dripy.read_param(
+        'save_rs_in_24_raster_flag', False, config, 'INPUTS')
+    save_dict['rs_out'] = dripy.read_param(
+        'save_rs_out_raster_flag', False, config, 'INPUTS')
     save_dict['g'] = dripy.read_param(
         'save_g_raster_flag', False, config, 'INPUTS')
     save_dict['g_water'] = dripy.read_param(
@@ -207,6 +233,8 @@ def metric_model2(image_ws, ini_path, bs=None,
         'save_g_landuse_rasters_flag', False, config, 'INPUTS')
     save_dict['zom'] = dripy.read_param(
         'save_zom_raster_flag', False, config, 'INPUTS')
+    save_dict['excess_res'] = dripy.read_param(
+        'save_excess_res_raster_flag', False, config, 'INPUTS')
 
     save_dict['dt'] = dripy.read_param(
         'save_dt_raster_flag', False, config, 'INPUTS')
@@ -233,8 +261,63 @@ def metric_model2(image_ws, ini_path, bs=None,
         'save_etrf_raster_flag', True, config, 'INPUTS')
     save_dict['et_24'] = dripy.read_param(
         'save_et_24_raster_flag', False, config, 'INPUTS')
-    # save_dict['ef'] = dripy.read_param(
-    #     'save_ef_raster_flag', False, config, 'INPUTS')
+    save_dict['ef'] = dripy.read_param(
+        'save_ef_raster_flag', False, config, 'INPUTS')
+    save_dict['etrf_no_ef'] = dripy.read_param(
+        'save_ef_raster_flag', False, config, 'INPUTS')
+
+    if adj_path:
+        # Read in hot cold kc adjustment file for each scene
+        with open(adj_path, 'r') as adj_f:
+            adj_lines = adj_f.readlines()
+
+        etrf_raster = raster_dict['etrf']
+        etrf_raster_backup = raster_dict['etrf_noadj']
+
+        # Repeated below but need to call here first to get initial kc_cold, kc_hot
+        if kc_cold is None:
+            kc_cold = dripy.read_param('kc_cold_pixel', 1.05, config, 'INPUTS')
+        if kc_hot is None:
+            kc_hot = dripy.read_param('kc_hot_pixel', 0.1, config, 'INPUTS')
+        if kc_cold <= kc_hot:
+            logging.error(
+                '\nERROR: Kc cold ({}) is less than Kc hot ({})'.format(
+                    kc_cold, kc_hot))
+            return False
+
+        for adj_line in adj_lines:
+            [year, satellite, pathD, rowD, date, use, adj, adj_le, adj_he, prod_id] = adj_line.split(",")
+            # CSV file variables can have extra spaces so use 'in' to check if contain same string
+            if (prod_id in image.folder_id) or (image.folder_id in prod_id):
+                # Convert to int for
+                use = int(use)
+                adj = int(adj)
+                adj_le = float(adj_le)
+                adj_he = float(adj_he)
+                if (use == 1) and (adj == 1):
+                    # Check if original etrf raster exists and backup before automatically deleted in next step
+                    if os.path.isfile(etrf_raster) and os.path.isfile(etrf_raster_backup):
+                        logging.info('\n'
+                                     'Backup of original ETrF raster already exists, keeping original backup')
+                    elif os.path.isfile(etrf_raster) and not os.path.isfile(etrf_raster_backup):
+                        logging.info('\n'
+                                     'Original ETrF raster exists, backing up before calculating adjustment')
+                        shutil.copy(etrf_raster, etrf_raster_backup)
+                    # Remove original etrf raster
+                    dripy.remove_file(etrf_raster)
+                    if abs(adj_le) > 0:
+                        logging.info('\n kc hot before adjustment: {}'.format(kc_hot))
+                        kc_hot = 0.1 + adj_le
+                        logging.info('\n kc hot after adjustment: {}'.format(kc_hot))
+                    if abs(adj_he) > 0:
+                        logging.info('\n kc cold before adjustment: {}'.format(kc_cold))
+                        kc_cold = 1.05 * (1 / (1.0 - adj_he))
+                        logging.info('\n kc cold after adjustment: {}'.format(kc_cold))
+                    if kc_cold <= kc_hot:
+                        logging.error(
+                            '\nERROR: Final adjusted Kc cold ({}) is less than Kc hot ({})'.format(
+                                kc_cold, kc_hot))
+                        return False
 
     # If overwrite, remove all existing rasters that can be saved
     logging.debug('\nRemoving existing rasters')
@@ -264,28 +347,29 @@ def metric_model2(image_ws, ini_path, bs=None,
 
     # NDLAS gridded weather data flags
     calc_dict['ea'] = False
+    calc_dict['ea_24'] = False
     calc_dict['wind'] = False
     calc_dict['etr'] = False
     calc_dict['etr_24'] = False
     calc_dict['tair'] = False
 
-
     # Working backwords,
     #   Adjust calc flags based on function dependencies
     #   Read in additional parameters based on calc flags
 
-    # # Compute evaporative fraction based ET 24hr estimate
-    # #   for target landuses
-    # calc_dict['ef'] = dripy.read_param(
-    #     'use_ef_flag', False, config, 'INPUTS')
-    # if calc_dict['ef']:
-    #     calc_dict['et_24'] = True
-    #     calc_dict['et_inst'] = True
-    #     calc_dict['landuse'] = True
-    #     calc_dict['rn_24'] = True
-    #     ef_landuse_list = dripy.read_param(
-    #         'ef_landuses', [21, 52, 71], config, 'INPUTS')
-    #     ef_landuse_list = list(map(int, ef_landuse_list))
+    # Compute evaporative fraction based ET 24hr estimate
+    #   for target landuses
+    calc_dict['ef'] = dripy.read_param(
+        'use_ef_flag', False, config, 'INPUTS')
+    if calc_dict['ef']:
+        calc_dict['et_24'] = True
+        calc_dict['et_inst'] = True
+        calc_dict['landuse'] = True
+        calc_dict['rn_24'] = True
+        calc_dict['ea_24'] = True
+        ef_landuse_list = dripy.read_param(
+            'ef_landuses', [21, 52, 71], config, 'INPUTS')
+        ef_landuse_list = list(map(int, ef_landuse_list))
 
     if calc_dict['et_24']:
         calc_dict['etrf'] = True
@@ -299,6 +383,15 @@ def metric_model2(image_ws, ini_path, bs=None,
         calc_dict['g'] = True
         calc_dict['h'] = True
 
+    calc_dict['excess_res'] = dripy.read_param(
+        'use_excess_res_flag', False, config, 'INPUTS')
+    cos_theta_model = dripy.read_param('cos_theta_model', 'CENTROID', config).upper()
+    if cos_theta_model == 'MOUNTAIN':
+        for local_key, full_key, raster_name in [
+            ['slp', 'slp_full', 'slope_raster'],
+            ['asp', 'asp_full', 'aspect_raster']]:
+            # Set raster_dict key from INPUTS in ini file
+            raster_dict[full_key] = config.get('INPUTS', raster_name)
     # Sensible heat flux
     if calc_dict['h']:
         # Read the Kc values from the input file if they were not set
@@ -312,6 +405,13 @@ def metric_model2(image_ws, ini_path, bs=None,
                     kc_cold, kc_hot))
             return False
         kc_array = np.array([kc_cold, kc_hot])
+        k_offset_flt = dripy.read_param('k_offset', 2.0, config, 'INPUTS')
+        dt_adjust_flag = dripy.read_param('dt_adjust_flag', True, config, 'INPUTS')
+        if dt_adjust_flag:
+            dt_slope_factor_flt = dripy.read_param(
+                'dt_slope_factor', 4.0, config, 'INPUTS')
+        else:
+            dt_slope_factor_flt = 0.0
         calc_dict['dt'] = True
         calc_dict['air_density'] = True
         calc_dict['l_stabil'] = True
@@ -392,6 +492,14 @@ def metric_model2(image_ws, ini_path, bs=None,
                     zom_remap_path))
             logging.debug('Exception: {}\n'.format(str(e)))
             return False
+
+    # Excess resistance
+    if calc_dict['excess_res']:
+        excess_res_factor_flt = dripy.read_param(
+            'excess_res_factor', 1.0, config, 'INPUTS')
+        excess_res_landuse_list = dripy.read_param(
+            'excess_res_landuses', [52, 71], config, 'INPUTS')
+        excess_res_landuse_list = list(map(int, excess_res_landuse_list))
 
     # Soil heat flux
     if calc_dict['g']:
@@ -559,7 +667,9 @@ def metric_model2(image_ws, ini_path, bs=None,
     if calc_dict['ts_dem'] and not os.path.isfile(raster_dict['ts_dem']):
         calc_dict['ts'] = True
         calc_dict['dem'] = True
-        lapse_rate_flt = dripy.read_param('lapse_rate', 6.5, config, 'INPUTS')
+        lapse_flat_flt = dripy.read_param('lapse_flat', 6.5, config, 'INPUTS')
+        lapse_mtn_flt = dripy.read_param('lapse_mtn', 10.0, config, 'INPUTS')
+        lapse_elev_flt = dripy.read_param('lapse_elev', 99999.0, config, 'INPUTS')
         datum_flt = float(config.get('INPUTS', 'datum'))
 
     # Check that rasters from model 1 exist
@@ -579,7 +689,9 @@ def metric_model2(image_ws, ini_path, bs=None,
     # Read in lapse rates and elevations
     # if (calc_dict['ts_cold_lap'] or calc_dict['ts_avg_delap']):
     if calc_dict['ts_cold_lap']:
-        lapse_rate_flt = dripy.read_param('lapse_rate', 6.5, config, 'INPUTS')
+        lapse_flat_flt = dripy.read_param('lapse_flat', 6.5, config, 'INPUTS')
+        lapse_mtn_flt = dripy.read_param('lapse_mtn', 10.0, config, 'INPUTS')
+        lapse_elev_flt = dripy.read_param('lapse_elev', 99999.0, config, 'INPUTS')
         datum_flt = float(config.get('INPUTS', 'datum'))
     # Read in calibration parameters/paths
     # if (calc_dict['ts_cold_lap'] or calc_dict['ts_avg_delap']):
@@ -861,6 +973,20 @@ def metric_model2(image_ws, ini_path, bs=None,
                 u3_flt))
             del u_star_station_flt
 
+    # Excess Resistance
+    if calc_dict['excess_res']:
+        log_fmt = '    {:<32s} {:f}'
+        logging.info('\n  Initial Excess Resistance')
+        excess_res_flt = et_numpy.excess_res_func(u3_flt)
+        logging.info(log_fmt.format(
+            'Excess Resistance [s/m]:', excess_res_flt))
+        # Adjust excess resistance
+        logging.info(log_fmt.format(
+            'Excess Resistance Factor:', excess_res_factor_flt))
+        excess_res_flt *= excess_res_factor_flt
+        logging.info(log_fmt.format(
+            'Adj. Excess Resistance [s/m]:', excess_res_flt))
+
     # Get hot and cold pixel values once
     # if (calc_dict['h'] or calc_dict['ts_cold_lap'] or
     #     calc_dict['ts_avg_delap']):
@@ -911,9 +1037,9 @@ def metric_model2(image_ws, ini_path, bs=None,
         hot_px_temp = ts_array.item(1)
 
         if calc_dict['ts_dem'] and not os.path.isfile(raster_dict['ts_dem']):
-
             ts_dem_array = et_numpy.ts_delapsed_func(
-                ts_array, elev_array, datum_flt, lapse_rate_flt)
+                ts_array, elev_array, datum_flt,
+                lapse_elev_flt, lapse_flat_flt, lapse_mtn_flt)
         else:
             ts_dem_array = np.array(et_common.cell_value_set(
                 raster_dict['ts_dem'], 'Ts_dem', cold_xy, hot_xy, 'DEBUG'))
@@ -977,19 +1103,37 @@ def metric_model2(image_ws, ini_path, bs=None,
             ts_dem_array[0] = ts_cold_override_flt
             ts_array[0] = float(et_numpy.ts_lapsed_func(
                 ts_dem_array[0], elev_array[0], datum_flt,
-                lapse_rate_flt))
+                lapse_elev_flt, lapse_flat_flt, lapse_mtn_flt))
         if ts_hot_override_flag:
             # ts_array[1] = ts_hot_override_flt
             # ts_dem_array[1] = ts_delapsed_func(
             #     ts_array[1], elev_hot_flt, datum, lapse_rate)
             ts_dem_array[1] = ts_hot_override_flt
             ts_array[1] = float(et_numpy.ts_lapsed_func(
-                ts_dem_array[1], elev_array[1], datum_flt, lapse_rate_flt))
+                ts_dem_array[1], elev_array[1], datum_flt,
+                lapse_elev_flt, lapse_flat_flt, lapse_mtn_flt))
         if ts_cold_override_flag or ts_hot_override_flag:
             logging.info('\nOverride Hot and Cold pixel temperatures')
             logging.info(pixel_str_fmt.format('', 'Cold Pixel', 'Hot Pixel'))
             logging.info(pixel_flt_fmt.format('Ts', *ts_array))
             logging.info(pixel_flt_fmt.format('TsDEM', *ts_dem_array))
+
+    # ts_dem_dry and ts_threshold values
+    if calc_dict['h']:
+        ts_dem_dry_flt = et_numpy.ts_dem_dry_func(
+            ts_dem_array[0], ts_dem_array[1],
+            kc_array[0], kc_array[1])
+        logging.debug('\n    {:<14s}  {:14.8f}'.format(
+            'TsDEM_dry:', ts_dem_dry_flt))
+        ts_hot_threshold = ts_dem_dry_flt + k_offset_flt
+        logging.debug('    {:<14s}  {:14.8f}'.format(
+            'Ts_hot thresh:', ts_hot_threshold))
+        ts_cold_threshold = ts_dem_array[0] - k_offset_flt
+        logging.debug('    {:<14s}  {:14.8f}'.format(
+            'Ts_cold thresh:', ts_cold_threshold))
+        if dt_adjust_flag:
+            logging.debug('    {:<14s}  {:14.8f}'.format(
+                'dT_factor:', dt_slope_factor_flt))
 
     # Calculate Rn/G at hot and cold point
     if calc_dict['h']:
@@ -1000,14 +1144,30 @@ def metric_model2(image_ws, ini_path, bs=None,
 
         # Net Radiation
         ts_cold_lapsed_array = et_numpy.ts_lapsed_func(
-            ts_array[0], elev_array, datum_flt, lapse_rate_flt)
+                cold_px_temp, elev_array, datum_flt,
+                lapse_elev_flt, lapse_flat_flt, lapse_mtn_flt)
         rs_in_array = et_numpy.rs_in_func(cos_theta_array, tau_array, image.dr)
+
+        # Ts correction and albedo correction function
+        ts_array_adj, albedo_sur_array_adj = et_numpy.albedo_ts_corrected_func(
+            albedo_sur_array, ndvi_toa_array, ts_array,
+            hot_px_temp, cold_px_temp, k_value, dense_veg_min_albedo)
+        #Use adjusted rasters, if flag indicates
+        if ts_correction_flag:
+            ts_array = ts_array_adj
+        if albedo_correction_flag:
+            albedo_sur_array = albedo_sur_array_adj
+
+        # Clean up
+        del ts_array_adj, albedo_sur_array_adj
+
         rs_out_array = et_numpy.rs_out_func(rs_in_array, albedo_sur_array)
         rl_in_array = et_numpy.rl_in_func(
             tau_array, ts_cold_lapsed_array, rl_in_coef1_flt, rl_in_coef2_flt)
         rl_out_array = et_numpy.rl_out_func(rl_in_array, ts_array, em_0_array)
         rn_array = et_numpy.rn_func(
             rs_in_array, rs_out_array, rl_in_array, rl_out_array)
+
         # Averaged of delapsed ts_hot & ts_cold (for water filter)
         # ts_avg_delap_array = ts_delapsed_func(
         #     float(np.mean(ts_array)), elev_array,
@@ -1034,6 +1194,11 @@ def metric_model2(image_ws, ini_path, bs=None,
         elif zom_lai_refl_type == 'SUR':
             zom_array = et_numpy.zom_func(
                 lai_sur_array, landuse_array, zom_remap_dict)
+        # Excess Resistance
+        excess_res_array = np.array([0.0, 0.0])
+        if calc_dict['excess_res']:
+            for landuse in excess_res_landuse_list:
+                excess_res_array[landuse_array == landuse] = excess_res_flt
 
         # Cleanup
         if calc_dict['ndvi_toa']:
@@ -1067,7 +1232,7 @@ def metric_model2(image_ws, ini_path, bs=None,
         # Calculate A & B values for atmospheric stability
         auto_wind_speed_list = [0]
         if stabil_pixel_mode_str == 'AUTO2':
-            auto_wind_speed_list = list(np.arange(0, 2.5, 0.5))
+            auto_wind_speed_list = list(np.arange(0, 5, 0.5))
         converge_flag = False
         for i, auto_wind_speed_flt in enumerate(auto_wind_speed_list):
             # Initialize parameters
@@ -1080,7 +1245,7 @@ def metric_model2(image_ws, ini_path, bs=None,
 
             # Iteration can only be greater than 0 if convergence failed
             #   on first iteration
-            # Recalculate u* and u3 with additional wind speed
+            # Recalculate u*, u3, and excess resistance with additional wind speed
             if i > 0:
                 logging.info(
                     '  Updated additonal wind speed - {:4.2f} [m/s]'.format(
@@ -1098,6 +1263,20 @@ def metric_model2(image_ws, ini_path, bs=None,
                     'U3 (Wind Velocity @ {:3.0f}m) [m/s]:'.format(
                         z_flt_dict[3]),
                     u3_flt))
+                if calc_dict['excess_res']:
+                    # Re-calculate excess resistance with updated u3
+                    excess_res_flt = et_numpy.excess_res_func(u3_flt)
+                    logging.info(log_fmt.format(
+                        'Excess Resistance [s/m]:', excess_res_flt))
+                    # Re-adjust excess resistance
+                    logging.info(log_fmt.format(
+                        'Excess Resistance Factor:', excess_res_factor_flt))
+                    excess_res_flt *= excess_res_factor_flt
+                    logging.info(log_fmt.format(
+                        'Adjusted Excess Resistance [s/m]:', excess_res_flt))
+                    # Updated array with updated excess resistance
+                    for landuse in excess_res_landuse_list:
+                            excess_res_array[landuse_array == landuse] = excess_res_flt
 
             logging.debug('\n  Calculate Stability')
             logging.debug(
@@ -1120,7 +1299,7 @@ def metric_model2(image_ws, ini_path, bs=None,
                     u3_flt, z_flt_dict[3], zom_array, psi_dict[3])
                 # Rah
                 rah_array = et_numpy.rah_func(
-                    z_flt_dict, psi_dict[2], psi_dict[1], u_star_array)
+                    z_flt_dict, psi_dict[2], psi_dict[1], u_star_array, excess_res=excess_res_array)
                 # Density
                 density_array = et_numpy.density_func(
                     elev_array, ts_array, dt_array)
@@ -1250,6 +1429,7 @@ def metric_model2(image_ws, ini_path, bs=None,
     # Cleanup
     # if (calc_dict['h'] or calc_dict['ts_cold_lap'] or
     #     calc_dict['ts_avg_delap']):
+    del excess_res_array
     if calc_dict['h'] or calc_dict['ts_cold_lap']:
         del elev_array, landuse_array, cos_theta_array
         del tau_array, albedo_sur_array, em_0_array
@@ -1342,10 +1522,36 @@ def metric_model2(image_ws, ini_path, bs=None,
         #     ndwi_sur_array = drigo.raster_to_block(
         #         raster_dict['ndwi_sur'], b_i, b_j, bs, return_nodata=False)
 
+        # Load landuse
+        if calc_dict['landuse']:
+            landuse_array = drigo.raster_to_array(
+                raster_dict['landuse_full'], 1, block_extent, fill_value=0,
+                return_nodata=False)
+
+        # Adjust surface temperature and albedo based on minimum albedo and NDVI
+        ts_array_adj, albedo_sur_array_adj = et_numpy.albedo_ts_corrected_func(
+            albedo_sur_array, ndvi_toa_array, ts_array,
+            hot_px_temp, cold_px_temp, k_value, dense_veg_min_albedo)
+        #Use adjusted rasters, if flag indicates
+        if ts_correction_flag:
+            if landuse_type in ['NLCD', 'CDL']:
+                ag_mask = (landuse_array == 81) | (landuse_array == 82)
+                ts_array = np.where(ag_mask, ts_array_adj, ts_array)
+                # for landuse in [81, 82]:
+                # excess_res_array[landuse_array == landuse] = excess_res_flt
+                # ts_array[landuse_array == landuse] = ts_array_adj
+        if albedo_correction_flag:
+            if landuse_type in ['NLCD', 'CDL']:
+                ag_mask = (landuse_array == 81) | (landuse_array == 82)
+                albedo_sur_array = np.where(ag_mask, albedo_sur_array_adj, albedo_sur_array)
+                # for landuse in [81, 82]:
+                #     albedo_sur_array[landuse_array == landuse] = albedo_sur_array_adj
+
         # Ts DEM can be read in or re-calculated
         if calc_dict['ts_dem'] and not os.path.isfile(raster_dict['ts_dem']):
             ts_dem_array = et_numpy.ts_delapsed_func(
-                ts_array, elev_array, datum_flt, lapse_rate_flt)
+                ts_array, elev_array, datum_flt,
+                lapse_elev_flt, lapse_flat_flt, lapse_mtn_flt)
         else:
             ts_dem_array = drigo.raster_to_block(
                 raster_dict['ts_dem'], b_i, b_j, bs, return_nodata=False)
@@ -1366,12 +1572,11 @@ def metric_model2(image_ws, ini_path, bs=None,
                     raster_dict['ea'], b_i, b_j, bs, return_nodata=False)
             else:
                 ea_array = np.array([ea_flt])
-            #
+            # TODO: Should this use cos_theta or cos_theta_flat? or Sin beta 24? Depends what input for may need recalc
             tau_array = et_numpy.tau_broadband_func(
                 pair_array,
                 et_common.precipitable_water_func(pair_array, ea_array),
                 cos_theta_array)
-            del pair_array, ea_array
         else:
             tau_array = drigo.raster_to_block(
                 raster_dict['tau'], b_i, b_j, bs, return_nodata=False)
@@ -1392,68 +1597,203 @@ def metric_model2(image_ws, ini_path, bs=None,
         # Lapse Adjusted ts_cold
         if calc_dict['ts_cold_lap']:
             ts_cold_lapsed_array = et_numpy.ts_lapsed_func(
-                ts_point_array[0], elev_array, datum_flt, lapse_rate_flt)
-        # Incoming Longwave Radiation
-        if calc_dict['rl_in']:
-            rl_in_array = et_numpy.rl_in_func(
-                tau_array, ts_cold_lapsed_array,
-                rl_in_coef1_flt, rl_in_coef2_flt)
-        if calc_dict['ts_cold_lap']:
-            del ts_cold_lapsed_array
-        # Emitted Longwave Radiation
-        if calc_dict['rl_out']:
-            rl_out_array = et_numpy.rl_out_func(
-                rl_in_array, ts_array, em_0_array)
-        # Incoming Shortwave Radiation
-        # possible rounding error in rs_in_array
-        if calc_dict['rs_in']:
-            rs_in_array = et_numpy.rs_in_func(
-                cos_theta_array, tau_array, image.dr)
-        # Outgoing Shortwave Radiation
-        if calc_dict['rs_out']:
-            rs_out_array = et_numpy.rs_out_func(
-                rs_in_array, albedo_sur_array)
-        # Net Radiation
-        if calc_dict['rn']:
-            rn_array = et_numpy.rn_func(
-                rs_in_array, rs_out_array, rl_in_array, rl_out_array)
-        if save_dict['rn']:
-            drigo.block_to_raster(rn_array, raster_dict['rn'], b_i, b_j, bs)
+                cold_px_temp, elev_array, datum_flt,
+                lapse_elev_flt, lapse_flat_flt, lapse_mtn_flt)
 
-        # Daily Net Radiation (for evaporative fraction)
-        if calc_dict['rn_24']:
+        # Mountain rasters for net radiation calculation
+        if cos_theta_model == 'MOUNTAIN':
+            slope_array, slope_nodata = drigo.raster_to_array(
+                raster_dict['slp_full'], 1, block_extent, return_nodata=True)
+            slope_array[block_nodata_mask] = slope_nodata
+            aspect_array, aspect_nodata = drigo.raster_to_array(
+                raster_dict['asp_full'], 1, block_extent, return_nodata=True)
+            slope_array[block_nodata_mask] = slope_nodata
             lat_array, lon_array = drigo.array_lat_lon_func(
                 env.snap_osr, env.cellsize, block_extent,
                 gcs_cs=0.005, radians_flag=True)
-            rn_24_array = et_numpy.rn_24_func(
-                albedo_sur=albedo_sur_array, rs_in=rs_in_array,
-                lat=lat_array, doy=image.acq_doy)
-            del lat_array, lon_array
-        if save_dict['rn_24']:
-            drigo.block_to_raster(
-                rn_24_array, raster_dict['rn_24'], b_i, b_j, bs)
+            cos_theta_array_flat = drigo.raster_to_block(
+                raster_dict['cos_theta_flat'], b_i, b_j, bs, return_nodata=False)
+            tau_array_flat = et_numpy.tau_broadband_func(
+                pair_array,
+                et_common.precipitable_water_func(pair_array, ea_array),
+                cos_theta_array_flat)
+            # Incoming Longwave Radiation
+            if calc_dict['rl_in']:
+                ts_terrain = et_numpy.calculate_lst_terrain_general(
+                    ts_array, slope_array, aspect_array, image.sun_azimuth, temp_diff=10.0)
+                rl_in_array = et_numpy.calculate_radiation_lw_incoming_mountain(
+                    ts_cold_lapsed_array, tau_array_flat, slope_array, em_0_array, ts_terrain)
+            #     rl_in_array = et_numpy.rl_in_func(
+            #         tau_array, ts_cold_lapsed_array,
+            #         rl_in_coef1_flt, rl_in_coef2_flt)
+            # if calc_dict['ts_cold_lap']:
+            # del ts_cold_lapsed_array
+            # Emitted Longwave Radiation
+            # if calc_dict['rl_out']:
+            #     rl_out_array = et_numpy.rl_out_func(
+            #         rl_in_array, ts_array, em_0_array)
+            # Incoming Shortwave Radiation
+            # possible rounding error in rs_in_array
+            if calc_dict['rs_in']:
+                rs_in_array = et_numpy.rs_in_func(
+                    cos_theta_array, tau_array_flat, image.dr)
+                rs_in_mt_inst_array = et_numpy.rso_instant_mountain_func(
+                    rs_in_array, lat_array, lon_array, slope_array, cos_theta_array_flat, cos_theta_array,
+                    pair_array, ea_array, image.dr, image.acq_doy, image.acq_time)
 
-        # Cleanup
-        if calc_dict['rs_in']:
-            del rs_in_array
+                del lat_array, lon_array
+
+            # Outgoing Shortwave Radiation
+            if calc_dict['rs_out']:
+                rs_out_array = et_numpy.rs_out_func(
+                    rs_in_mt_inst_array, albedo_sur_array)
+            # Net Radiation
+            if calc_dict['rn']:
+                rn_array = et_numpy.rn_mountain_func(
+                    rs_in_array, rs_in_mt_inst_array, rl_in_array, em_0_array, ts_array, albedo_sur_array)
+            if save_dict['rn']:
+                drigo.block_to_raster(rn_array, raster_dict['rn'], b_i, b_j, bs)
+            if save_dict['rs_in']:
+                drigo.block_to_raster(rs_in_array, raster_dict['rs_in'], b_i, b_j, bs)
+            if save_dict['rs_out']:
+                drigo.block_to_raster(rs_out_array, raster_dict['rs_out'], b_i, b_j, bs)
+
+            # Clean up
+            if calc_dict['tau']:
+                del tau_array_flat
+
+        else:
+            # Incoming Longwave Radiation
+            if calc_dict['rl_in']:
+                rl_in_array = et_numpy.rl_in_func(
+                    tau_array, ts_cold_lapsed_array,
+                    rl_in_coef1_flt, rl_in_coef2_flt)
+            # if calc_dict['ts_cold_lap']:
+                # del ts_cold_lapsed_array
+            # Emitted Longwave Radiation
+            if calc_dict['rl_out']:
+                rl_out_array = et_numpy.rl_out_func(
+                    rl_in_array, ts_array, em_0_array)
+            # Incoming Shortwave Radiation
+            # possible rounding error in rs_in_array
+            if calc_dict['rs_in']:
+                rs_in_array = et_numpy.rs_in_func(
+                    cos_theta_array, tau_array, image.dr)
+            # Outgoing Shortwave Radiation
+            if calc_dict['rs_out']:
+                rs_out_array = et_numpy.rs_out_func(
+                    rs_in_array, albedo_sur_array)
+            # Net Radiation
+            if calc_dict['rn']:
+                rn_array = et_numpy.rn_func(
+                    rs_in_array, rs_out_array, rl_in_array, rl_out_array)
+            if save_dict['rn']:
+                drigo.block_to_raster(rn_array, raster_dict['rn'], b_i, b_j, bs)
+            if save_dict['rs_in']:
+                drigo.block_to_raster(rs_in_array, raster_dict['rs_in'], b_i, b_j, bs)
+            if save_dict['rs_out']:
+                drigo.block_to_raster(rs_out_array, raster_dict['rs_out'], b_i, b_j, bs)
+
+            if calc_dict['rl_out']:
+                del rl_out_array
+            if calc_dict['tau']:
+                del tau_array
+
         if calc_dict['rs_out']:
             del rs_out_array
         if calc_dict['rl_in']:
             del rl_in_array
-        if calc_dict['rl_out']:
-            del rl_out_array
-        if calc_dict['em_0']:
-            del em_0_array
-        if calc_dict['tau']:
-            del tau_array
         if calc_dict['cos_theta']:
             del cos_theta_array
 
-        # Load landuse
-        if calc_dict['landuse']:
-            landuse_array = drigo.raster_to_array(
-                raster_dict['landuse_full'], 1, block_extent, fill_value=0,
-                return_nodata=False)
+        if calc_dict['rn_24'] or cos_theta_model == 'MOUNTAIN':
+            ea_24_array = drigo.raster_to_block(
+                raster_dict['ea_24hr'], b_i, b_j, bs, return_nodata=False)
+            lat_array, lon_array = drigo.array_lat_lon_func(
+                env.snap_osr, env.cellsize, block_extent,
+                gcs_cs=0.005, radians_flag=True)
+            del lon_array
+            # Daily extraterrestrial radiation for flat surface
+            ra_24_array = et_numpy.ra_daily_func(
+                lat_array, image.acq_doy)
+            # Daily clear sky solar radiation for flat surface
+            rso_in_24_array = et_numpy.rso_24_func_flat(
+                lat_array, image.acq_doy, pair_array, ea_24_array, ra_24_array)
+
+        if cos_theta_model == 'MOUNTAIN':
+            # Daily Net Radiation (for evaporative fraction) using slob approach with mountain model functions
+
+            # Calculate radiation components for radiation correction and 24 hr ET with EF using slob method
+            # Daily extraterrestrial radiation for terrain
+            ra_24_array_mt = et_numpy.ra_daily_mountain_func(
+                lat_array, image.acq_doy, slope_array, aspect_array)
+            # Daily clear sky radiation for terrain
+            rso_24_array_mt = et_numpy.rso_24_func_mountain(
+                rso_in_24_array, ra_24_array_mt, lat_array, slope_array, image.acq_doy, pair_array, ea_24_array)
+
+            # Calculate radiation correction factor to extrapolate instantaneous ETrF to 24 hr ETrF
+            crad = (rs_in_array / rs_in_mt_inst_array) * (rso_24_array_mt / rso_in_24_array)
+            crad = np.where(crad > 1.5, 1.5, crad)
+
+            if calc_dict['ef']:
+                lapse = et_numpy.lapse_func(
+                    elev_array, datum_flt,
+                    lapse_elev_flt, lapse_flat_flt, lapse_mtn_flt)
+                sin_beta_24 = et_numpy.sin_beta_daily(lat_array, image.acq_doy)
+                tau_array_flat_24 = et_numpy.tau_broadband_func(
+                    pair_array,
+                    et_common.precipitable_water_func(pair_array, ea_24_array),
+                    sin_beta_24)
+
+                # Calculate radiation components for evaporative fraction
+                ts_terrain = et_numpy.calculate_lst_terrain_general(
+                    ts_array, slope_array, aspect_array, image.sun_azimuth, temp_diff=10.0)
+                rl_in_array_mt = et_numpy.calculate_radiation_lw_incoming_mountain(
+                    ts_cold_lapsed_array, tau_array_flat_24, slope_array, em_0_array, ts_terrain)
+                rl_in_flat_array = et_numpy.rl_in_func(
+                    tau_array_flat_24, ts_cold_lapsed_array, ea_coef1=0.85, ea_coef2=0.09)
+                rl_out_array = et_numpy.rl_out_func(rl_in_array_mt, ts_array, em_0_array)
+
+                # Calculate 24 hr net radiation for evaporative fraction using slob method and mountain model funcs
+                rn_24_array = et_numpy.rn_24_slob_func(
+                    lat_array, ts_array, cold_px_temp, hot_px_temp, ts_cold_lapsed_array, lapse, ts_dem_dry_flt,
+                    ts_dem_point_array, albedo_sur_array, rso_24_array_mt, ra_24_array_mt, image.acq_doy,
+                    cold_xy, hot_xy, rl_in_flat_array, rl_in_array_mt, rl_out_array)
+
+                del lapse, sin_beta_24, tau_array_flat_24
+                del ts_terrain, rl_in_array_mt, rl_in_flat_array, rl_out_array
+
+            del slope_array, aspect_array
+            del lat_array
+            del pair_array, ea_24_array
+            if save_dict['rs_in_24']:
+                drigo.block_to_raster(rso_24_array_mt, raster_dict['rs_in_24'], b_i, b_j, bs)
+            if save_dict['rn_24']:
+                drigo.block_to_raster(
+                    rn_24_array, raster_dict['rn_24'], b_i, b_j, bs)
+
+            # Cleanup
+            if calc_dict['rs_in']:
+                del ra_24_array, ra_24_array_mt
+                del rs_in_array, rs_in_mt_inst_array, rso_in_24_array, rso_24_array_mt
+            if calc_dict['em_0']:
+                del em_0_array
+        else:
+            # Daily Net Radiation (for evaporative fraction) using flat model
+            if calc_dict['ef']:
+                lat_array, lon_array = drigo.array_lat_lon_func(
+                        env.snap_osr, env.cellsize, block_extent,
+                        gcs_cs=0.005, radians_flag=True)
+                rn_24_array = et_numpy.rn_24_func(
+                    albedo_sur=albedo_sur_array, rs_in=rso_in_24_array,
+                    lat=lat_array, doy=image.acq_doy)
+                del lat_array, lon_array
+                del rso_in_24_array
+            if save_dict['rs_in_24']:
+                drigo.block_to_raster(rso_in_24_array, raster_dict['rs_in_24'], b_i, b_j, bs)
+            if save_dict['rn_24']:
+                drigo.block_to_raster(
+                    rn_24_array, raster_dict['rn_24'], b_i, b_j, bs)
 
         # Soil Heat Flux
         # (Uncommenting would apply Ag function to all pixels)
@@ -1496,7 +1836,7 @@ def metric_model2(image_ws, ini_path, bs=None,
             g_water_mask &= (ts_array < ts_avg_delap_flt)
             if np.any(g_water_mask):
                 g_array[g_water_mask] = (
-                    0.5 * rn_array[g_water_mask])
+                        0.5 * rn_array[g_water_mask])
             if save_dict['g_water']:
                 g_water_array = np.copy(g_array)
                 g_water_array[~g_water_mask] = np.nan
@@ -1515,7 +1855,7 @@ def metric_model2(image_ws, ini_path, bs=None,
             g_snow_mask &= (ts_array < snow_temp_threshold_flt)
             if np.any(g_snow_mask):
                 g_array[g_snow_mask] = (
-                    0.5 * rn_array[g_snow_mask])
+                        0.5 * rn_array[g_snow_mask])
             if save_dict['g_snow']:
                 g_snow_array = np.copy(g_array)
                 g_snow_array[~g_snow_mask] = np.nan
@@ -1528,7 +1868,7 @@ def metric_model2(image_ws, ini_path, bs=None,
             g_wetland_mask = np.copy(block_data_mask)
             if landuse_type in ['NLCD', 'CDL']:
                 g_wetland_mask &= (
-                    (landuse_array == 90) | (landuse_array == 95))
+                        (landuse_array == 90) | (landuse_array == 95))
             else:
                 pass
             if g_refl_type == 'TOA':
@@ -1537,7 +1877,7 @@ def metric_model2(image_ws, ini_path, bs=None,
                 g_wetland_mask &= (ndvi_sur_array <= 0.5)
             if np.any(g_wetland_mask):
                 g_array[g_wetland_mask] = (
-                    -51 + (0.41 * rn_array[g_wetland_mask]))
+                        -51 + (0.41 * rn_array[g_wetland_mask]))
             if save_dict['g_wetland']:
                 g_wetland_array = np.copy(g_array)
                 g_wetland_array[~g_wetland_mask] = np.nan
@@ -1574,9 +1914,21 @@ def metric_model2(image_ws, ini_path, bs=None,
         if calc_dict['lai_sur']:
             del lai_sur_array
 
+        # Excess Resistance
+        excess_res_array = np.zeros(
+            block_data_mask.shape).astype(np.float32)
+        if calc_dict['excess_res']:
+            for landuse in excess_res_landuse_list:
+                excess_res_array[landuse_array == landuse] = excess_res_flt
+        if save_dict['excess_res']:
+            drigo.block_to_raster(
+                excess_res_array, raster_dict['excess_res'], b_i, b_j, bs)
+
         # dT (Eqn 45)
         if calc_dict['dt']:
-            dt_array = et_numpy.dt_func(ts_dem_array, a, b)
+            dt_array = et_numpy.dt_func(
+                dt_adjust_flag, ts_dem_array, a, b, ts_cold_threshold,
+                ts_hot_threshold, dt_slope_factor_flt)
         if save_dict['dt']:
             drigo.block_to_raster(dt_array, raster_dict['dt'], b_i, b_j, bs)
 
@@ -1598,7 +1950,7 @@ def metric_model2(image_ws, ini_path, bs=None,
                     u3_flt, z_flt_dict[3], zom_array, psi_z3_array)
                 rah_array = et_numpy.rah_func(
                     z_flt_dict, psi_z2_array, psi_z1_array,
-                    u_star_array)
+                    u_star_array, excess_res=excess_res_array)
                 del psi_z3_array, psi_z2_array, psi_z1_array, l_stabil_array
 
                 l_stabil_array = et_numpy.l_func(
@@ -1635,7 +1987,7 @@ def metric_model2(image_ws, ini_path, bs=None,
             del psi_z3_array
             rah_array = et_numpy.rah_func(
                 z_flt_dict, psi_z2_array, psi_z1_array,
-                u_star_array)
+                u_star_array, excess_res=excess_res_array)
             if save_dict['rah']:
                 drigo.block_to_raster(
                     rah_array, raster_dict['rah'], b_i, b_j, bs)
@@ -1654,6 +2006,8 @@ def metric_model2(image_ws, ini_path, bs=None,
         # Cleanup
         if calc_dict['zom']:
             del zom_array
+        if calc_dict['excess_res']:
+            del excess_res_array
         if calc_dict['dem']:
             del elev_array
 
@@ -1673,7 +2027,13 @@ def metric_model2(image_ws, ini_path, bs=None,
         # ET Reference Fraction - ETrF
         if calc_dict['etrf']:
             etrf_array = et_numpy.etrf_func(et_inst_array, etr_flt)
-        if save_dict['etrf']:
+            # Apply radiation correction for 24 hr period
+            if cos_theta_model == 'MOUNTAIN':
+                etrf_array = etrf_array * crad
+            # Clamp ETrF to (-0.2, 2)
+            etrf_array = np.clip(etrf_array, -0.2, 2)
+        if save_dict['etrf'] and not calc_dict['ef']:
+            # Don't save ETrF if calculating ef since will update EF classes and save later
             drigo.block_to_raster(
                 etrf_array, raster_dict['etrf'], b_i, b_j, bs)
 
@@ -1682,20 +2042,35 @@ def metric_model2(image_ws, ini_path, bs=None,
         #   but is saved after E.F.
         if calc_dict['et_24']:
             et_24_array = etr_24hr_flt * etrf_array
-
-        # # Calc ET 24hr [mm/day] from evaporative fraction`
-        # if calc_dict['ef']:
-        #     # ef_array = et_numpy.ef_func(le_array, rn_array, g_array)
-        #     ef_24_array = et_inst_array * (rn_24_array - 0) / (rn_array - g_array)
-        #     # for lu in ef_landuse_list:
-        #     #     et_24_array[landuse_array == lu] = ef_24_array[landuse_array == lu]
-        #     del ef_24_array
-        # # Save evaporative fraction raster (not ET raster)
-        # if save_dict['ef']:
-        #     ef_array = et_numpy.ef_func(le_array, rn_array, g_array)
-        #     drigo.block_to_raster(ef_array, raster_dict['ef'], b_i, b_j, bs)
-        if calc_dict['et_inst']:
-            del et_inst_array
+        # Calc ET 24hr [mm/day] from evaporative fraction`
+        if calc_dict['ef']:
+            # ef_inst_array = et_numpy.ef_func(le_array, rn_array, g_array)
+            ef_array = et_numpy.ef_func(le_array, rn_array, g_array)
+            ef_24_array = et_inst_array * (rn_24_array * 24) / (rn_array - g_array)  # Multiply by 24 to get equivalent flux in time as hourly
+            # lat_array, lon_array = drigo.array_lat_lon_func(
+            #     env.snap_osr, env.cellsize, block_extent,
+            #     gcs_cs=0.005, radians_flag=True)
+            # TODO: ET EF calculation doesn't look right without including all the other adjustment equations
+            # ef_24_array = et_numpy.calculate_et_ef(lat_array, image.acq_doy, rn_24_array, rn_array, g_array, et_inst_array)
+            for lu in ef_landuse_list:
+                et_24_array[landuse_array == lu] = ef_24_array[landuse_array == lu]
+            del ef_24_array
+        # Save evaporative fraction raster (not ET raster)
+        if calc_dict['ef']:
+            # Save updated ETrF with EF based values by LU
+            etrf_ef_array = et_24_array / etr_24hr_flt
+            # Clamp ETrF with EF to (-0.2, 2)
+            etrf_ef_array = np.clip(etrf_ef_array, -0.2, 2)
+            if save_dict['ef']:
+                drigo.block_to_raster(ef_array, raster_dict['ef'], b_i, b_j, bs)
+                # Save Original ETrF array without EF since resaving ETrf with ef as 'ETrF'
+                drigo.block_to_raster(
+                    etrf_array, raster_dict['etrf_no_ef'], b_i, b_j, bs)
+                # Save radiation adjustment coefficient (crad) raster
+                # drigo.block_to_raster(
+                #     crad, crad_raster, b_i, b_j, bs)
+                # del crad
+            del ef_array
 
         # Save ET 24hr after updating with EF based values
         if save_dict['et_24']:
@@ -1703,10 +2078,16 @@ def metric_model2(image_ws, ini_path, bs=None,
                 et_24_array, raster_dict['et_24'], b_i, b_j, bs)
         if calc_dict['et_24']:
             del et_24_array
-        if calc_dict['etrf']:
-            del etrf_array
+        if calc_dict['etrf'] and calc_dict['ef']:
+            # Resave ETrF using EF for EF landuses to include EF in ETrF raster used for interpolation
+            if save_dict['etrf']:
+                drigo.block_to_raster(
+                    etrf_ef_array, raster_dict['etrf'], b_i, b_j, bs)
+            del etrf_array, etrf_ef_array
 
         # Cleanup
+        if calc_dict['et_inst']:
+            del et_inst_array
         if calc_dict['ts']:
             del ts_array
         if calc_dict['h']:
@@ -1715,6 +2096,8 @@ def metric_model2(image_ws, ini_path, bs=None,
             del g_array
         if calc_dict['rn']:
             del rn_array
+        if calc_dict['rn_24']:
+            del rn_24_array
         del block_nodata_mask, block_data_mask, block_rows, block_cols
 
     # Raster Statistics
@@ -1781,6 +2164,9 @@ def arg_parse():
     parser.add_argument(
         '-xyh', '--xy_hot', default=None, type=float, nargs=2,
         help='Location of the hot calibration point', metavar=('X', 'Y'))
+    parser.add_argument(
+        '-adj', '--adj_file', default=None, type=dripy.arg_valid_file,
+        help='Scene adjustment input csv file', metavar='FILE')
     args = parser.parse_args()
 
     # Convert relative paths to absolute paths
@@ -1823,7 +2209,7 @@ if __name__ == '__main__':
     # Delay
     sleep(random.uniform(0, max([0, abs(args.delay)])))
 
-    metric_model2(image_ws=args.workspace, ini_path=args.ini,
+    metric_model2(image_ws=args.workspace, ini_path=args.ini, adj_path=args.adj_file,
                   mc_iter=args.iter, kc_cold=args.kc[0], kc_hot=args.kc[1],
                   cold_xy=args.xy_cold, hot_xy=args.xy_hot,
                   bs=args.blocksize, stats_flag=args.stats,
