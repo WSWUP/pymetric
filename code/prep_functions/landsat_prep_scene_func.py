@@ -18,10 +18,10 @@ import numpy as np
 from scipy import ndimage
 from osgeo import gdal
 
+import python_common as dripy
 import et_common
 import et_image
 import et_numpy
-import python_common as dripy
 
 
 def main(image_ws, ini_path, bs=2048, stats_flag=False, overwrite_flag=False):
@@ -137,8 +137,8 @@ def main(image_ws, ini_path, bs=2048, stats_flag=False, overwrite_flag=False):
     #     'calc_ledaps_cloud_flag', False, config, 'INPUTS')
 
     # Interpolate/clip/project hourly rasters for each Landsat scene
-    # calc_metric_flag = dripy.read_param(
-    #     'calc_metric_flag', False, config, 'INPUTS')
+    calc_metric_ea_daily_flag = dripy.read_param(
+        'calc_metric_ea_daily_flag', False, config, 'INPUTS')
     calc_metric_ea_flag = dripy.read_param(
         'calc_metric_ea_flag', False, config, 'INPUTS')
     calc_metric_wind_flag = dripy.read_param(
@@ -147,6 +147,12 @@ def main(image_ws, ini_path, bs=2048, stats_flag=False, overwrite_flag=False):
         'calc_metric_etr_flag', False, config, 'INPUTS')
     calc_metric_tair_flag = dripy.read_param(
         'calc_metric_tair_flag', False, config, 'INPUTS')
+
+    # Option to use daily bias corrected corrected etr rasters
+    use_bias_corrected_etr_flag = dripy.read_param(
+        'use_bias_corrected_etr_flag', False, config, 'INPUTS')
+    nldas_bias_corr_factor = dripy.read_param(
+        'nldas_bias_corr_factor', 0.85, config, 'INPUTS')
 
     # Interpolate/clip/project AWC and daily ETr/PPT rasters
     # to compute SWB Ke for each Landsat scene
@@ -283,6 +289,14 @@ def main(image_ws, ini_path, bs=2048, stats_flag=False, overwrite_flag=False):
                  '\n  Setting calc_metric_ea_flag=False\n  {}'.format(
                      metric_ea_input_ws))
             calc_metric_ea_flag = False
+    if calc_metric_ea_daily_flag:
+        ea_daily_input_ws = config.get('INPUTS', 'ea_daily_input_folder')
+        if not os.path.isdir(ea_daily_input_ws):
+            logging.warning(
+                 '\nDaily Ea folder does not exist but calc_metric_ea_daily_flag=True'
+                 '\n  Setting calc_metric_ea_flag=False\n  {}'.format(
+                     ea_daily_input_ws))
+            calc_metric_ea_daily_flag = False
     if calc_metric_wind_flag:
         metric_wind_input_ws = config.get('INPUTS', 'metric_wind_input_folder')
         if not os.path.isdir(metric_wind_input_ws):
@@ -293,11 +307,21 @@ def main(image_ws, ini_path, bs=2048, stats_flag=False, overwrite_flag=False):
             calc_metric_wind_flag = False
     if calc_metric_etr_flag:
         metric_etr_input_ws = config.get('INPUTS', 'metric_etr_input_folder')
+        if use_bias_corrected_etr_flag:
+            etr_input_ws = config.get('INPUTS', 'etr_input_folder_corr')
+        else:
+            etr_input_ws = config.get('INPUTS', 'etr_input_folder')
         if not os.path.isdir(metric_etr_input_ws):
             logging.warning(
                  '\nHourly ETr folder does not exist but calc_metric_etr_flag=True'
                  '\n  Setting calc_metric_etr_flag=False\n  {}'.format(
                      metric_etr_input_ws))
+            calc_metric_etr_flag = False
+        if not os.path.isdir(etr_input_ws):
+            logging.warning(
+                '\nDaily ETr folder does not exist but calc_metric_etr_flag=True'
+                '\n  Setting calc_metric_etr_flag=False\n  {}'.format(
+                    metric_etr_input_ws))
             calc_metric_etr_flag = False
     if calc_metric_tair_flag:
         metric_tair_input_ws = config.get('INPUTS', 'metric_tair_input_folder')
@@ -308,16 +332,26 @@ def main(image_ws, ini_path, bs=2048, stats_flag=False, overwrite_flag=False):
                      metric_tair_input_ws))
             calc_metric_tair_flag = False
     if (calc_metric_ea_flag or calc_metric_wind_flag or
-            calc_metric_etr_flag or calc_metric_tair_flag):
+            calc_metric_etr_flag or calc_metric_tair_flag or calc_metric_ea_daily_flag):
         metric_hourly_re = re.compile(config.get('INPUTS', 'metric_hourly_re'))
-        metric_daily_re = re.compile(config.get('INPUTS', 'metric_daily_re'))
+        # metric_daily_re = re.compile(config.get('INPUTS', 'metric_daily_re'))
+        ea_daily_re = re.compile(config.get('INPUTS', 'ea_daily_re'))
+
+        if use_bias_corrected_etr_flag:
+            etr_input_re = re.compile(config.get('INPUTS', 'etr_input_corr_re'))
+        else:
+            etr_input_re = re.compile(config.get('INPUTS', 'etr_input_re'))
 
     if calc_swb_ke_flag:
         awc_input_path = config.get('INPUTS', 'awc_input_path')
-        etr_input_ws = config.get('INPUTS', 'etr_input_folder')
         ppt_input_ws = config.get('INPUTS', 'ppt_input_folder')
-        etr_input_re = re.compile(config.get('INPUTS', 'etr_input_re'))
         ppt_input_re = re.compile(config.get('INPUTS', 'ppt_input_re'))
+        if use_bias_corrected_etr_flag:
+            etr_input_ws = config.get('INPUTS', 'etr_input_folder_corr')
+            etr_input_re = re.compile(config.get('INPUTS', 'etr_input_corr_re'))
+        else:
+            etr_input_ws = config.get('INPUTS', 'etr_input_folder')
+            etr_input_re = re.compile(config.get('INPUTS', 'etr_input_re'))
         if not os.path.isfile(awc_input_path):
             logging.warning(
                  '\nAWC raster does not exist but calc_swb_ke_flag=True'
@@ -769,7 +803,7 @@ def main(image_ws, ini_path, bs=2048, stats_flag=False, overwrite_flag=False):
 
 
     # Interpolate/project/clip METRIC hourly/daily rasters
-    if (calc_metric_ea_flag or
+    if (calc_metric_ea_flag or calc_metric_ea_daily_flag or
             calc_metric_wind_flag or
             calc_metric_etr_flag):
         logging.info('METRIC hourly/daily rasters')
@@ -821,7 +855,7 @@ def main(image_ws, ini_path, bs=2048, stats_flag=False, overwrite_flag=False):
         def metric_weather_func(output_raster, input_ws, input_re,
                                 prev_dt, next_dt,
                                 resample_method=gdal.GRA_NearestNeighbour,
-                                rounding_flag=False):
+                                rounding_flag=False, var_name='wind'):
             """Interpolate/project/clip METRIC hourly rasters"""
             logging.debug('    Output: {}'.format(output_raster))
             if os.path.isfile(output_raster):
@@ -892,6 +926,9 @@ def main(image_ws, ini_path, bs=2048, stats_flag=False, overwrite_flag=False):
             # Apply common area mask
             output_array[~common_array] = np.nan
 
+            # Reduce hourly ETr by bias correction factor
+            if var_name == 'etr':
+                output_array = output_array * nldas_bias_corr_factor
             # Reduce the file size by rounding to the nearest n digits
             if rounding_flag:
                 output_array = np.around(output_array, rounding_digits)
@@ -909,7 +946,7 @@ def main(image_ws, ini_path, bs=2048, stats_flag=False, overwrite_flag=False):
             metric_weather_func(
                 image.metric_ea_raster, metric_ea_input_ws,
                 metric_hourly_re, image_prev_dt, image_next_dt,
-                gdal.GRA_Bilinear, rounding_flag=True)
+                gdal.GRA_Bilinear, rounding_flag=True, var_name='ea')
 
         # Wind - Project to Landsat scene after clipping
         if calc_metric_wind_flag:
@@ -917,7 +954,7 @@ def main(image_ws, ini_path, bs=2048, stats_flag=False, overwrite_flag=False):
             metric_weather_func(
                 image.metric_wind_raster, metric_wind_input_ws,
                 metric_hourly_re, image_prev_dt, image_next_dt,
-                gdal.GRA_NearestNeighbour, rounding_flag=False)
+                gdal.GRA_NearestNeighbour, rounding_flag=False, var_name='wind')
 
         # ETr - Project to Landsat scene after clipping
         if calc_metric_etr_flag:
@@ -925,9 +962,135 @@ def main(image_ws, ini_path, bs=2048, stats_flag=False, overwrite_flag=False):
             metric_weather_func(
                 image.metric_etr_raster, metric_etr_input_ws,
                 metric_hourly_re, image_prev_dt, image_next_dt,
-                gdal.GRA_NearestNeighbour, rounding_flag=False)
+                gdal.GRA_NearestNeighbour, rounding_flag=False, var_name='etr')
+
+        # Tair - Project to Landsat scene after clipping
+        if calc_metric_tair_flag:
+            logging.info('  Hourly air temperature (Tair)')
+            metric_weather_func(
+                image.metric_tair_raster, metric_tair_input_ws,
+                metric_hourly_re, image_prev_dt, image_next_dt,
+                gdal.GRA_NearestNeighbour, rounding_flag=False, var_name='tair')
+
+        #  # ETr 24hr - Project to Landsat scene after clipping
+        # if calc_metric_etr_flag:
+        #     logging.info('  Daily reference ET (ETr)')
+        #     logging.debug('    Output: {}'.format(
+        #         image.metric_etr_24hr_raster))
+        #     if (os.path.isfile(image.metric_etr_24hr_raster) and
+        #             overwrite_flag):
+        #         logging.debug('    Overwriting output')
+        #         os.remove(image.metric_etr_24hr_raster)
+        #     if not os.path.isfile(image.metric_etr_24hr_raster):
+        #         etr_prev_ws = os.path.join(
+        #             metric_etr_input_ws, str(image_prev_dt.year))
+        #         try:
+        #             input_path = [
+        #                 os.path.join(etr_prev_ws, file_name)
+        #                 for file_name in os.listdir(etr_prev_ws)
+        #                 for match in [metric_daily_re.match(file_name)]
+        #                 if (match and
+        #                     (image_prev_dt.strftime('%Y%m%d') ==
+        #                      match.group('YYYYMMDD')))][0]
+        #             logging.debug('    Input: {}'.format(input_path))
+        #         except IndexError:
+        #             logging.error('  No daily file for {}'.format(
+        #                 image_prev_dt.strftime('%Y-%m-%d')))
+        #             return False
+        #         output_array = drigo.raster_to_array(
+        #             input_path, mask_extent=common_gcs_extent,
+        #             return_nodata=False)
+        #         output_array = drigo.project_array(
+        #             output_array, gdal.GRA_NearestNeighbour,
+        #             input_osr, input_cs, common_gcs_extent,
+        #             common_osr, env.cellsize, common_extent,
+        #             output_nodata=None)
+        #         # Apply common area mask
+        #         output_array[~common_array] = np.nan
+        #         # Reduce the file size by rounding to the nearest n digits
+        #         # output_array = np.around(output_array, rounding_digits)
+        #         drigo.array_to_raster(
+        #             output_array, image.metric_etr_24hr_raster,
+        #             output_geo=common_geo, output_proj=common_proj,
+        #             stats_flag=stats_flag)
+        #         del output_array
+        #         del input_path
+
+        # Get GRIDMET properties from one of the images
+        input_ws = ea_daily_input_ws
+        try:
+            input_path = [
+                os.path.join(input_ws, file_name)
+                for file_name in os.listdir(input_ws)
+                for match in [ea_daily_re.match(file_name)]
+                if (match and
+                    (image_prev_dt.strftime('%Y') ==
+                     match.group('YYYY')))][0]
+        except IndexError:
+            logging.error('  No daily file for {}'.format(
+                image_prev_dt.strftime('%Y-%m-%d')))
+            return False
+        try:
+            input_ds = gdal.Open(input_path)
+            input_osr = drigo.raster_ds_osr(input_ds)
+            # input_proj = drigo.osr_proj(input_osr)
+            input_extent = drigo.raster_ds_extent(input_ds)
+            input_cs = drigo.raster_ds_cellsize(input_ds, x_only=True)
+            # input_geo = input_extent.geo(input_cs)
+            input_x, input_y = input_extent.origin()
+            input_ds = None
+        except:
+            logging.error('  Could not get default input image properties')
+            logging.error('    {}'.format(input_path))
+            return False
+
+        # Ea 24hr - Project to Landsat scene after clipping
+        if calc_metric_ea_daily_flag:
+            logging.info('  Daily actual vapor pressure (ea)')
+            logging.debug('    Output: {}'.format(
+                image.metric_ea_24hr_raster))
+            if (os.path.isfile(image.metric_ea_24hr_raster) and
+                    overwrite_flag):
+                logging.debug('    Overwriting output')
+                os.remove(image.metric_ea_24hr_raster)
+            if not os.path.isfile(image.metric_ea_24hr_raster):
+                ea_prev_ws = ea_daily_input_ws
+                # ea_prev_ws = os.path.join(
+                #     ea_prev_ws, str(image_prev_dt.year))
+                try:
+                    input_path = [
+                        os.path.join(ea_prev_ws, file_name)
+                        for file_name in os.listdir(ea_prev_ws)
+                        for match in [ea_daily_re.match(file_name)]
+                        if (match and
+                            (image.acq_datetime.strftime('%Y') ==
+                             match.group('YYYY')))][0]
+                    logging.debug('    Input: {}'.format(input_path))
+                except IndexError:
+                    logging.error('  No daily file for {}'.format(
+                        image_prev_dt.strftime('%Y-%m-%d')))
+                    return False
+                output_array = drigo.raster_to_array(
+                    input_path, band=image.acq_doy, mask_extent=common_gcs_extent,
+                    return_nodata=False)
+                output_array = drigo.project_array(
+                    output_array, gdal.GRA_NearestNeighbour,
+                    input_osr, input_cs, common_gcs_extent,
+                    common_osr, env.cellsize, common_extent,
+                    output_nodata=None)
+                # Apply common area mask
+                output_array[~common_array] = np.nan
+                # Reduce the file size by rounding to the nearest n digits
+                # output_array = np.around(output_array, rounding_digits)
+                drigo.array_to_raster(
+                    output_array, image.metric_ea_24hr_raster,
+                    output_geo=common_geo, output_proj=common_proj,
+                    stats_flag=stats_flag)
+                del output_array
+                del input_path
 
         # ETr 24hr - Project to Landsat scene after clipping
+        # Changed so use GRIDMET daily ETr instead of daily from NLDAS
         if calc_metric_etr_flag:
             logging.info('  Daily reference ET (ETr)')
             logging.debug('    Output: {}'.format(
@@ -937,24 +1100,40 @@ def main(image_ws, ini_path, bs=2048, stats_flag=False, overwrite_flag=False):
                 logging.debug('    Overwriting output')
                 os.remove(image.metric_etr_24hr_raster)
             if not os.path.isfile(image.metric_etr_24hr_raster):
-                etr_prev_ws = os.path.join(
-                    metric_etr_input_ws, str(image_prev_dt.year))
+                if use_bias_corrected_etr_flag:
+                    etr_prev_ws = os.path.join(
+                        etr_input_ws, str(image_prev_dt.year))
+                else:
+                    etr_prev_ws = etr_input_ws
                 try:
-                    input_path = [
-                        os.path.join(etr_prev_ws, file_name)
-                        for file_name in os.listdir(etr_prev_ws)
-                        for match in [metric_daily_re.match(file_name)]
-                        if (match and
-                            (image_prev_dt.strftime('%Y%m%d') ==
-                             match.group('YYYYMMDD')))][0]
+                    if use_bias_corrected_etr_flag:
+                        input_path = [
+                            os.path.join(etr_prev_ws, file_name)
+                            for file_name in os.listdir(etr_prev_ws)
+                            for match in [etr_input_re.match(file_name)]
+                            if (match and (image.acq_datetime.strftime('%Y%m%d') ==
+                                           match.group('YYYYMMDD')))][0]
+                    else:
+                        input_path = [
+                            os.path.join(etr_prev_ws, file_name)
+                            for file_name in os.listdir(etr_prev_ws)
+                            for match in [etr_input_re.match(file_name)]
+                            if (match and
+                                (image.acq_datetime.strftime('%Y') ==
+                                 match.group('YYYY')))][0]
                     logging.debug('    Input: {}'.format(input_path))
                 except IndexError:
                     logging.error('  No daily file for {}'.format(
                         image_prev_dt.strftime('%Y-%m-%d')))
                     return False
-                output_array = drigo.raster_to_array(
-                    input_path, mask_extent=common_gcs_extent,
-                    return_nodata=False)
+                if use_bias_corrected_etr_flag:
+                    output_array = drigo.raster_to_array(
+                        input_path, band=1, mask_extent=common_gcs_extent,
+                        return_nodata=False)
+                else:
+                    output_array = drigo.raster_to_array(
+                        input_path, band=image.acq_doy, mask_extent=common_gcs_extent,
+                        return_nodata=False)
                 output_array = drigo.project_array(
                     output_array, gdal.GRA_NearestNeighbour,
                     input_osr, input_cs, common_gcs_extent,
@@ -970,14 +1149,6 @@ def main(image_ws, ini_path, bs=2048, stats_flag=False, overwrite_flag=False):
                     stats_flag=stats_flag)
                 del output_array
                 del input_path
-
-        # Tair - Project to Landsat scene after clipping
-        if calc_metric_tair_flag:
-            logging.info('  Hourly air temperature (Tair)')
-            metric_weather_func(
-                image.metric_tair_raster, metric_tair_input_ws,
-                metric_hourly_re, image_prev_dt, image_next_dt,
-                gdal.GRA_NearestNeighbour, rounding_flag=False)
 
         # Cleanup
         del image_prev_dt, image_next_dt
