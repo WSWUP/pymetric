@@ -62,6 +62,8 @@ def main(ini_path, tile_list=None, overwrite_flag=False):
         'ledaps_flag', False, config, 'INPUTS')
     dem_flag = dripy.read_param(
         'dem_flag', True, config, 'INPUTS')
+    mountain_flag = dripy.read_param(
+        'mountain_flag', True, config, 'INPUTS')
     nlcd_flag = dripy.read_param(
         'nlcd_flag', True, config, 'INPUTS')
     cdl_flag = dripy.read_param(
@@ -78,6 +80,8 @@ def main(ini_path, tile_list=None, overwrite_flag=False):
         'interpolate_rasters_flag', False, config, 'INPUTS')
     interp_tables_flag = dripy.read_param(
         'interpolate_tables_flag', False, config, 'INPUTS')
+    use_bias_corrected_etr_flag = dripy.read_param(
+        'use_bias_corrected_etr_flag', False, config, 'INPUTS')
 
     metric_hourly_weather = dripy.read_param(
         'metric_hourly_weather', 'NLDAS', config, 'INPUTS')
@@ -107,6 +111,7 @@ def main(ini_path, tile_list=None, overwrite_flag=False):
         interpolate_folder = dripy.read_param(
             'interpolate_folder', 'ET', config)
         interpolate_ini = config.get('INPUTS', 'interpolate_ini')
+
     if interp_rasters_flag:
         study_area_path = config.get('INPUTS', 'study_area_path')
         study_area_mask_flag = dripy.read_param(
@@ -148,6 +153,16 @@ def main(ini_path, tile_list=None, overwrite_flag=False):
         dem_output_name = dripy.read_param(
             'dem_output_name', 'dem.img', config)
         # dem_output_name = config.get('INPUTS', 'dem_output_name')
+        if mountain_flag:
+            mountain_input_ws = config.get('INPUTS', 'mountain_input_folder')
+            mountain_output_ws = config.get('INPUTS', 'mountain_output_folder')
+            slope_output_name = dripy.read_param('slope_output_name', 'slope.img', config)
+            aspect_output_name = dripy.read_param('aspect_output_name', 'aspect.img', config)
+
+        else:
+            mountain_input_ws, mountain_output_ws = None, None
+            slope_output_name, aspect_output_name = None, None
+
     else:
         dem_input_ws, dem_tile_fmt = None, None
         dem_output_ws, dem_output_name = None, None
@@ -223,14 +238,20 @@ def main(ini_path, tile_list=None, overwrite_flag=False):
             'etrf_input_folder', None, config)
         # if etrf_input_ws is None:
         #     etrf_input_ws = os.path.join(project_ws, year)
-        etr_input_ws = config.get('INPUTS', 'etr_input_folder')
+        if use_bias_corrected_etr_flag:
+            etr_input_ws = config.get('INPUTS', 'etr_input_folder_corr')
+            # Directory for bias corrected daily ETr with subfolder for each year
+            etr_input_ws = os.path.join(etr_input_ws, str(year))
+            etr_input_re = config.get('INPUTS', 'etr_input_corr_re')
+        else:
+            etr_input_ws = config.get('INPUTS', 'etr_input_folder')
+            etr_input_re = config.get('INPUTS', 'etr_input_re')
         ppt_input_ws = config.get('INPUTS', 'ppt_input_folder')
-        etr_input_re = config.get('INPUTS', 'etr_input_re')
         ppt_input_re = config.get('INPUTS', 'ppt_input_re')
     if monte_carlo_flag or interp_rasters_flag or interp_tables_flag:
         awc_input_path = config.get('INPUTS', 'awc_input_path')
         swb_adjust_flag = dripy.read_param(
-            'swb_adjust_flag', 30, config, 'INPUTS')
+            'swb_adjust_flag', False, config, 'INPUTS')
         spinup_days = dripy.read_param(
             'swb_spinup_days', 30, config, 'INPUTS')
         min_spinup_days = dripy.read_param(
@@ -428,6 +449,11 @@ def main(ini_path, tile_list=None, overwrite_flag=False):
         if dem_flag:
             dem_output_path = os.path.join(
                 dem_output_ws, tile_name, dem_output_name)
+            if mountain_flag:
+                slope_output_path = os.path.join(
+                    mountain_output_ws, tile_name, slope_output_name)
+                aspect_output_path = os.path.join(
+                    mountain_output_ws, tile_name, aspect_output_name)
         if nlcd_flag:
             nlcd_output_path = os.path.join(
                 nlcd_output_ws, tile_name, nlcd_output_fmt.format(year))
@@ -493,6 +519,15 @@ def main(ini_path, tile_list=None, overwrite_flag=False):
 
             if dem_flag:
                 config.set('INPUTS', 'dem_raster', dem_output_path)
+                if mountain_flag:
+                    config.set('INPUTS', 'slope_raster', slope_output_path)
+                    config.set('INPUTS', 'aspect_raster', aspect_output_path)
+                else:
+                    try:
+                        config.remove_option('INPUTS', 'slope_raster')
+                        config.remove_option('INPUTS', 'aspect_raster')
+                    except:
+                        pass
             else:
                 try:
                     config.remove_option('INPUTS', 'dem_raster')
@@ -600,6 +635,11 @@ def main(ini_path, tile_list=None, overwrite_flag=False):
             config.read(year_interpolator_ini)
             config.set('INPUTS', 'folder_name', interpolate_folder)
             config.set('INPUTS', 'tile_list', ', '.join(tile_list))
+            config.set('INPUTS', 'keep_list_path', keep_list_path)
+
+            if use_bias_corrected_etr_flag:
+                config.set('INPUTS', 'use_bias_corrected_etr_flag', use_bias_corrected_etr_flag)
+
             if interp_rasters_flag:
                 config.set('INPUTS', 'study_area_path', study_area_path)
                 config.set('INPUTS', 'study_area_mask_flag', study_area_mask_flag)
@@ -619,6 +659,8 @@ def main(ini_path, tile_list=None, overwrite_flag=False):
                 config.set('INPUTS', 'zones_snap', ', '.join(map(str, zones_snap)))
                 config.set('INPUTS', 'zones_cellsize', zones_cellsize)
                 config.set('INPUTS', 'zones_name_field', zones_name_field)
+                config.set('INPUTS', 'nlcd_input_path', nlcd_input_path)
+
                 # zones_buffer is not currently implemented
                 if zones_buffer:
                     config.set('INPUTS', 'zones_buffer', zones_buffer)
