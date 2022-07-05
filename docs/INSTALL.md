@@ -56,7 +56,7 @@ conda activate pymetric
 
 Most of the external modules can then be installed by calling:
 ```
-conda install future matplotlib netcdf4 numpy pandas refet requests scipy richdem numexpr
+conda install future matplotlib netcdf4 numpy pandas refet requests requests-html scipy richdem numexpr
 conda install gdal==3.3.2
 ```
 
