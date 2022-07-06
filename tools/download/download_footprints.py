@@ -29,9 +29,8 @@ def main(output_folder, overwrite_flag=False):
     None
 
     """
-    download_url = (
-        'https://landsat.usgs.gov/sites/default/files/documents/'
-        'WRS2_descending.zip')
+    download_url = ('https://d9-wret.s3.us-west-2.amazonaws.com/assets/palladium/production/s3fs-public/atoms/files/'
+                    'WRS2_descending_0.zip')
 
     zip_name = 'wrs2_descending.zip'
     zip_path = os.path.join(output_folder, zip_name)
