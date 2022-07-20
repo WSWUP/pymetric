@@ -87,8 +87,8 @@ def arg_parse():
         help='Output folder')
     parser.add_argument(
         '-y', '--year', metavar='YEAR', default='2016',
-        choices=['2001', '2004', '2006', '2008', '2011', '2013', '2016'],
-        help='NLCD Year (2001, 2004, 2006, 2008, 2011, 2013, or 2016)')
+        choices=['2001', '2004', '2006', '2008', '2011', '2013', '2016', '2019'],
+        help='NLCD Year (2001, 2004, 2006, 2008, 2011, 2013, or 2016, 2019)')
     parser.add_argument(
         '-o', '--overwrite', default=None, action="store_true",
         help='Force overwrite of existing files')
