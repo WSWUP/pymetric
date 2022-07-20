@@ -111,7 +111,7 @@ def metric_interpolate(year_ws, ini_path, mc_iter=None, bs=None,
     etrf_input_ws = dripy.read_param('etrf_input_folder', None, config)
     etr_input_ws = config.get('INPUTS', 'etr_input_folder')
     etr_input_re = re.compile(config.get('INPUTS', 'etr_input_re'))
-    use_bias_corrected_etr_flag = config.get('INPUTS', 'use_bias_corrected_etr_flag')
+    use_bias_corrected_etr_flag = dripy.read_param('use_bias_corrected_etr_flag', False, config)
     ppt_input_ws = config.get('INPUTS', 'ppt_input_folder')
     ppt_input_re = re.compile(config.get('INPUTS', 'ppt_input_re'))
     footprint_path = config.get('INPUTS', 'footprint_path')
@@ -396,6 +396,7 @@ def metric_interpolate(year_ws, ini_path, mc_iter=None, bs=None,
         bs = 1024
 
     # Print run properties
+    logging.info(log_fmt.format('Use bias corrected ETr flag:', use_bias_corrected_etr_flag))
     logging.info(log_fmt.format('ETrF Workspace:', etrf_input_ws))
     logging.info(log_fmt.format('Output Workspace:', output_ws))
     logging.info(log_fmt.format('Fill:', fill_method))

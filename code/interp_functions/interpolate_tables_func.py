@@ -115,7 +115,7 @@ def metric_interpolate(year_ws, ini_path, mc_iter=None, bs=None,
     etrf_input_ws = dripy.read_param('etrf_input_folder', None, config)
     etr_input_ws = config.get('INPUTS', 'etr_input_folder')
     etr_input_re = re.compile(config.get('INPUTS', 'etr_input_re'))
-    use_bias_corrected_etr_flag = config.get('INPUTS', 'use_bias_corrected_etr_flag')
+    use_bias_corrected_etr_flag = dripy.read_param('use_bias_corrected_etr_flag', False, config)
     ppt_input_ws = config.get('INPUTS', 'ppt_input_folder')
     ppt_input_re = re.compile(config.get('INPUTS', 'ppt_input_re'))
     footprint_path = config.get('INPUTS', 'footprint_path')

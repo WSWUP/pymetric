@@ -636,9 +636,7 @@ def main(ini_path, tile_list=None, overwrite_flag=False):
             config.set('INPUTS', 'folder_name', interpolate_folder)
             config.set('INPUTS', 'tile_list', ', '.join(tile_list))
             config.set('INPUTS', 'keep_list_path', keep_list_path)
-
-            if use_bias_corrected_etr_flag:
-                config.set('INPUTS', 'use_bias_corrected_etr_flag', use_bias_corrected_etr_flag)
+            config.set('INPUTS', 'use_bias_corrected_etr_flag', use_bias_corrected_etr_flag)
 
             if interp_rasters_flag:
                 config.set('INPUTS', 'study_area_path', study_area_path)
