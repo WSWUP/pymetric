@@ -657,7 +657,6 @@ def main(ini_path, tile_list=None, overwrite_flag=False):
                 config.set('INPUTS', 'zones_snap', ', '.join(map(str, zones_snap)))
                 config.set('INPUTS', 'zones_cellsize', zones_cellsize)
                 config.set('INPUTS', 'zones_name_field', zones_name_field)
-                config.set('INPUTS', 'nlcd_input_path', nlcd_input_path)
 
                 # zones_buffer is not currently implemented
                 if zones_buffer:
