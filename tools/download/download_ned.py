@@ -94,7 +94,7 @@ def main(extent_path, output_folder, overwrite_flag=False):
             'EXPAND', tile_x, tile_y, tile_cs)
         logging.debug('Tile Extent:   {}'.format(tile_extent))
 
-        # Get list of avaiable tiles that intersect the extent
+        # Get list of available tiles that intersect the extent
         lat_lon_list.extend([
             (lat, -lon)
             for lon in range(int(tile_extent.xmin), int(tile_extent.xmax))

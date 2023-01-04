@@ -21,7 +21,7 @@ def main(output_folder, version='140', overwrite_flag=False):
     ----------
     output_folder : str
         Folder path where files will be saved.
-    version : {'105', '110', '120', '130', '140'}
+    version : {'105', '110', '120', '130', '140', '200'}
         LANDFIRE version string (the default is '140').
     overwrite_flag : bool, optional
         If True, overwrite existing files (the default is False).
@@ -35,6 +35,7 @@ def main(output_folder, version='140', overwrite_flag=False):
 
     base_url = 'http://www.landfire.gov/bulk/downloadfile.php?FNAME='
     zip_dict = {
+        '200': 'US_{0}_mosaic-US_{0}EVT.zip&TYPE=landfire'.format(version),
         '140': 'US_{0}_mosaic-US_{0}EVT_20180618.zip&TYPE=landfire'.format(version),
         '130': 'US_{0}_Mosaic-US_{0}_EVT_04232015.zip&TYPE=landfire'.format(version),
         '120': 'US_{0}_Mosaic-US_{0}_EVT_06142017.zip&TYPE=landfire'.format(version),
@@ -117,8 +118,8 @@ def arg_parse():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
         '-v', '--version', metavar='VERSION', default='140',
-        choices=['105', '110', '120', '130', '140'],
-        help='Version (105, 110, 120, 130, or 140)')
+        choices=['105', '110', '120', '130', '140', '200'],
+        help='Version (105, 110, 120, 130, 140, or 200)')
     parser.add_argument(
         '--output', help='Output folder', metavar='FOLDER',
         default=output_folder)

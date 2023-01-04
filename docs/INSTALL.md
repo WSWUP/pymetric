@@ -6,14 +6,13 @@ Most of the documentation and examples are written assuming you are running pyME
 
 ## Python
 
-pyMETRIC has only been tested using Python 2.7 and 3.6, but may work with other versions.
+pyMETRIC will only officially work with Python 3.6+, but may work with older versions.
 
 ## Dependencies
 
 The following external Python modules must be present to run pyMETRIC:
 * [fiona](http://toblerity.org/fiona/) (used to read and write multi-layered GIS file formats)
-* [future](https://pypi.python.org/pypi/future) (adds features from Python 3 to Python 2 installations)
-* [gdal](http://www.gdal.org/) (version >2.2 and <3.0.0) (the Geospatial Data Abstraction Library is used to interact with raster and vector geospatial data)
+* [gdal](http://www.gdal.org/) (version >=3.0) (the Geospatial Data Abstraction Library is used to interact with raster and vector geospatial data)
 * [matplotlib](https://matplotlib.org/) (necessary for creating plots of ET related data)
 * [netcdf4](https://www.unidata.ucar.edu/software/netcdf/) (for interacting with multi-dimensional scientific datasets, such as GRIDMET/DAYMET)
 * [numpy](http://www.numpy.org/)
@@ -24,10 +23,6 @@ The following external Python modules must be present to run pyMETRIC:
 * [drigo](https://github.com/WSWUP/drigo) (GDAL/OGR helper functions)
 
 Please see the [requirements](../requirements.txt) file for details on the versioning requirements.  The module version numbers listed in the file were tested and are known to work.  Other combinations of versions may work but have not been tested.
-
-### Python 2
-The following external Python modules must be present to run pyMETRIC on Python 2
-* [configparser]()(Python 2 implementation of the Python 3 configparser module)
 
 ## Anaconda/Miniconda
 

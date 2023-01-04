@@ -12,7 +12,7 @@ import sys
 import drigo
 import netCDF4
 import numpy as np
-from osgeo import osr
+from osgeo import gdal, osr
 
 import _utils
 
@@ -43,9 +43,10 @@ def main(ancillary_ws=os.getcwd(), zero_elev_nodata_flag=False,
     # Manually define the spatial reference and extent of the GRIDMET data
     # This could be read in from a raster
     gridmet_osr = osr.SpatialReference()
-    # Assume GRIDMET data is in WGS84 not NAD83 (need to check with John)
     gridmet_osr.ImportFromEPSG(4326)
-    # gridmet_osr.ImportFromEPSG(4326)
+    if int(gdal.__version__[0]) >= 3:
+        # GDAL 3 changes axis order: https://github.com/OSGeo/gdal/issues/1546
+        gridmet_osr.SetAxisMappingStrategy(osr.OAMS_TRADITIONAL_GIS_ORDER)
     gridmet_proj = drigo.osr_proj(gridmet_osr)
     gridmet_cs = 1. / 24   # 0.041666666666666666
     gridmet_x = -125 + gridmet_cs * 5

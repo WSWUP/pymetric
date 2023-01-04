@@ -7,12 +7,14 @@ import argparse
 import datetime as dt
 import logging
 import os
-import subprocess
+# import subprocess
 import sys
 
 import drigo
+import netCDF4
 import numpy as np
-import pandas as pd
+from osgeo import gdal, osr
+# import pandas as pd
 
 import _utils
 
@@ -38,134 +40,155 @@ def main(ancillary_ws=os.getcwd(), zero_elev_nodata_flag=False,
     logging.info('\nProcess NLDAS ancillary data')
 
     # Site URLs
-    mask_url = 'http://ldas.gsfc.nasa.gov/nldas/asc/NLDASmask_UMDunified.asc'
-    elev_url = 'http://ldas.gsfc.nasa.gov/nldas/asc/gtopomean15k.asc'
+    mask_url = 'https://ldas.gsfc.nasa.gov/sites/default/files/ldas/nldas/NLDAS_masks-veg-soil.nc4'
+    elev_url = 'https://ldas.gsfc.nasa.gov/sites/default/files/ldas/nldas/NLDAS_elevation.nc4'
 
-    nldas_epsg = 'EPSG:4269'
-    # nldas_epsg = 'EPSG:4326'
-
+    # Manually define the spatial reference and extent of the NLDAS data
+    # This could be read in from a raster
+    nldas_osr = osr.SpatialReference()
+    nldas_osr.ImportFromEPSG(4326)
+    if int(gdal.__version__[0]) >= 3:
+        # GDAL 3 changes axis order: https://github.com/OSGeo/gdal/issues/1546
+        nldas_osr.SetAxisMappingStrategy(osr.OAMS_TRADITIONAL_GIS_ORDER)
+    nldas_proj = drigo.osr_proj(nldas_osr)
+    nldas_geo = (-125.0005,  0.125, 0., 53.0005, 0., -0.125)
+    # nldas_geo = (-124.9375,  0.125, 0., 25.0625 + 224 * 0.125, 0., -0.125)
+    logging.debug('  Geo: {}'.format(nldas_geo))
     nldas_nodata = -9999.0
-
-    # Site URLs
-    # file_re = re.compile(
-    #    'NLDAS_FORA0125_H.A(?P<YEAR>\d{4})(?P<MONTH>\d{2})(?P<DAY>\d{2}).' +
-    #    '(?P<TIME>\d{4}).002.grb')
-    # file_re = re.compile(
-    #    'NLDAS_FORA0125_H.A(?P<DATE>\d{8}).(?P<TIME>\d{4}).002.grb')
+    # logging.debug('  X/Y: {} {}'.format(gridmet_x, gridmet_y))
+    # logging.debug('  Cellsize: {}'.format(gridmet_cs))
 
     # Build output workspace if it doesn't exist
     if not os.path.isdir(ancillary_ws):
         os.makedirs(ancillary_ws)
 
     # Input paths
-    input_elev_ascii = os.path.join(ancillary_ws, os.path.basename(elev_url))
-    input_mask_ascii = os.path.join(ancillary_ws, os.path.basename(mask_url))
+    mask_nc = os.path.join(ancillary_ws, os.path.basename(mask_url))
+    elev_nc = os.path.join(ancillary_ws, os.path.basename(elev_url))
 
     # Output paths
-    elev_ascii = os.path.join(ancillary_ws, 'nldas_elev.asc')
-    mask_ascii = os.path.join(ancillary_ws, 'nldas_mask.asc')
-    lat_ascii = os.path.join(ancillary_ws, 'nldas_lat.asc')
-    lon_ascii = os.path.join(ancillary_ws, 'nldas_lon.asc')
     elev_raster = os.path.join(ancillary_ws, 'nldas_elev.img')
     mask_raster = os.path.join(ancillary_ws, 'nldas_mask.img')
     lat_raster = os.path.join(ancillary_ws, 'nldas_lat.img')
     lon_raster = os.path.join(ancillary_ws, 'nldas_lon.img')
 
-    # Download the elevation data if necessary
-    logging.info('\nDownloading ASCII files')
-    if overwrite_flag or not os.path.isfile(input_elev_ascii):
-        logging.info("  {}".format(os.path.basename(elev_url)))
-        logging.debug("    {}".format(elev_url))
-        logging.debug("    {}".format(input_elev_ascii))
-        _utils.url_download(elev_url, input_elev_ascii)
+    if overwrite_flag or not os.path.isfile(mask_raster):
+        logging.info('\nNLDAS Mask')
+        logging.info('  Downloading')
+        logging.debug('    {}'.format(mask_url))
+        logging.debug('    {}'.format(mask_nc))
+        _utils.url_download(mask_url, mask_nc)
 
-    # Download the land/water mask if necessary
-    if overwrite_flag or not os.path.isfile(input_mask_ascii):
-        logging.info("  {}".format(os.path.basename(mask_url)))
-        logging.debug("    {}".format(elev_url))
-        logging.debug("    {}".format(input_elev_ascii))
-        _utils.url_download(mask_url, input_mask_ascii)
+        logging.info('  Extracting')
+        logging.debug('  {}'.format(mask_raster))
+        mask_nc_f = netCDF4.Dataset(mask_nc, 'r')
+        mask_array = np.flipud(mask_nc_f.variables['NLDAS_mask'][0, :, :])
+        # mask_array = np.flipud(mask_nc_f.variables['CONUS_mask'][0, :, :])
+        drigo.array_to_raster(
+            mask_array.astype(np.uint8), mask_raster,
+            output_geo=nldas_geo, output_proj=nldas_proj)
+        mask_nc_f.close()
+        del mask_nc_f, mask_array
+        # os.remove(mask_nc)
 
-    # The XYZ ASCII format is expecting LAT/LON/VALUE
-    # Export new asc files with just the needed columns for each raster
-    logging.debug('\nParsing input ASCII files')
+    if overwrite_flag or not os.path.isfile(elev_raster):
+        logging.info('\nNLDAS Elevation')
+        logging.info('  Downloading')
+        logging.debug('    {}'.format(elev_url))
+        logging.debug('    {}'.format(elev_nc))
+        _utils.url_download(elev_url, elev_nc)
 
-    logging.debug('  {}'.format(elev_ascii))
-    elev_df = pd.read_table(
-        input_elev_ascii, header=None, sep=r"\s+", engine='python',
-        names=['COL', 'ROW', 'LAT', 'LON', 'VALUE'])
-    elev_df = elev_df.sort_values(['LAT', 'LON'])
-    if zero_elev_nodata_flag:
-        elev_df.loc[elev_df['VALUE'] == nldas_nodata, 'VALUE'] = 0
-    elev_df[['LON', 'LAT', 'VALUE']].to_csv(
-        elev_ascii, header=None, index=False)
+        logging.info('  Extracting')
+        logging.debug('  {}'.format(elev_raster))
+        elev_nc_f = netCDF4.Dataset(elev_nc, 'r')
+        elev_ma = elev_nc_f.variables['NLDAS_elev'][0, :, :]
+        # elev_ma = elev_nc_f.variables['CONUS_mask'][0, :, :]
+        elev_array = np.flipud(elev_ma.data.astype(np.float32))
+        # elev_nodata = float(elev_ma.fill_value)
+        elev_array[
+            (elev_array == elev_ma.fill_value) |
+            (elev_array <= -300)] = np.nan
+        if zero_elev_nodata_flag:
+            elev_array[np.isnan(elev_array)] = 0
+        if np.all(np.isnan(elev_array)):
+            logging.error(
+                '\nERROR: The elevation array is all nodata, exiting\n')
+            sys.exit()
 
-    logging.debug('  {}'.format(input_mask_ascii))
-    mask_df = pd.read_table(
-        input_mask_ascii, header=None, sep=r"\s+", engine='python',
-        names=['COL', 'ROW', 'LAT', 'LON', 'VALUE'])
-    mask_df = mask_df.sort_values(['LAT', 'LON'])
-    mask_df[['LON', 'LAT', 'VALUE']].to_csv(
-        mask_ascii, header=None, index=False)
-    mask_df[['LON', 'LAT', 'LAT']].to_csv(lat_ascii, header=None, index=False)
-    mask_df[['LON', 'LAT', 'LON']].to_csv(lon_ascii, header=None, index=False)
+        drigo.array_to_raster(
+            elev_array, elev_raster,
+            output_geo=nldas_geo, output_proj=nldas_proj)
+        elev_nc_f.close()
+        del elev_nc_f, elev_array
+        # os.remove(mask_nc)
 
-    # Remove existing rasters if necessary
-    #   -overwrite argument could be passed to gdalwarp instead
-    if overwrite_flag:
-        logging.info('\nRemoving existing rasters')
-        if os.path.isfile(elev_raster):
-            logging.info('  {}'.format(elev_raster))
-            subprocess.call(['gdalmanage', 'delete', elev_raster])
-        if os.path.isfile(mask_raster):
-            logging.info('  {}'.format(mask_raster))
-            subprocess.call(['gdalmanage', 'delete', mask_raster])
-        if os.path.isfile(lat_raster):
-            logging.info('  {}'.format(lat_raster))
-            subprocess.call(['gdalmanage', 'delete', lat_raster])
-        if os.path.isfile(lon_raster):
-            logging.info('  {}'.format(lon_raster))
-            subprocess.call(['gdalmanage', 'delete', lon_raster])
 
-    # Convert XYZ ascii to raster
-    logging.info('\nConverting ASCII to raster')
-    if not os.path.isfile(elev_raster):
-        logging.info('  {}'.format(elev_ascii))
-        subprocess.call(
-            ['gdalwarp', '-of', 'HFA', '-t_srs', nldas_epsg,
-             '-co', 'COMPRESSED=TRUE', elev_ascii, elev_raster,
-             '-ot', 'Float32',
-             '-srcnodata', str(nldas_nodata),
-             '-dstnodata', str(drigo.numpy_type_nodata(np.float32))],
-            cwd=ancillary_ws)
-        # subprocess.call(
-        #     ['gdal_translate', '-of', 'HFA', '-a_srs', nldas_epsg,
-        #      '-co', 'COMPRESSED=TRUE', elev_ascii, elev_raster],
-        #     cwd=ancillary_ws)
-    if not os.path.isfile(mask_raster):
-        logging.info('  {}'.format(mask_ascii))
-        subprocess.call(
-            ['gdalwarp', '-of', 'HFA', '-t_srs', nldas_epsg,
-             '-co', 'COMPRESSED=TRUE', mask_ascii, mask_raster],
-            cwd=ancillary_ws)
-    if not os.path.isfile(lat_raster):
-        logging.info('  {}'.format(lat_ascii))
-        subprocess.call(
-            ['gdalwarp', '-of', 'HFA', '-t_srs', nldas_epsg,
-             '-co', 'COMPRESSED=TRUE', lat_ascii, lat_raster],
-            cwd=ancillary_ws)
-    if not os.path.isfile(lon_raster):
-        logging.info('  {}'.format(lon_ascii))
-        subprocess.call(
-            ['gdalwarp', '-of', 'HFA', '-t_srs', nldas_epsg,
-             '-co', 'COMPRESSED=TRUE', lon_ascii, lon_raster],
-            cwd=ancillary_ws)
+    # Compute latitude/longitude rasters
+    if ((overwrite_flag or
+         not os.path.isfile(lat_raster) or
+         not os.path.isfile(lat_raster)) and
+        os.path.isfile(mask_raster)):
+        logging.info('\nNLDAS Latitude/Longitude')
+        logging.debug('    {}'.format(lat_raster))
+        lat_array, lon_array = drigo.raster_lat_lon_func(mask_raster)
+        # Handle the conversion to radians in the other scripts
+        # lat_array *= (math.pi / 180)
+        drigo.array_to_raster(
+            lat_array, lat_raster, output_geo=nldas_geo,
+            output_proj=nldas_proj)
+        logging.debug('    {}'.format(lon_raster))
+        drigo.array_to_raster(
+            lon_array, lon_raster, output_geo=nldas_geo,
+            output_proj=nldas_proj)
+        del lat_array, lon_array
 
-    # Cleanup
-    os.remove(elev_ascii)
-    os.remove(mask_ascii)
-    os.remove(lat_ascii)
-    os.remove(lon_ascii)
+    # # Download the elevation data if necessary
+    # logging.info('\nDownloading ASCII files')
+    # if overwrite_flag or not os.path.isfile(input_elev_ascii):
+    #     logging.info("  {}".format(os.path.basename(elev_url)))
+    #     logging.debug("    {}".format(elev_url))
+    #     logging.debug("    {}".format(input_elev_ascii))
+    #     _utils.url_download(elev_url, input_elev_ascii)
+    #
+    # # The XYZ ASCII format is expecting LAT/LON/VALUE
+    # # Export new asc files with just the needed columns for each raster
+    # logging.debug('\nParsing elevation ASCII file')
+    # logging.debug('  {}'.format(elev_ascii))
+    # elev_df = pd.read_table(
+    #     input_elev_ascii, header=None, sep=r"\s+", engine='python',
+    #     names=['COL', 'ROW', 'LAT', 'LON', 'VALUE'])
+    # elev_df = elev_df.sort_values(['LAT', 'LON'])
+    # if zero_elev_nodata_flag:
+    #     elev_df.loc[elev_df['VALUE'] == nldas_nodata, 'VALUE'] = 0
+    # elev_df[['LON', 'LAT', 'VALUE']].to_csv(
+    #     elev_ascii, header=None, index=False)
+    #
+    # # Remove existing rasters if necessary
+    # #   -overwrite argument could be passed to gdalwarp instead
+    # if overwrite_flag:
+    #     logging.info('\nRemoving existing rasters')
+    #     # if os.path.isfile(elev_raster):
+    #     #     logging.info('  {}'.format(elev_raster))
+    #     #     subprocess.call(['gdalmanage', 'delete', elev_raster])
+    #
+    # # Convert XYZ ascii to raster
+    # logging.info('\nConverting ASCII to raster')
+    # if not os.path.isfile(elev_raster):
+    #     logging.info('  {}'.format(elev_ascii))
+    #     subprocess.call(
+    #         ['gdalwarp', '-of', 'HFA', '-t_srs', nldas_epsg,
+    #          '-co', 'COMPRESSED=TRUE', elev_ascii, elev_raster,
+    #          '-ot', 'Float32',
+    #          '-srcnodata', str(nldas_nodata),
+    #          '-dstnodata', str(drigo.numpy_type_nodata(np.float32))],
+    #         cwd=ancillary_ws)
+    #     # subprocess.call(
+    #     #     ['gdal_translate', '-of', 'HFA', '-a_srs', nldas_epsg,
+    #     #      '-co', 'COMPRESSED=TRUE', elev_ascii, elev_raster],
+    #     #     cwd=ancillary_ws)
+    #
+    # # Cleanup
+    # os.remove(elev_ascii)
 
     logging.debug('\nScript Complete')
 
